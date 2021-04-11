@@ -11,7 +11,11 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
 
-def log_in(driver: WebDriver, email_address: str, password: str) -> None:
+def log_in(
+    driver: WebDriver,
+    email_address: str,
+    password: str,
+) -> None:  # pragma: no cover
     """
     Log in to Vuforia web services.
     """
@@ -34,7 +38,10 @@ def log_in(driver: WebDriver, email_address: str, password: str) -> None:
     )
 
 
-def create_license(driver: WebDriver, license_name: str) -> None:
+def create_license(
+    driver: WebDriver,
+    license_name: str,
+) -> None:  # pragma: no cover
     """
     Create a license.
     """
@@ -79,7 +86,7 @@ def create_vws_license(
     license_name: str,
     email_address: str,
     password: str,
-) -> None:
+) -> None:  # pragma: no cover
     """
     Create a license.
     """
