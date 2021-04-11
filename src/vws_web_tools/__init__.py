@@ -71,6 +71,29 @@ def create_license(
     agree_terms_checkbox_element.submit()
 
 
+def create_database(
+    driver: WebDriver,
+    database_name: str,
+    license_name: str,
+) -> None:  # pragma: no cover
+    target_manager_url = 'https://developer.vuforia.com/vui/develop/databases'
+    driver.get(target_manager_url)
+    ten_second_wait = WebDriverWait(driver, 10)
+
+    add_database_button_element = ten_second_wait.until(
+        expected_conditions.presence_of_element_located(
+            (By.ID, 'add-dialog-btn'),
+        ),
+    )
+    add_database_button_element.click()
+
+    database_name_element = driver.find_element_by_id('database-name')
+    database_name_element.send_keys(database_name)
+
+    cloud_type_radio_element = driver.find_element_by_id('cloud-radio-btn')
+    cloud_type_radio_element.click()
+
+
 @click.group(name='vws-web')
 def vws_web_tools_group() -> None:
     """
@@ -96,4 +119,29 @@ def create_vws_license(
     driver.close()
 
 
+@click.command()
+@click.option('--license-name')
+@click.option('--database-name')
+@click.option('--email-address', envvar='VWS_EMAIL_ADDRESS')
+@click.option('--password', envvar='VWS_PASSWORD')
+def create_vws_database(
+    database_name: str,
+    license_name: str,
+    email_address: str,
+    password: str,
+):
+    """
+    Create a database.
+    """
+    driver = webdriver.Safari()
+    log_in(driver=driver, email_address=email_address, password=password)
+    create_database(
+        driver=driver,
+        database_name=database_name,
+        license_name=license_name,
+    )
+    driver.close()
+
+
+vws_web_tools_group.add_command(create_vws_database)
 vws_web_tools_group.add_command(create_vws_license)
