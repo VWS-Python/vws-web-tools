@@ -12,6 +12,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 def log_in(driver: WebDriver, email_address: str, password: str) -> None:
+    """
+    Log in to Vuforia web services.
+    """
     log_in_url = 'https://developer.vuforia.com/vui/auth/login'
     driver.get(log_in_url)
     email_address_input_element = driver.find_element_by_id('login_email')
@@ -32,6 +35,9 @@ def log_in(driver: WebDriver, email_address: str, password: str) -> None:
 
 
 def create_license(driver: WebDriver, license_name: str) -> None:
+    """
+    Create a license.
+    """
     licenses_url = 'https://developer.vuforia.com/vui/develop/licenses'
     driver.get(licenses_url)
 
@@ -60,7 +66,9 @@ def create_license(driver: WebDriver, license_name: str) -> None:
 
 @click.group(name='vws-web')
 def vws_web_tools_group() -> None:
-    pass
+    """
+    Commands for interacting with VWS.
+    """
 
 
 @click.command()
@@ -72,6 +80,9 @@ def create_vws_license(
     email_address: str,
     password: str,
 ) -> None:
+    """
+    Create a license.
+    """
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
     create_license(driver=driver, license_name=license_name)

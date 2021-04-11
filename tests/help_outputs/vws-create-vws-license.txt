@@ -1,5 +1,7 @@
 Usage: vws-web create-vws-license [OPTIONS]
 
+  Create a license.
+
 Options:
   --license-name TEXT
   --email-address TEXT

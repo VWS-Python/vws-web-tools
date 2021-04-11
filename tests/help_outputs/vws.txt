@@ -1,7 +1,9 @@
 Usage: vws-web [OPTIONS] COMMAND [ARGS]...
 
+  Commands for interacting with VWS.
+
 Options:
   --help  Show this message and exit.
 
 Commands:
-  create-vws-license
+  create-vws-license  Create a license.
