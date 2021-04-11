@@ -1,0 +1,7 @@
+Usage: vws-web [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  create-vws-license

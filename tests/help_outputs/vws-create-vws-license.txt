@@ -1,0 +1,7 @@
+Usage: vws-web create-vws-license [OPTIONS]
+
+Options:
+  --license-name TEXT
+  --email-address TEXT
+  --password TEXT
+  --help                Show this message and exit.
