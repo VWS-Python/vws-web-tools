@@ -6,4 +6,5 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  create-vws-license  Create a license.
+  create-vws-database  Create a database.
+  create-vws-license   Create a license.
