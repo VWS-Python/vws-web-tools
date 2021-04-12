@@ -9,6 +9,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+import time
+from selenium.webdriver.support.ui import Select
 
 
 def log_in(
@@ -85,6 +87,7 @@ def create_database(
             (By.ID, 'add-dialog-btn'),
         ),
     )
+    time.sleep(1)
     add_database_button_element.click()
 
     database_name_element = driver.find_element_by_id('database-name')
@@ -92,6 +95,21 @@ def create_database(
 
     cloud_type_radio_element = driver.find_element_by_id('cloud-radio-btn')
     cloud_type_radio_element.click()
+
+    license_dropdown_element = driver.find_element_by_id(
+        'cloud-license-dropdown',
+    )
+    time.sleep(1)
+    new_element_id = f'cloud-license-{license_name}'
+    new_element = license_dropdown_element.find_element_by_id(new_element_id)
+    new_element.click()
+    # license_select = Select(license_dropdown_element)
+    # license_select.select_by_visible_text(license_name)
+
+    create_button = driver.find_element_by_id('create-btn')
+    create_button.click()
+    breakpoint()
+    pass
 
 
 @click.group(name='vws-web')
