@@ -2,6 +2,8 @@
 Tools for interacting with the VWS (Vuforia Web Services) website.
 """
 
+import time
+
 import click
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -9,8 +11,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
-import time
-from selenium.webdriver.support.ui import Select
 
 
 def log_in(
@@ -78,6 +78,9 @@ def create_database(
     database_name: str,
     license_name: str,
 ) -> None:  # pragma: no cover
+    """
+    Create a database.
+    """
     target_manager_url = 'https://developer.vuforia.com/vui/develop/databases'
     driver.get(target_manager_url)
     ten_second_wait = WebDriverWait(driver, 10)
@@ -143,7 +146,7 @@ def create_vws_database(
     license_name: str,
     email_address: str,
     password: str,
-):
+) -> None:  # pragma: no cover
     """
     Create a database.
     """
