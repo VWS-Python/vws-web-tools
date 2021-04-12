@@ -1,0 +1,10 @@
+Usage: vws-web create-vws-database [OPTIONS]
+
+  Create a database.
+
+Options:
+  --license-name TEXT
+  --database-name TEXT
+  --email-address TEXT
+  --password TEXT
+  --help                Show this message and exit.
