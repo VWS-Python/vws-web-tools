@@ -103,13 +103,9 @@ def create_database(
     new_element_id = f'cloud-license-{license_name}'
     new_element = license_dropdown_element.find_element_by_id(new_element_id)
     new_element.click()
-    # license_select = Select(license_dropdown_element)
-    # license_select.select_by_visible_text(license_name)
 
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
-    breakpoint()
-    pass
 
 
 @click.group(name='vws-web')
