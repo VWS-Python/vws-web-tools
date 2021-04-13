@@ -91,6 +91,7 @@ def create_database(
         ),
     )
     time.sleep(1)
+    breakpoint()
     add_database_button_element.click()
 
     database_name_element = driver.find_element_by_id('database-name')
@@ -110,6 +111,24 @@ def create_database(
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
 
+def get_database_details(
+    driver: WebDriver,
+    database_name: str,
+) -> None:  # pragma: no cover
+    """
+    Get details of a database.
+    """
+    target_manager_url = 'https://developer.vuforia.com/vui/develop/databases'
+    driver.get(target_manager_url)
+    ten_second_wait = WebDriverWait(driver, 10)
+
+    add_database_button_element = ten_second_wait.until(
+        expected_conditions.presence_of_element_located(
+            (By.ID, 'add-dialog-btn'),
+        ),
+    )
+    time.sleep(1)
+
 
 @click.group(name='vws-web')
 def vws_web_tools_group() -> None:
@@ -119,9 +138,9 @@ def vws_web_tools_group() -> None:
 
 
 @click.command()
-@click.option('--license-name')
-@click.option('--email-address', envvar='VWS_EMAIL_ADDRESS')
-@click.option('--password', envvar='VWS_PASSWORD')
+@click.option('--license-name', required=True)
+@click.option('--email-address', envvar='VWS_EMAIL_ADDRESS', required=True)
+@click.option('--password', envvar='VWS_PASSWORD', required=True)
 def create_vws_license(
     license_name: str,
     email_address: str,
@@ -137,10 +156,10 @@ def create_vws_license(
 
 
 @click.command()
-@click.option('--license-name')
-@click.option('--database-name')
-@click.option('--email-address', envvar='VWS_EMAIL_ADDRESS')
-@click.option('--password', envvar='VWS_PASSWORD')
+@click.option('--license-name', required=True)
+@click.option('--database-name', required=True)
+@click.option('--email-address', envvar='VWS_EMAIL_ADDRESS', required=True)
+@click.option('--password', envvar='VWS_PASSWORD', required=True)
 def create_vws_database(
     database_name: str,
     license_name: str,
@@ -160,5 +179,25 @@ def create_vws_database(
     driver.close()
 
 
+@click.command()
+@click.option('--database-name', required=True)
+@click.option('--email-address', envvar='VWS_EMAIL_ADDRESS', required=True)
+@click.option('--password', envvar='VWS_PASSWORD', required=True)
+def show_database_details(
+    database_name: str,
+    email_address: str,
+    password: str,
+) -> None:  # pragma: no cover
+    """
+    Show the details of a database.
+    """
+    driver = webdriver.Safari()
+    log_in(driver=driver, email_address=email_address, password=password)
+    details = get_database_details(driver=driver, database_name=database_name)
+    print(details)
+    driver.close()
+
+
 vws_web_tools_group.add_command(create_vws_database)
 vws_web_tools_group.add_command(create_vws_license)
+vws_web_tools_group.add_command(show_database_details)
