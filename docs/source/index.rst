@@ -10,12 +10,12 @@ Installation
 
 This is tested on Python 3.9+.
 
-Example usage
--------------
+Usage
+-----
 
-.. code:: sh
-
-   $ ...
+.. click:: vws_web_tools:vws_web_tools_group
+  :prog: vws-web-tools
+  :show-nested:
 
 
 Reference
