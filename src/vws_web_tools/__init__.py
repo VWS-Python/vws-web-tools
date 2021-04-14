@@ -3,14 +3,28 @@ Tools for interacting with the VWS (Vuforia Web Services) website.
 """
 
 import time
+from typing import TypedDict
 
 import click
+import yaml
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+
+
+class DatabaseDict(TypedDict):
+    """
+    A dictionary type which represents a database.
+    """
+
+    database_name: str
+    server_access_key: str
+    server_secret_key: str
+    client_access_key: str
+    client_secret_key: str
 
 
 def log_in(
@@ -91,7 +105,6 @@ def create_database(
         ),
     )
     time.sleep(1)
-    breakpoint()
     add_database_button_element.click()
 
     database_name_element = driver.find_element_by_id('database-name')
@@ -118,22 +131,20 @@ def create_database(
 def get_database_details(
     driver: WebDriver,
     database_name: str,
-) -> None:  # pragma: no cover
+) -> DatabaseDict:  # pragma: no cover
     """
     Get details of a database.
     """
     target_manager_url = 'https://developer.vuforia.com/vui/develop/databases'
     driver.get(target_manager_url)
+    database_name_xpath = "//span[text()='" + database_name + "']"
     ten_second_wait = WebDriverWait(driver, 10)
 
-    add_database_button_element = ten_second_wait.until(
+    database_cell_element = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.ID, 'add-dialog-btn'),
+            (By.XPATH, database_name_xpath),
         ),
     )
-    time.sleep(1)
-    database_name_xpath = "//span[text()='" + database_name + "']"
-    database_cell_element = driver.find_element_by_xpath(database_name_xpath)
     database_cell_element.click()
 
     access_keys_tab_item = ten_second_wait.until(
@@ -143,6 +154,30 @@ def get_database_details(
     )
 
     access_keys_tab_item.click()
+
+    # Without this we sometimes get empty strings for the keys.
+    time.sleep(1)
+
+    client_access_key = driver.find_element_by_class_name(
+        'client-access-key',
+    ).text
+    client_secret_key = driver.find_element_by_class_name(
+        'client-secret-key',
+    ).text
+    server_access_key = driver.find_element_by_class_name(
+        'server-access-key',
+    ).text
+    server_secret_key = driver.find_element_by_class_name(
+        'server-secret-key',
+    ).text
+
+    return {
+        'database_name': database_name,
+        'server_access_key': str(server_access_key),
+        'server_secret_key': str(server_secret_key),
+        'client_access_key': str(client_access_key),
+        'client_secret_key': str(client_secret_key),
+    }
 
 
 @click.group(name='vws-web')
@@ -209,8 +244,8 @@ def show_database_details(
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
     details = get_database_details(driver=driver, database_name=database_name)
-    print(details)
     driver.close()
+    click.echo(yaml.dump(details), nl=False)
 
 
 vws_web_tools_group.add_command(create_vws_database)
