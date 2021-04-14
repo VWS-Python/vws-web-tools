@@ -1,9 +1,9 @@
-Usage: vws-web create-vws-license [OPTIONS]
+Usage: vws-web show-database-details [OPTIONS]
 
-  Create a license.
+  Show the details of a database.
 
 Options:
-  --license-name TEXT   [required]
+  --database-name TEXT  [required]
   --email-address TEXT  [required]
   --password TEXT       [required]
   --help                Show this message and exit.
