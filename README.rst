@@ -7,21 +7,20 @@ Tools for interacting with the VWS (Vuforia Web Services) website.
 
 .. code::
 
-	export VWS_EMAIL_ADDRESS=[YOUR-EMAIL]
-	export VWS_PASSWORD=[YOUR-PASSWORD]
+   export VWS_EMAIL_ADDRESS=[YOUR-EMAIL]
+   export VWS_PASSWORD=[YOUR-PASSWORD]
 
-	vws-web-tools \
-		create-vws-license \
-		--license-name my-licence-0001
+   vws-web-tools \
+       create-vws-license \
+       --license-name my-licence-0001
 
+   vws-web-tools \
+       create-vws-database \
+       --license-name my-licence-0001  \
+       --database-name my-database-0001
 
-	vws-web-tools \
-		create-vws-database \
-		--license-name my-licence-0001  \
-		--database-name my-database-0001
-	
-	vws-web-tools show-database-details \
-		--database-name my-database-0001
+   vws-web-tools show-database-details \
+       --database-name my-database-0001
 
 .. |Build Status| image:: https://github.com/VWS-Python/vws-web-tools/workflows/CI/badge.svg
    :target: https://github.com/VWS-Python/vws-web-tools/actions
