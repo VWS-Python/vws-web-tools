@@ -3,7 +3,7 @@ Usage: vws-web create-vws-license [OPTIONS]
   Create a license.
 
 Options:
-  --license-name TEXT
-  --email-address TEXT
-  --password TEXT
+  --license-name TEXT   [required]
+  --email-address TEXT  [required]
+  --password TEXT       [required]
   --help                Show this message and exit.
