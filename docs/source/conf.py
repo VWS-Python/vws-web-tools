@@ -19,6 +19,7 @@ extensions = [
     'sphinx-prompt',
     'sphinx_substitution_extensions',
     'sphinxcontrib.spelling',
+    'sphinx_click',
 ]
 
 templates_path = ['_templates']
