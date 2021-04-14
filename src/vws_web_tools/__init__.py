@@ -104,12 +104,16 @@ def create_database(
         'cloud-license-dropdown',
     )
     time.sleep(1)
-    new_element_id = f'cloud-license-{license_name}'
-    new_element = license_dropdown_element.find_element_by_id(new_element_id)
-    new_element.click()
+    license_name_no_underscores = license_name.replace('_', '-')
+    license_dropdown_id = 'cloud-license-' + license_name_no_underscores
+    dropdown_choice_element = license_dropdown_element.find_element_by_id(
+        license_dropdown_id,
+    )
+    dropdown_choice_element.click()
 
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
+
 
 def get_database_details(
     driver: WebDriver,
@@ -128,6 +132,17 @@ def get_database_details(
         ),
     )
     time.sleep(1)
+    database_name_xpath = "//span[text()='" + database_name + "']"
+    database_cell_element = driver.find_element_by_xpath(database_name_xpath)
+    database_cell_element.click()
+
+    access_keys_tab_item = ten_second_wait.until(
+        expected_conditions.presence_of_element_located(
+            (By.LINK_TEXT, 'Database Access Keys'),
+        ),
+    )
+
+    access_keys_tab_item.click()
 
 
 @click.group(name='vws-web')
