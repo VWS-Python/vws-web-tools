@@ -137,8 +137,25 @@ def get_database_details(
     """
     target_manager_url = 'https://developer.vuforia.com/vui/develop/databases'
     driver.get(target_manager_url)
-    database_name_xpath = "//span[text()='" + database_name + "']"
     ten_second_wait = WebDriverWait(driver, 10)
+
+    # This is a hack.
+    #
+    # Not all items are shown on the first page and we do not yet support going
+    # through pages.
+    #
+    # In our use cases so far we always want the latest databases.
+    #
+    #
+    # Therefore we sort by last modified date.
+    time.sleep(2)
+    date_modified_element = driver.find_element_by_id(
+        'sort-by-last-modified-date'
+    )
+    date_modified_element.click()
+    date_modified_element.click()
+
+    database_name_xpath = "//span[text()='" + database_name + "']"
 
     database_cell_element = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
