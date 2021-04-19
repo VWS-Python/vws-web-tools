@@ -72,15 +72,15 @@ def create_license(
         ),
     )
 
-    for i in range(20):
+    for _ in range(20):
         time.sleep(1)
 
         try:
             get_development_key_button_element.click()
-        except Exception:
-            print("Trying to click get development key failed")
+        except Exception:  # pylint: disable=broad-except
+            print('Trying to click get development key failed')
         else:
-            print("Clicked get development key")
+            print('Clicked get development key')
 
     license_name_input_element = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
@@ -112,15 +112,15 @@ def create_database(
             (By.ID, 'add-dialog-btn'),
         ),
     )
-    for i in range(20):
+    for _ in range(20):
         time.sleep(1)
 
         try:
             add_database_button_element.click()
-        except Exception:
-            print("Trying to click add database element failed")
+        except Exception:  # pylint: disable=broad-except
+            print('Trying to click add database element failed')
         else:
-            print("Clicked add database element")
+            print('Clicked add database element')
 
     database_name_element = driver.find_element_by_id('database-name')
     database_name_element.send_keys(database_name)
@@ -135,14 +135,9 @@ def create_database(
     license_name_no_underscores = license_name.replace('_', '-')
     license_dropdown_id = 'cloud-license-' + license_name_no_underscores
 
-    try:
-        dropdown_choice_element = license_dropdown_element.find_element_by_id(
-            license_dropdown_id,
-        )
-    except Exception as exc:
-        breakpoint()
-        pass
-
+    dropdown_choice_element = license_dropdown_element.find_element_by_id(
+        license_dropdown_id,
+    )
     dropdown_choice_element.click()
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
@@ -170,7 +165,7 @@ def get_database_details(
     # Therefore we sort by last modified date.
     time.sleep(2)
     date_modified_element = driver.find_element_by_id(
-        'sort-by-last-modified-date'
+        'sort-by-last-modified-date',
     )
     date_modified_element.click()
     time.sleep(10)
@@ -184,15 +179,15 @@ def get_database_details(
             (By.XPATH, database_name_xpath),
         ),
     )
-    for i in range(20):
+    for _ in range(20):
         time.sleep(1)
 
         try:
             database_cell_element.click()
-        except Exception:
-            print("Trying to click database cell element failed")
+        except Exception:  # pylint: disable=broad-except
+            print('Trying to click database cell element failed')
         else:
-            print("Clicked database cell element")
+            print('Clicked database cell element')
 
     access_keys_tab_item = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
