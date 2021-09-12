@@ -17,7 +17,7 @@ pylint==2.9.6
 pyroma==3.2
 pytest-cov==2.12.1  # Measure code coverage
 pytest==6.2.4
-sphinx==4.1.2
+sphinx==4.2.0
 sphinxcontrib.spelling==7.2.1
 twine==3.4.2
 types-PyYAML==5.4.10
