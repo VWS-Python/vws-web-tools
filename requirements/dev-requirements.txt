@@ -19,6 +19,6 @@ pytest==6.2.5
 sphinx==4.4.0
 sphinxcontrib.spelling==7.3.2
 types-PyYAML==6.0.3
-types-setuptools==57.4.7
+types-setuptools==57.4.8
 vulture==2.3
 sphinx-click==3.0.2
