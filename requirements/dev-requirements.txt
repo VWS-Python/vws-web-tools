@@ -1,4 +1,4 @@
-Sphinx-Substitution-Extensions==2020.9.30.0
+Sphinx-Substitution-Extensions==2022.2.16
 autoflake==1.4
 black==22.1.0
 check-manifest==0.47
@@ -6,8 +6,8 @@ doc8==0.10.1
 flake8-commas==2.1.0
 flake8-quotes==3.3.1
 flake8==4.0.1
-freezegun==1.1.0
-furo==2022.1.2
+freezegun==1.2.0
+furo==2022.3.4
 isort==5.10.1
 mypy==0.931
 pip_check_reqs==2.3.2
@@ -19,6 +19,7 @@ pytest==7.0.1
 sphinx==4.4.0
 sphinxcontrib.spelling==7.3.2
 types-PyYAML==6.0.4
+types-selenium==3.141.8
 types-setuptools==57.4.9
 vulture==2.3
 sphinx-click==3.1.0
