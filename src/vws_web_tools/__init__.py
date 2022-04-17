@@ -80,7 +80,7 @@ def create_license(
     )
 
     get_development_key_button_element = driver.find_element_by_id(
-        'get-development-key'
+        'get-development-key',
     )
     get_development_key_button_element.click()
     try:
@@ -129,7 +129,7 @@ def create_database(
     )
 
     add_database_button_element = driver.find_element_by_id(
-        add_database_button_id
+        add_database_button_id,
     )
     add_database_button_element.click()
     try:
@@ -152,13 +152,11 @@ def create_database(
     license_dropdown_element = Select(
         driver.find_element_by_id(
             'cloud-license-dropdown',
-        )
+        ),
     )
 
     time.sleep(1)
-    dropdown_choice_element = license_dropdown_element.select_by_visible_text(
-        text=license_name,
-    )
+    license_dropdown_element.select_by_visible_text(text=license_name)1
 
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
