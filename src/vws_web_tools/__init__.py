@@ -156,7 +156,7 @@ def create_database(
     )
 
     time.sleep(1)
-    license_dropdown_element.select_by_visible_text(text=license_name)1
+    license_dropdown_element.select_by_visible_text(text=license_name)
 
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
