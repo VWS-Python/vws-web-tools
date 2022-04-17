@@ -135,8 +135,9 @@ def create_database(
     license_name_no_underscores = license_name.replace('_', '-')
     license_dropdown_id = 'cloud-license-' + license_name_no_underscores
 
-    dropdown_choice_element = license_dropdown_element.find_element_by_id(
-        license_dropdown_id,
+    dropdown_choice_element = license_dropdown_element.find_element(
+        by=By.ID,
+        value=license_dropdown_id,
     )
     dropdown_choice_element.click()
     create_button = driver.find_element_by_id('create-btn')
