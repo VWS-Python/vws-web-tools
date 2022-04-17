@@ -77,6 +77,10 @@ def create_license(
             (By.ID, 'get-development-key'),
         ),
     )
+    
+    # The button 'get-development-key' sometimes does not work for a moment
+    # after it is deemed "clickable".
+    time.sleep(1)
 
     get_development_key_button_element.click()
 
