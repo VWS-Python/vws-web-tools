@@ -8,6 +8,7 @@ from typing import TypedDict
 import click
 import yaml
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -82,6 +83,12 @@ def create_license(
         'get-development-key'
     )
     get_development_key_button_element.click()
+    try:
+        get_development_key_button_element.click()
+        time.sleep(1)
+        get_development_key_button_element.click()
+    except WebDriverException:
+        pass
 
     license_name_input_element = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
@@ -121,9 +128,15 @@ def create_database(
         ),
     )
 
-    add_database_button_element = driver.find_element_by_id(add_database_button_id)
+    # time.sleep(5)
+    add_database_button_element = driver.find_element_by_id(
+        add_database_button_id
+    )
     add_database_button_element.click()
-
+    try:
+        add_database_button_element.click()
+    except WebDriverException:
+        pass
     database_name_id = 'database-name'
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
@@ -142,19 +155,14 @@ def create_database(
             'cloud-license-dropdown',
         )
     )
-    license_name_no_underscores = license_name.replace('_', '-')
-    license_dropdown_id = 'cloud-license-' + license_name_no_underscores
 
-    breakpoint()
-
-    dropdown_choice_element = license_dropdown_element.find_element(
-        by=By.ID,
-        value=license_dropdown_id,
+    time.sleep(1)
+    dropdown_choice_element = license_dropdown_element.select_by_visible_text(
+        text=license_name,
     )
-    dropdown_choice_element.click()
+
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
-    time.sleep(1)
 
 
 def get_database_details(
