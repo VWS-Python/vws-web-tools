@@ -128,7 +128,6 @@ def create_database(
         ),
     )
 
-    # time.sleep(5)
     add_database_button_element = driver.find_element_by_id(
         add_database_button_id
     )
