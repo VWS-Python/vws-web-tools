@@ -8,11 +8,12 @@ from typing import TypedDict
 import click
 import yaml
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 
 class DatabaseDict(TypedDict):
@@ -72,13 +73,22 @@ def create_license(
         ),
     )
 
-    get_development_key_button_element = ten_second_wait.until(
+    ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
             (By.ID, 'get-development-key'),
         ),
     )
 
+    get_development_key_button_element = driver.find_element_by_id(
+        'get-development-key',
+    )
     get_development_key_button_element.click()
+    try:
+        get_development_key_button_element.click()
+        time.sleep(1)
+        get_development_key_button_element.click()
+    except WebDriverException:
+        pass
 
     license_name_input_element = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
@@ -105,41 +115,51 @@ def create_database(
     driver.get(target_manager_url)
     ten_second_wait = WebDriverWait(driver, 10)
 
+    add_database_button_id = 'add-dialog-btn'
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.ID, 'add-dialog-btn'),
+            (By.ID, add_database_button_id),
         ),
     )
 
-    add_database_button_element = ten_second_wait.until(
+    ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
-            (By.ID, 'add-dialog-btn'),
+            (By.ID, add_database_button_id),
         ),
     )
 
+    add_database_button_element = driver.find_element_by_id(
+        add_database_button_id,
+    )
     add_database_button_element.click()
+    try:
+        add_database_button_element.click()
+    except WebDriverException:
+        pass
+    database_name_id = 'database-name'
+    ten_second_wait.until(
+        expected_conditions.presence_of_element_located(
+            (By.ID, database_name_id),
+        ),
+    )
 
-    database_name_element = driver.find_element_by_id('database-name')
+    database_name_element = driver.find_element_by_id(database_name_id)
     database_name_element.send_keys(database_name)
 
     cloud_type_radio_element = driver.find_element_by_id('cloud-radio-btn')
     cloud_type_radio_element.click()
 
-    license_dropdown_element = driver.find_element_by_id(
-        'cloud-license-dropdown',
+    license_dropdown_element = Select(
+        driver.find_element_by_id(
+            'cloud-license-dropdown',
+        ),
     )
-    time.sleep(10)
-    license_name_no_underscores = license_name.replace('_', '-')
-    license_dropdown_id = 'cloud-license-' + license_name_no_underscores
 
-    dropdown_choice_element = license_dropdown_element.find_element(
-        by=By.ID,
-        value=license_dropdown_id,
-    )
-    dropdown_choice_element.click()
+    time.sleep(1)
+    license_dropdown_element.select_by_visible_text(text=license_name)
+
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
-    time.sleep(1)
 
 
 def get_database_details(
