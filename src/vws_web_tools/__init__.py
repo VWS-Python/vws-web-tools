@@ -78,17 +78,7 @@ def create_license(
         ),
     )
 
-    for _ in range(20):
-        time.sleep(1)
-
-        try:
-            get_development_key_button_element.click()
-        except Exception as exc:  # pylint: disable=broad-except
-            print(exc)
-            print('Trying to click get development key failed')
-        else:
-            print('Clicked get development key')
-            break
+    get_development_key_button_element.click()
 
     license_name_input_element = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
@@ -127,17 +117,7 @@ def create_database(
         ),
     )
 
-    for _ in range(20):
-        time.sleep(1)
-
-        try:
-            add_database_button_element.click()
-        except Exception as exc:  # pylint: disable=broad-except
-            print(exc)
-            print('Trying to click add database element failed')
-        else:
-            print('Clicked add database element')
-            break
+    add_database_button_element.click()
 
     database_name_element = driver.find_element_by_id('database-name')
     database_name_element.send_keys(database_name)
@@ -204,17 +184,7 @@ def get_database_details(
         ),
     )
 
-    for _ in range(20):
-        time.sleep(1)
-
-        try:
-            database_cell_element.click()
-        except Exception as exc:  # pylint: disable=broad-except
-            print(exc)
-            print('Trying to click database cell element failed')
-        else:
-            print('Clicked database cell element')
-            break
+    database_cell_element.click()
 
     access_keys_tab_item = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
