@@ -9,18 +9,18 @@ flake8==4.0.1
 freezegun==1.2.0
 furo==2022.3.4
 isort==5.10.1
-mypy==0.931
+mypy==0.942
 pip_check_reqs==2.3.2
 pydocstyle==6.1.1
 pylint==2.12.2
 pyroma==3.2
 pytest-cov==3.0.0  # Measure code coverage
-pytest==7.0.1
-sphinx==4.4.0
+pytest==7.1.1
+sphinx==4.5.0
 sphinx-prompt==1.5.0
 sphinxcontrib.spelling==7.3.2
 types-PyYAML==6.0.4
 types-selenium==3.141.9
-types-setuptools==57.4.12
+types-setuptools==57.4.14
 vulture==2.3
 sphinx-click==3.1.0
