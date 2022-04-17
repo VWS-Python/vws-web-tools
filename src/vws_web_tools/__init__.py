@@ -139,6 +139,7 @@ def create_database(
     dropdown_choice_element.click()
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
+    time.sleep(1)
 
 
 def get_database_details(
