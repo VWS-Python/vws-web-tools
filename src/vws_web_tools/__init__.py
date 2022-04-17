@@ -108,21 +108,20 @@ def create_database(
     driver.get(target_manager_url)
     ten_second_wait = WebDriverWait(driver, 10)
 
+    add_database_button_id = 'add-dialog-btn'
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.ID, 'add-dialog-btn'),
+            (By.ID, add_database_button_id),
         ),
     )
 
-    add_database_button_element = ten_second_wait.until(
+    ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
-            (By.ID, 'add-dialog-btn'),
+            (By.ID, add_database_button_id),
         ),
     )
 
-    # After clickable it doesn't work immediately always
-    time.sleep(5)
-
+    add_database_button_element = driver.find_element_by_id(add_database_button_id)
     add_database_button_element.click()
 
     database_name_id = 'database-name'
@@ -146,11 +145,7 @@ def create_database(
     license_name_no_underscores = license_name.replace('_', '-')
     license_dropdown_id = 'cloud-license-' + license_name_no_underscores
 
-    ten_second_wait.until(
-        expected_conditions.presence_of_element_located(
-            (By.ID, license_dropdown_id),
-        ),
-    )
+    breakpoint()
 
     dropdown_choice_element = license_dropdown_element.find_element(
         by=By.ID,
