@@ -196,7 +196,7 @@ def get_database_details(
             (By.XPATH, database_name_xpath),
         ),
     )
-    
+
     database_cell_element = ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
             (By.XPATH, database_name_xpath),
