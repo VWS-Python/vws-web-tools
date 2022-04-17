@@ -66,21 +66,19 @@ def create_license(
 
     ten_second_wait = WebDriverWait(driver, 10)
 
-    get_development_key_button_element = ten_second_wait.until(
+    ten_second_wait.until(
         expected_conditions.presence_of_element_located(
             (By.ID, 'get-development-key'),
         ),
     )
 
-    for _ in range(20):
-        time.sleep(1)
+    get_development_key_button_element = ten_second_wait.until(
+        expected_conditions.element_to_be_clickable(
+            (By.ID, 'get-development-key'),
+        ),
+    )
 
-        try:
-            get_development_key_button_element.click()
-        except Exception:  # pylint: disable=broad-except
-            print('Trying to click get development key failed')
-        else:
-            print('Clicked get development key')
+    get_development_key_button_element.click()
 
     license_name_input_element = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
@@ -107,20 +105,19 @@ def create_database(
     driver.get(target_manager_url)
     ten_second_wait = WebDriverWait(driver, 10)
 
-    add_database_button_element = ten_second_wait.until(
+    ten_second_wait.until(
         expected_conditions.presence_of_element_located(
             (By.ID, 'add-dialog-btn'),
         ),
     )
-    for _ in range(20):
-        time.sleep(1)
 
-        try:
-            add_database_button_element.click()
-        except Exception:  # pylint: disable=broad-except
-            print('Trying to click add database element failed')
-        else:
-            print('Clicked add database element')
+    add_database_button_element = ten_second_wait.until(
+        expected_conditions.element_to_be_clickable(
+            (By.ID, 'add-dialog-btn'),
+        ),
+    )
+
+    add_database_button_element.click()
 
     database_name_element = driver.find_element_by_id('database-name')
     database_name_element.send_keys(database_name)
@@ -142,6 +139,7 @@ def create_database(
     dropdown_choice_element.click()
     create_button = driver.find_element_by_id('create-btn')
     create_button.click()
+    time.sleep(1)
 
 
 def get_database_details(
@@ -175,20 +173,19 @@ def get_database_details(
     time.sleep(2)
     database_name_xpath = "//span[text()='" + database_name + "']"
 
-    database_cell_element = ten_second_wait.until(
+    ten_second_wait.until(
         expected_conditions.presence_of_element_located(
             (By.XPATH, database_name_xpath),
         ),
     )
-    for _ in range(20):
-        time.sleep(1)
 
-        try:
-            database_cell_element.click()
-        except Exception:  # pylint: disable=broad-except
-            print('Trying to click database cell element failed')
-        else:
-            print('Clicked database cell element')
+    database_cell_element = ten_second_wait.until(
+        expected_conditions.element_to_be_clickable(
+            (By.XPATH, database_name_xpath),
+        ),
+    )
+
+    database_cell_element.click()
 
     access_keys_tab_item = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
