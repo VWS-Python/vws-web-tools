@@ -21,6 +21,6 @@ sphinx-prompt==1.5.0
 sphinxcontrib.spelling==7.5.0
 types-PyYAML==6.0.8
 types-selenium==3.141.9
-types-setuptools==57.4.14
+types-setuptools==57.4.18
 vulture==2.4
 sphinx-click==4.2.0
