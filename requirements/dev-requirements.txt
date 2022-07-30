@@ -2,7 +2,7 @@ Sphinx-Substitution-Extensions==2022.2.16
 autoflake==1.4
 black==22.6.0
 check-manifest==0.48
-doc8==0.11.2
+doc8==1.0.0
 flake8-commas==2.1.0
 flake8-quotes==3.3.1
 flake8==4.0.1
@@ -16,11 +16,11 @@ pylint==2.14.4
 pyroma==4.0
 pytest-cov==3.0.0  # Measure code coverage
 pytest==7.1.2
-sphinx==5.0.2
+sphinx==5.1.1
 sphinx-prompt==1.5.0
 sphinxcontrib.spelling==7.6.0
 types-PyYAML==6.0.9
 types-selenium==3.141.9
-types-setuptools==62.6.1
+types-setuptools==63.2.2
 vulture==2.5
 sphinx-click==4.3.0
