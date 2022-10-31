@@ -12,7 +12,7 @@ Installation
 
    pip install vws-web-tools
 
-This is tested on Python 3.10+.
+This is tested on Python 3.11+.
 
 Usage
 -----
