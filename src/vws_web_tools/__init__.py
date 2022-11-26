@@ -36,12 +36,12 @@ def log_in(
     """
     Log in to Vuforia web services.
     """
-    log_in_url = 'https://developer.vuforia.com/vui/auth/login'
+    log_in_url = "https://developer.vuforia.com/vui/auth/login"
     driver.get(log_in_url)
-    email_address_input_element = driver.find_element_by_id('login_email')
+    email_address_input_element = driver.find_element_by_id("login_email")
     email_address_input_element.send_keys(email_address)
 
-    password_input_element = driver.find_element_by_id('login_password')
+    password_input_element = driver.find_element_by_id("login_password")
     password_input_element.send_keys(password)
     password_input_element.send_keys(Keys.RETURN)
 
@@ -50,7 +50,7 @@ def log_in(
 
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.ID, 'get-development-key'),
+            (By.ID, "get-development-key"),
         ),
     )
 
@@ -62,25 +62,25 @@ def create_license(
     """
     Create a license.
     """
-    licenses_url = 'https://developer.vuforia.com/vui/develop/licenses'
+    licenses_url = "https://developer.vuforia.com/vui/develop/licenses"
     driver.get(licenses_url)
 
     ten_second_wait = WebDriverWait(driver, 10)
 
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.ID, 'get-development-key'),
+            (By.ID, "get-development-key"),
         ),
     )
 
     ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
-            (By.ID, 'get-development-key'),
+            (By.ID, "get-development-key"),
         ),
     )
 
     get_development_key_button_element = driver.find_element_by_id(
-        'get-development-key',
+        "get-development-key",
     )
     get_development_key_button_element.click()
     try:
@@ -92,13 +92,13 @@ def create_license(
 
     license_name_input_element = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.ID, 'license-name'),
+            (By.ID, "license-name"),
         ),
     )
 
     license_name_input_element.send_keys(license_name)
 
-    agree_terms_id = 'agree-terms-checkbox'
+    agree_terms_id = "agree-terms-checkbox"
     agree_terms_checkbox_element = driver.find_element_by_id(agree_terms_id)
     agree_terms_checkbox_element.submit()
 
@@ -111,11 +111,11 @@ def create_database(
     """
     Create a database.
     """
-    target_manager_url = 'https://developer.vuforia.com/vui/develop/databases'
+    target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
     driver.get(target_manager_url)
     ten_second_wait = WebDriverWait(driver, 10)
 
-    add_database_button_id = 'add-dialog-btn'
+    add_database_button_id = "add-dialog-btn"
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
             (By.ID, add_database_button_id),
@@ -136,7 +136,7 @@ def create_database(
         add_database_button_element.click()
     except WebDriverException:
         pass
-    database_name_id = 'database-name'
+    database_name_id = "database-name"
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
             (By.ID, database_name_id),
@@ -146,19 +146,19 @@ def create_database(
     database_name_element = driver.find_element_by_id(database_name_id)
     database_name_element.send_keys(database_name)
 
-    cloud_type_radio_element = driver.find_element_by_id('cloud-radio-btn')
+    cloud_type_radio_element = driver.find_element_by_id("cloud-radio-btn")
     cloud_type_radio_element.click()
 
     license_dropdown_element = Select(
         driver.find_element_by_id(
-            'cloud-license-dropdown',
+            "cloud-license-dropdown",
         ),
     )
 
     time.sleep(1)
     license_dropdown_element.select_by_visible_text(text=license_name)
 
-    create_button = driver.find_element_by_id('create-btn')
+    create_button = driver.find_element_by_id("create-btn")
     create_button.click()
 
 
@@ -169,7 +169,7 @@ def get_database_details(
     """
     Get details of a database.
     """
-    target_manager_url = 'https://developer.vuforia.com/vui/develop/databases'
+    target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
     driver.get(target_manager_url)
     ten_second_wait = WebDriverWait(driver, 10)
 
@@ -184,7 +184,7 @@ def get_database_details(
     # Therefore we sort by last modified date.
     time.sleep(2)
     date_modified_element = driver.find_element_by_id(
-        'sort-by-last-modified-date',
+        "sort-by-last-modified-date",
     )
     date_modified_element.click()
     time.sleep(10)
@@ -209,7 +209,7 @@ def get_database_details(
 
     access_keys_tab_item = ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.LINK_TEXT, 'Database Access Keys'),
+            (By.LINK_TEXT, "Database Access Keys"),
         ),
     )
 
@@ -219,28 +219,28 @@ def get_database_details(
     time.sleep(1)
 
     client_access_key = driver.find_element_by_class_name(
-        'client-access-key',
+        "client-access-key",
     ).text
     client_secret_key = driver.find_element_by_class_name(
-        'client-secret-key',
+        "client-secret-key",
     ).text
     server_access_key = driver.find_element_by_class_name(
-        'server-access-key',
+        "server-access-key",
     ).text
     server_secret_key = driver.find_element_by_class_name(
-        'server-secret-key',
+        "server-secret-key",
     ).text
 
     return {
-        'database_name': database_name,
-        'server_access_key': str(server_access_key),
-        'server_secret_key': str(server_secret_key),
-        'client_access_key': str(client_access_key),
-        'client_secret_key': str(client_secret_key),
+        "database_name": database_name,
+        "server_access_key": str(server_access_key),
+        "server_secret_key": str(server_secret_key),
+        "client_access_key": str(client_access_key),
+        "client_secret_key": str(client_secret_key),
     }
 
 
-@click.group(name='vws-web')
+@click.group(name="vws-web")
 def vws_web_tools_group() -> None:
     """
     Commands for interacting with VWS.
@@ -248,9 +248,9 @@ def vws_web_tools_group() -> None:
 
 
 @click.command()
-@click.option('--license-name', required=True)
-@click.option('--email-address', envvar='VWS_EMAIL_ADDRESS', required=True)
-@click.option('--password', envvar='VWS_PASSWORD', required=True)
+@click.option("--license-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
 def create_vws_license(
     license_name: str,
     email_address: str,
@@ -266,10 +266,10 @@ def create_vws_license(
 
 
 @click.command()
-@click.option('--license-name', required=True)
-@click.option('--database-name', required=True)
-@click.option('--email-address', envvar='VWS_EMAIL_ADDRESS', required=True)
-@click.option('--password', envvar='VWS_PASSWORD', required=True)
+@click.option("--license-name", required=True)
+@click.option("--database-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
 def create_vws_database(
     database_name: str,
     license_name: str,
@@ -290,9 +290,9 @@ def create_vws_database(
 
 
 @click.command()
-@click.option('--database-name', required=True)
-@click.option('--email-address', envvar='VWS_EMAIL_ADDRESS', required=True)
-@click.option('--password', envvar='VWS_PASSWORD', required=True)
+@click.option("--database-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
 def show_database_details(
     database_name: str,
     email_address: str,

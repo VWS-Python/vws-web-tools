@@ -9,25 +9,25 @@ import datetime
 
 from pkg_resources import get_distribution
 
-project = 'VWS-Web-Tools'
-author = 'Adam Dangoor'
+project = "VWS-Web-Tools"
+author = "Adam Dangoor"
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.napoleon',
-    'sphinx-prompt',
-    'sphinx_substitution_extensions',
-    'sphinxcontrib.spelling',
-    'sphinx_click',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
+    "sphinx-prompt",
+    "sphinx_substitution_extensions",
+    "sphinxcontrib.spelling",
+    "sphinx_click",
 ]
 
-templates_path = ['_templates']
-source_suffix = '.rst'
-master_doc = 'index'
+templates_path = ["_templates"]
+source_suffix = ".rst"
+master_doc = "index"
 
 year = datetime.datetime.now().year
-project_copyright = f'{year}, {author}'
+project_copyright = f"{year}, {author}"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -36,30 +36,30 @@ project_copyright = f'{year}, {author}'
 # Use ``pkg_resources`` as per
 # https://github.com/pypa/setuptools_scm#usage-from-sphinx.
 version = get_distribution(project).version
-_month, _day, _year, *_ = version.split('.')
-release = f'{_month}.{_day}.{_year}'
+_month, _day, _year, *_ = version.split(".")
+release = f"{_month}.{_day}.{_year}"
 
-language = 'en'
+language = "en"
 
 # The name of the syntax highlighting style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'VWSWEBTOOLSdoc'
-autoclass_content = 'init'
+htmlhelp_basename = "VWSWEBTOOLSdoc"
+autoclass_content = "init"
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.11', None),
+    "python": ("https://docs.python.org/3.11", None),
 }
 nitpicky = True
 warning_is_error = True
 
-html_theme = 'furo'
+html_theme = "furo"
 html_title = project
 html_show_copyright = False
 html_show_sphinx = False
 html_show_sourcelink = False
 html_theme_options = {
-    'sidebar_hide_name': False,
+    "sidebar_hide_name": False,
 }
 
 # Don't check anchors because many websites use #! for AJAX magic
@@ -69,10 +69,10 @@ linkcheck_anchors = False
 linkcheck_retries = 5
 linkcheck_ignore = [
     # Requires login.
-    r'https://developer.vuforia.com/targetmanager',
+    r"https://developer.vuforia.com/targetmanager",
 ]
 
-spelling_word_list_filename = '../../spelling_private_dict.txt'
+spelling_word_list_filename = "../../spelling_private_dict.txt"
 
 rst_prolog = f"""
 .. |project| replace:: {project}
