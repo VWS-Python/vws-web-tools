@@ -2,6 +2,7 @@
 Tools for interacting with the VWS (Vuforia Web Services) website.
 """
 
+import contextlib
 import time
 from typing import TypedDict
 
@@ -132,10 +133,8 @@ def create_database(
         add_database_button_id,
     )
     add_database_button_element.click()
-    try:
+    with contextlib.suppress(WebDriverException):
         add_database_button_element.click()
-    except WebDriverException:
-        pass
     database_name_id = "database-name"
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
