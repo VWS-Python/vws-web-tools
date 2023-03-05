@@ -214,3 +214,4 @@ vws_web_tools = ["py.typed"]
 [project.scripts]
 vws-web-tools = "vws_web_tools:vws_web_tools_group"
 
+[tool.setuptools_scm]
