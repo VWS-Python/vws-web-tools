@@ -217,7 +217,7 @@ dev = [
     "sphinx-prompt==1.5.0",
     "sphinx==7.0.1",
     "sphinxcontrib.spelling==8.0.0",
-    "types-PyYAML==6.0.12.9",
+    "types-PyYAML==6.0.12.10",
     "types-selenium==3.141.9",
     "vulture==2.7",
 ]
