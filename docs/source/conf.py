@@ -43,13 +43,13 @@ language = "en"
 # The name of the syntax highlighting style to use.
 pygments_style = "sphinx"
 
-python_minumum_supported_version = "3.11"
+python_minimum_supported_version = "3.11"
 # Output file base name for HTML help builder.
 htmlhelp_basename = "VWSWEBTOOLSdoc"
 autoclass_content = "init"
 intersphinx_mapping = {
     "python": (
-        f"https://docs.python.org/{python_minumum_supported_version}",
+        f"https://docs.python.org/{python_minimum_supported_version}",
         None,
     ),
 }
@@ -65,9 +65,6 @@ html_theme_options = {
     "sidebar_hide_name": False,
 }
 
-# Don't check anchors because many websites use #! for AJAX magic
-# http://sphinx-doc.org/config.html#confval-linkcheck_anchors
-linkcheck_anchors = False
 # Retry link checking to avoid transient network errors.
 linkcheck_retries = 5
 linkcheck_ignore = [
