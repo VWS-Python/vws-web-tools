@@ -215,7 +215,7 @@ dev = [
     "ruff==0.0.285",
     "sphinx-click==5.0.1",
     "sphinx-prompt==1.5.0",
-    "sphinx==7.2.2",
+    "sphinx==7.2.3",
     "sphinxcontrib.spelling==8.0.0",
     "types-PyYAML==6.0.12.11",
     "types-selenium==3.141.9",
