@@ -218,7 +218,7 @@ dev = [
     "sphinxcontrib.spelling==8.0.0",
     "types-PyYAML==6.0.12.12",
     "types-selenium==3.141.9",
-    "vulture==2.9.1",
+    "vulture==2.10",
 ]
 
 [project.urls]
