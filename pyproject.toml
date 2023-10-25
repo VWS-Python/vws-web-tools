@@ -126,6 +126,7 @@ ignore = [
     "tests/**",
     "vuforia_secrets.env.example",
     "lint.mk",
+    ".vscode/**",
 ]
 
 [tool.mypy]
