@@ -35,7 +35,7 @@ Usage
 
 .. |Build Status| image:: https://github.com/VWS-Python/vws-web-tools/workflows/CI/badge.svg
    :target: https://github.com/VWS-Python/vws-web-tools/actions
-.. |codecov| image:: https://codecov.io/gh/VWS-Python/vws-web-tools/branch/master/graph/badge.svg
+.. |codecov| image:: https://codecov.io/gh/VWS-Python/vws-web-tools/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/VWS-Python/vws-web-tools
 .. |Documentation Status| image:: https://readthedocs.org/projects/vws-web-tools/badge/?version=latest
    :target: https://vws-web-tools.readthedocs.io/en/latest/?badge=latest
