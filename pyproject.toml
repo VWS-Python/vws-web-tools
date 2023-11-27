@@ -216,7 +216,7 @@ dev = [
     "pytest-cov==4.1",
     "ruff==0.1.6",
     "sphinx==7.2.6",
-    "sphinx-click==5.0.1",
+    "sphinx-click==5.1.0",
     "sphinx-prompt==1.8",
     "Sphinx-Substitution-Extensions==2022.2.16",
     "sphinxcontrib.spelling==8",
