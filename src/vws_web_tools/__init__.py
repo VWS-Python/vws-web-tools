@@ -46,12 +46,19 @@ def log_in(
     password_input_element.send_keys(password)
     password_input_element.send_keys(Keys.RETURN)
 
-    # This shows that the log in is complete.
-    ten_second_wait = WebDriverWait(driver, 10)
 
+def wait_for_logged_in(
+    driver: WebDriver,
+) -> None:  # pragma: no cover
+    """
+    Wait for the user to be logged in.
+
+    Without this, we sometimes get a redirect to a post-login page.
+    """
+    ten_second_wait = WebDriverWait(driver, 10)
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.ID, "get-development-key"),
+            (By.CLASS_NAME, "userNameInHeaderSpan"),
         ),
     )
 
@@ -271,6 +278,7 @@ def create_vws_license(
     """
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
+    wait_for_logged_in(driver=driver)
     create_license(driver=driver, license_name=license_name)
     driver.close()
 
