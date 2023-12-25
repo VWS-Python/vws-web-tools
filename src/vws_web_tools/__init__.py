@@ -167,7 +167,8 @@ def create_database(
         ),
     )
 
-    time.sleep(1)
+    # Sleeping 1 second here did not work, so we sleep 5 seconds.
+    time.sleep(5)
     license_dropdown_element.select_by_visible_text(text=license_name)
 
     create_button = driver.find_element(By.ID, "create-btn")
