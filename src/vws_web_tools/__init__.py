@@ -39,10 +39,10 @@ def log_in(
     """
     log_in_url = "https://developer.vuforia.com/vui/auth/login"
     driver.get(log_in_url)
-    email_address_input_element = driver.find_element_by_id("login_email")
+    email_address_input_element = driver.find_element(By.ID, "login_email")
     email_address_input_element.send_keys(email_address)
 
-    password_input_element = driver.find_element_by_id("login_password")
+    password_input_element = driver.find_element(By.ID, "login_password")
     password_input_element.send_keys(password)
     password_input_element.send_keys(Keys.RETURN)
 
@@ -80,7 +80,8 @@ def create_license(
         ),
     )
 
-    get_development_key_button_element = driver.find_element_by_id(
+    get_development_key_button_element = driver.find_element(
+        By.ID,
         "get-development-key",
     )
     get_development_key_button_element.click()
@@ -100,7 +101,10 @@ def create_license(
     license_name_input_element.send_keys(license_name)
 
     agree_terms_id = "agree-terms-checkbox"
-    agree_terms_checkbox_element = driver.find_element_by_id(agree_terms_id)
+    agree_terms_checkbox_element = driver.find_element(
+        By.ID,
+        agree_terms_id,
+    )
     agree_terms_checkbox_element.submit()
 
 
@@ -129,7 +133,8 @@ def create_database(
         ),
     )
 
-    add_database_button_element = driver.find_element_by_id(
+    add_database_button_element = driver.find_element(
+        By.ID,
         add_database_button_id,
     )
     add_database_button_element.click()
@@ -142,14 +147,15 @@ def create_database(
         ),
     )
 
-    database_name_element = driver.find_element_by_id(database_name_id)
+    database_name_element = driver.find_element(By.ID, database_name_id)
     database_name_element.send_keys(database_name)
 
-    cloud_type_radio_element = driver.find_element_by_id("cloud-radio-btn")
+    cloud_type_radio_element = driver.find_element(By.ID, "cloud-radio-btn")
     cloud_type_radio_element.click()
 
     license_dropdown_element = Select(
-        driver.find_element_by_id(
+        driver.find_element(
+            By.ID,
             "cloud-license-dropdown",
         ),
     )
@@ -157,7 +163,7 @@ def create_database(
     time.sleep(1)
     license_dropdown_element.select_by_visible_text(text=license_name)
 
-    create_button = driver.find_element_by_id("create-btn")
+    create_button = driver.find_element(By.ID, "create-btn")
     create_button.click()
 
 
@@ -182,7 +188,8 @@ def get_database_details(
     #
     # Therefore we sort by last modified date.
     time.sleep(2)
-    date_modified_element = driver.find_element_by_id(
+    date_modified_element = driver.find_element(
+        By.ID,
         "sort-by-last-modified-date",
     )
     date_modified_element.click()
@@ -217,16 +224,20 @@ def get_database_details(
     # Without this we sometimes get empty strings for the keys.
     time.sleep(1)
 
-    client_access_key = driver.find_element_by_class_name(
+    client_access_key = driver.find_element(
+        By.CLASS_NAME,
         "client-access-key",
     ).text
-    client_secret_key = driver.find_element_by_class_name(
+    client_secret_key = driver.find_element(
+        By.CLASS_NAME,
         "client-secret-key",
     ).text
-    server_access_key = driver.find_element_by_class_name(
+    server_access_key = driver.find_element(
+        By.CLASS_NAME,
         "server-access-key",
     ).text
-    server_secret_key = driver.find_element_by_class_name(
+    server_secret_key = driver.find_element(
+        By.CLASS_NAME,
         "server-secret-key",
     ).text
 
