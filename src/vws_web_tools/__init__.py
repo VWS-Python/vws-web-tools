@@ -195,16 +195,20 @@ def get_database_details(
     )
 
     search_input_element = driver.find_element(By.ID, "table_search")
-    search_input_element.send_keys(database_name)
-    search_input_element.send_keys(Keys.RETURN)
-
-    # We assume that searching for the database name will return one result.
-    ten_second_wait.until(
-        expected_conditions.presence_of_element_located(
+    original_first_database_cell_element = ten_second_wait.until(
+        expected_conditions.element_to_be_clickable(
             (By.ID, "table_row_0_project_name"),
         ),
     )
+    search_input_element.send_keys(database_name)
+    search_input_element.send_keys(Keys.RETURN)
+    # The search has competed when the original first database cell element is
+    # "stale".
+    ten_second_wait.until(
+        expected_conditions.staleness_of(original_first_database_cell_element),
+    )
 
+    # We assume that searching for the database name will return one result.
     database_cell_element = ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
             (By.ID, "table_row_0_project_name"),
