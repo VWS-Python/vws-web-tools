@@ -173,6 +173,8 @@ def create_database(
 
     create_button = driver.find_element(By.ID, "create-btn")
     create_button.click()
+    # Without this we might close the driver before the database is created.
+    time.sleep(5)
 
 
 def get_database_details(
@@ -186,36 +188,30 @@ def get_database_details(
     driver.get(target_manager_url)
     ten_second_wait = WebDriverWait(driver, 10)
 
-    # This is a hack.
-    #
-    # Not all items are shown on the first page and we do not yet support going
-    # through pages.
-    #
-    # In our use cases so far we always want the latest databases.
-    #
-    #
-    # Therefore we sort by last modified date.
-    time.sleep(2)
-    date_modified_element = driver.find_element(
-        By.ID,
-        "sort-by-last-modified-date",
-    )
-    date_modified_element.click()
-    time.sleep(10)
-    date_modified_element.click()
-
-    time.sleep(2)
-    database_name_xpath = "//span[text()='" + database_name + "']"
-
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.XPATH, database_name_xpath),
+            (By.ID, "table_search"),
         ),
     )
 
+    search_input_element = driver.find_element(By.ID, "table_search")
+    original_first_database_cell_element = ten_second_wait.until(
+        expected_conditions.element_to_be_clickable(
+            (By.ID, "table_row_0_project_name"),
+        ),
+    )
+    search_input_element.send_keys(database_name)
+    search_input_element.send_keys(Keys.RETURN)
+    # The search has competed when the original first database cell element is
+    # "stale".
+    ten_second_wait.until(
+        expected_conditions.staleness_of(original_first_database_cell_element),
+    )
+
+    # We assume that searching for the database name will return one result.
     database_cell_element = ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
-            (By.XPATH, database_name_xpath),
+            (By.ID, "table_row_0_project_name"),
         ),
     )
 
