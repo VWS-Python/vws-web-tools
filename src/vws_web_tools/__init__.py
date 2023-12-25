@@ -173,6 +173,8 @@ def create_database(
 
     create_button = driver.find_element(By.ID, "create-btn")
     create_button.click()
+    # Without this we might close the driver before the database is created.
+    time.sleep(5)
 
 
 def get_database_details(
@@ -220,13 +222,13 @@ def get_database_details(
     breakpoint()
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.ID, "table_row_0_app_name"),
+            (By.ID, "table_row_0_project_name"),
         ),
     )
 
     database_cell_element = ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
-            (By.XPATH, "table_row_0_app_name"),
+            (By.ID, "table_row_0_project_name"),
         ),
     )
 
