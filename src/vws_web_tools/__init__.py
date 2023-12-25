@@ -299,6 +299,7 @@ def create_vws_database(
     """
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
+    wait_for_logged_in(driver=driver)
     create_database(
         driver=driver,
         database_name=database_name,
@@ -321,6 +322,7 @@ def show_database_details(
     """
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
+    wait_for_logged_in(driver=driver)
     details = get_database_details(driver=driver, database_name=database_name)
     driver.close()
     click.echo(yaml.dump(details), nl=False)
