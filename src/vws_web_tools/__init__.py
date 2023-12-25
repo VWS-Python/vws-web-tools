@@ -309,10 +309,13 @@ def create_vws_database(
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
+@click.option("--env-var-format", is_flag=True)
 def show_database_details(
     database_name: str,
     email_address: str,
     password: str,
+    *,
+    env_var_format: bool,
 ) -> None:  # pragma: no cover
     """
     Show the details of a database.
@@ -322,7 +325,19 @@ def show_database_details(
     wait_for_logged_in(driver=driver)
     details = get_database_details(driver=driver, database_name=database_name)
     driver.close()
-    click.echo(yaml.dump(details), nl=False)
+    if env_var_format:
+        env_var_format_details = {
+            "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details["database_name"],
+            "VUFORIA_SERVER_ACCESS_KEY": details["server_access_key"],
+            "VUFORIA_SERVER_SECRET_KEY": details["server_secret_key"],
+            "VUFORIA_CLIENT_ACCESS_KEY": details["client_access_key"],
+            "VUFORIA_CLIENT_SECRET_KEY": details["client_secret_key"],
+        }
+
+        for key, value in env_var_format_details.items():
+            click.echo(f"{key}={value}")
+    else:
+        click.echo(yaml.dump(details), nl=False)
 
 
 vws_web_tools_group.add_command(create_vws_database)
