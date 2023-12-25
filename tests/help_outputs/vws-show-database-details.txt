@@ -6,4 +6,5 @@ Options:
   --database-name TEXT  [required]
   --email-address TEXT  [required]
   --password TEXT       [required]
+  --env-var-format
   --help                Show this message and exit.
