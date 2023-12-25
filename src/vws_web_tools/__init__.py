@@ -197,29 +197,8 @@ def get_database_details(
     search_input_element = driver.find_element(By.ID, "table_search")
     search_input_element.send_keys(database_name)
     search_input_element.send_keys(Keys.RETURN)
-    # # This is a hack.
-    # #
-    # # Not all items are shown on the first page and we do not yet support going
-    # # through pages.
-    # #
-    # # In our use cases so far we always want the latest databases.
-    # #
-    # #
-    # # Therefore we sort by last modified date.
-    # time.sleep(5)
-    # date_modified_element = driver.find_element(
-    #     By.ID,
-    #     "sort-by-last-modified-date",
-    # )
-    # date_modified_element.click()
-    # time.sleep(10)
-    # date_modified_element.click()
-    # date_modified_element.click()
 
-    # time.sleep(2)
-    # database_name_xpath = "//span[text()='" + database_name + "']"
-
-    breakpoint()
+    # We assume that searching for the database name will return one result.
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
             (By.ID, "table_row_0_project_name"),
