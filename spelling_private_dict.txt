@@ -1,6 +1,9 @@
 changelog
 cli
 macOS
+mypy
 pragma
+pyright
+reportUnknownMemberType
 vuforia
 vws
