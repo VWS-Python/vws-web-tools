@@ -13,7 +13,7 @@ lint: \
     mypy \
     pip-extra-reqs \
     pip-missing-reqs \
-   pyproject-fmt \
+    pyproject-fmt \
     pyroma \
     ruff \
     spelling \
