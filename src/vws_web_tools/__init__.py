@@ -14,7 +14,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.wait import WebDriverWait
 
 
 class DatabaseDict(TypedDict):
@@ -40,11 +41,11 @@ def log_in(
     log_in_url = "https://developer.vuforia.com/vui/auth/login"
     driver.get(log_in_url)
     email_address_input_element = driver.find_element(By.ID, "login_email")
-    email_address_input_element.send_keys(email_address)
+    email_address_input_element.send_keys(email_address)  # pyright: ignore[reportUnknownMemberType]
 
     password_input_element = driver.find_element(By.ID, "login_password")
-    password_input_element.send_keys(password)
-    password_input_element.send_keys(Keys.RETURN)
+    password_input_element.send_keys(password)  # pyright: ignore[reportUnknownMemberType]
+    password_input_element.send_keys(Keys.RETURN)  # pyright: ignore[reportUnknownMemberType]
 
 
 def wait_for_logged_in(
@@ -105,14 +106,15 @@ def create_license(
         ),
     )
 
-    license_name_input_element.send_keys(license_name)
+    license_name_input_element.send_keys(license_name)  # pyright: ignore[reportUnknownMemberType]
 
     agree_terms_id = "agree-terms-checkbox"
     agree_terms_checkbox_element = driver.find_element(
         By.ID,
         agree_terms_id,
     )
-    agree_terms_checkbox_element.submit()
+    # See https://github.com/SeleniumHQ/selenium/pull/13490 for mypy fix.
+    agree_terms_checkbox_element.submit()  # type: ignore[no-untyped-call]
 
 
 def create_database(
@@ -155,7 +157,7 @@ def create_database(
     )
 
     database_name_element = driver.find_element(By.ID, database_name_id)
-    database_name_element.send_keys(database_name)
+    database_name_element.send_keys(database_name)  # pyright: ignore[reportUnknownMemberType]
 
     cloud_type_radio_element = driver.find_element(By.ID, "cloud-radio-btn")
     cloud_type_radio_element.click()
@@ -200,8 +202,8 @@ def get_database_details(
             (By.ID, "table_row_0_project_name"),
         ),
     )
-    search_input_element.send_keys(database_name)
-    search_input_element.send_keys(Keys.RETURN)
+    search_input_element.send_keys(database_name)  # pyright: ignore[reportUnknownMemberType]
+    search_input_element.send_keys(Keys.RETURN)  # pyright: ignore[reportUnknownMemberType]
     # The search has competed when the original first database cell element is
     # "stale".
     ten_second_wait.until(

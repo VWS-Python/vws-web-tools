@@ -15,6 +15,7 @@ lint: \
     pip-missing-reqs \
     pyproject-fmt \
     pyroma \
+    pyright \
     ruff \
     spelling \
     vulture \

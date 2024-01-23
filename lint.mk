@@ -40,6 +40,10 @@ pylint:
 pyroma:
 	pyroma --min 10 .
 
+.PHONY: pyright
+pyright:
+	pyright .
+
 .PHONY: vulture
 vulture:
 	vulture --min-confidence 100 --exclude _vendor --exclude .eggs .
