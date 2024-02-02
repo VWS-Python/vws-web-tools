@@ -168,12 +168,16 @@ requires = [
 ]
 
 [tool.ruff]
-select = ["ALL"]
 line-length = 79
+
+[tool.ruff.lint]
+select = ["ALL"]
 
 ignore = [
     # We do not annotate the type of 'self'.
     "ANN101",
+    # Ruff warns that this conflicts with the formatter.
+    "COM812",
     # Allow our chosen docstring line-style - no one-line summary.
     "D200",
     "D203",
@@ -185,6 +189,8 @@ ignore = [
     "D406",
     "D407",
     "D413",
+    # Ruff warns that this conflicts with the formatter.
+    "ISC001",
     # Allow 'assert' as we use it for tests.
     "S101",
 ]
@@ -241,7 +247,7 @@ dev = [
     "pyroma==4.2",
     "pytest==8.0.0",
     "pytest-cov==4.1",
-    "ruff==0.1.15",
+    "ruff==0.2.0",
     "sphinx==7.2.6",
     "sphinx-click==5.1.0",
     "sphinx-prompt==1.8",
