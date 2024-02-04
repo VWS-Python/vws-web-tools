@@ -109,6 +109,9 @@
 
 branch = true
 
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:"]
+
 [tool.pytest.ini_options]
 
 xfail_strict = true
@@ -247,6 +250,7 @@ dev = [
     "pyroma==4.2",
     "pytest==8.0.0",
     "pytest-cov==4.1",
+    "pytest-regressions==2.5.0",
     "ruff==0.2.0",
     "sphinx==7.2.6",
     "sphinx-click==5.1.0",
