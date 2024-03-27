@@ -41,11 +41,11 @@ def log_in(
     log_in_url = "https://developer.vuforia.com/vui/auth/login"
     driver.get(log_in_url)
     email_address_input_element = driver.find_element(By.ID, "login_email")
-    email_address_input_element.send_keys(email_address)  # pyright: ignore[reportUnknownMemberType]
+    email_address_input_element.send_keys(email_address)
 
     password_input_element = driver.find_element(By.ID, "login_password")
-    password_input_element.send_keys(password)  # pyright: ignore[reportUnknownMemberType]
-    password_input_element.send_keys(Keys.RETURN)  # pyright: ignore[reportUnknownMemberType]
+    password_input_element.send_keys(password)
+    password_input_element.send_keys(Keys.RETURN)
 
 
 def wait_for_logged_in(
@@ -106,15 +106,14 @@ def create_license(
         ),
     )
 
-    license_name_input_element.send_keys(license_name)  # pyright: ignore[reportUnknownMemberType]
+    license_name_input_element.send_keys(license_name)
 
     agree_terms_id = "agree-terms-checkbox"
     agree_terms_checkbox_element = driver.find_element(
         By.ID,
         agree_terms_id,
     )
-    # See https://github.com/SeleniumHQ/selenium/pull/13490 for mypy fix.
-    agree_terms_checkbox_element.submit()  # type: ignore[no-untyped-call]
+    agree_terms_checkbox_element.submit()
 
 
 def create_database(
@@ -157,7 +156,7 @@ def create_database(
     )
 
     database_name_element = driver.find_element(By.ID, database_name_id)
-    database_name_element.send_keys(database_name)  # pyright: ignore[reportUnknownMemberType]
+    database_name_element.send_keys(database_name)
 
     cloud_type_radio_element = driver.find_element(By.ID, "cloud-radio-btn")
     cloud_type_radio_element.click()
@@ -202,8 +201,8 @@ def get_database_details(
             (By.ID, "table_row_0_project_name"),
         ),
     )
-    search_input_element.send_keys(database_name)  # pyright: ignore[reportUnknownMemberType]
-    search_input_element.send_keys(Keys.RETURN)  # pyright: ignore[reportUnknownMemberType]
+    search_input_element.send_keys(database_name)
+    search_input_element.send_keys(Keys.RETURN)
     # The search has competed when the original first database cell element is
     # "stale".
     ten_second_wait.until(
