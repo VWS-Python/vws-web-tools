@@ -252,7 +252,7 @@ dev = [
     "pytest-cov==5.0.0",
     "pytest-regressions==2.5.0",
     "ruff==0.3.7",
-    "sphinx==7.3.5",
+    "sphinx==7.3.6",
     "sphinx-click==5.1.0",
     "sphinx-prompt==1.8",
     "Sphinx-Substitution-Extensions==2024.2.25",
