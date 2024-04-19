@@ -183,15 +183,9 @@ ignore = [
     "COM812",
     # Allow our chosen docstring line-style - no one-line summary.
     "D200",
-    "D203",
     "D205",
     "D212",
-    "D213",
-    # We ignore some docstyle errors which do not apply to Google style
-    # docstrings.
-    "D406",
-    "D407",
-    "D413",
+    "D415",
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
     # Allow 'assert' as we use it for tests.
@@ -202,6 +196,9 @@ ignore = [
 # We comment out code during development, and with VSCode auto-save, this code
 # is sometimes annoyingly removed.
 unfixable = ["ERA001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.distutils.bdist_wheel]
 universal = true
