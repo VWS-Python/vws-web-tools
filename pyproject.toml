@@ -55,7 +55,7 @@ optional-dependencies.dev = [
     "pytest-cov==5.0.0",
     "pytest-regressions==2.5.0",
     "ruff==0.5.2",
-    "sphinx==7.4.4",
+    "sphinx==7.4.5",
     "sphinx-click==6.0.0",
     "sphinx-prompt==1.8",
     "sphinx-substitution-extensions==2024.2.25",
