@@ -60,7 +60,7 @@ optional-dependencies.dev = [
     "sphinx-prompt==1.8",
     "sphinx-substitution-extensions==2024.2.25",
     "sphinxcontrib-spelling==8",
-    "types-pyyaml==6.0.12.20240311",
+    "types-pyyaml==6.0.12.20240724",
     "vulture==2.11",
 ]
 urls.Source = "https://github.com/VWS-Python/vws-web-tools"
