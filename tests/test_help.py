@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from click.testing import CliRunner
+
 from vws_web_tools import vws_web_tools_group
 
 if TYPE_CHECKING:
