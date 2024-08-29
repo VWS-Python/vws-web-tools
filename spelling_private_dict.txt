@@ -1,3 +1,4 @@
+beartype
 changelog
 cli
 macOS
