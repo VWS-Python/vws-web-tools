@@ -6,6 +6,7 @@ import pytest
 from beartype import beartype
 
 
+@beartype
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     """
     Apply the beartype decorator to all collected test functions.
