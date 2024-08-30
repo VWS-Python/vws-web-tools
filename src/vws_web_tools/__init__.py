@@ -8,6 +8,7 @@ from typing import TypedDict
 
 import click
 import yaml
+from beartype import beartype
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
@@ -18,6 +19,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 
 
+@beartype
 class DatabaseDict(TypedDict):
     """
     A dictionary type which represents a database.
@@ -30,6 +32,7 @@ class DatabaseDict(TypedDict):
     client_secret_key: str
 
 
+@beartype
 def log_in(
     driver: WebDriver,
     email_address: str,
@@ -48,9 +51,8 @@ def log_in(
     password_input_element.send_keys(Keys.RETURN)
 
 
-def wait_for_logged_in(
-    driver: WebDriver,
-) -> None:  # pragma: no cover
+@beartype
+def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
     """
     Wait for the user to be logged in.
 
@@ -64,6 +66,7 @@ def wait_for_logged_in(
     )
 
 
+@beartype
 def create_license(
     driver: WebDriver,
     license_name: str,
@@ -116,6 +119,7 @@ def create_license(
     agree_terms_checkbox_element.submit()
 
 
+@beartype
 def create_database(
     driver: WebDriver,
     database_name: str,
@@ -178,6 +182,7 @@ def create_database(
     time.sleep(5)
 
 
+@beartype
 def get_database_details(
     driver: WebDriver,
     database_name: str,
@@ -255,6 +260,7 @@ def get_database_details(
     }
 
 
+@beartype
 @click.group(name="vws-web")
 def vws_web_tools_group() -> None:
     """
@@ -262,6 +268,7 @@ def vws_web_tools_group() -> None:
     """
 
 
+@beartype
 @click.command()
 @click.option("--license-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
@@ -281,6 +288,7 @@ def create_vws_license(
     driver.close()
 
 
+@beartype
 @click.command()
 @click.option("--license-name", required=True)
 @click.option("--database-name", required=True)
@@ -306,6 +314,7 @@ def create_vws_database(
     driver.close()
 
 
+@beartype
 @click.command()
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
