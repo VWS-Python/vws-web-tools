@@ -42,11 +42,17 @@ def log_in(
     Log in to Vuforia web services.
     """
     log_in_url = "https://developer.vuforia.com/vui/auth/login"
-    driver.get(log_in_url)
-    email_address_input_element = driver.find_element(By.ID, "login_email")
+    driver.get(url=log_in_url)
+    email_address_input_element = driver.find_element(
+        by=By.ID,
+        value="login_email",
+    )
     email_address_input_element.send_keys(email_address)
 
-    password_input_element = driver.find_element(By.ID, "login_password")
+    password_input_element = driver.find_element(
+        by=By.ID,
+        value="login_password",
+    )
     password_input_element.send_keys(password)
     password_input_element.send_keys(Keys.RETURN)
 
@@ -58,7 +64,7 @@ def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
 
     Without this, we sometimes get a redirect to a post-login page.
     """
-    ten_second_wait = WebDriverWait(driver, 10)
+    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
             (By.CLASS_NAME, "userNameInHeaderSpan"),
@@ -75,9 +81,9 @@ def create_license(
     Create a license.
     """
     licenses_url = "https://developer.vuforia.com/vui/develop/licenses"
-    driver.get(licenses_url)
+    driver.get(url=licenses_url)
 
-    ten_second_wait = WebDriverWait(driver, 10)
+    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
@@ -92,8 +98,8 @@ def create_license(
     )
 
     get_development_key_button_element = driver.find_element(
-        By.ID,
-        "get-development-key",
+        by=By.ID,
+        value="get-development-key",
     )
     get_development_key_button_element.click()
     try:
@@ -113,8 +119,8 @@ def create_license(
 
     agree_terms_id = "agree-terms-checkbox"
     agree_terms_checkbox_element = driver.find_element(
-        By.ID,
-        agree_terms_id,
+        by=By.ID,
+        value=agree_terms_id,
     )
     agree_terms_checkbox_element.submit()
 
@@ -129,8 +135,8 @@ def create_database(
     Create a database.
     """
     target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
-    driver.get(target_manager_url)
-    ten_second_wait = WebDriverWait(driver, 10)
+    driver.get(url=target_manager_url)
+    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
     add_database_button_id = "add-dialog-btn"
     ten_second_wait.until(
@@ -141,34 +147,40 @@ def create_database(
 
     ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
-            (By.ID, add_database_button_id),
+            mark=(By.ID, add_database_button_id),
         ),
     )
 
     add_database_button_element = driver.find_element(
-        By.ID,
-        add_database_button_id,
+        by=By.ID,
+        value=add_database_button_id,
     )
     add_database_button_element.click()
     with contextlib.suppress(WebDriverException):
         add_database_button_element.click()
     database_name_id = "database-name"
     ten_second_wait.until(
-        expected_conditions.presence_of_element_located(
-            (By.ID, database_name_id),
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, database_name_id),
         ),
     )
 
-    database_name_element = driver.find_element(By.ID, database_name_id)
+    database_name_element = driver.find_element(
+        by=By.ID,
+        value=database_name_id,
+    )
     database_name_element.send_keys(database_name)
 
-    cloud_type_radio_element = driver.find_element(By.ID, "cloud-radio-btn")
+    cloud_type_radio_element = driver.find_element(
+        by=By.ID,
+        value="cloud-radio-btn",
+    )
     cloud_type_radio_element.click()
 
     license_dropdown_element = Select(
         driver.find_element(
-            By.ID,
-            "cloud-license-dropdown",
+            by=By.ID,
+            value="cloud-license-dropdown",
         ),
     )
 
@@ -176,7 +188,7 @@ def create_database(
     time.sleep(5)
     license_dropdown_element.select_by_visible_text(text=license_name)
 
-    create_button = driver.find_element(By.ID, "create-btn")
+    create_button = driver.find_element(by=By.ID, value="create-btn")
     create_button.click()
     # Without this we might close the driver before the database is created.
     time.sleep(5)
@@ -191,8 +203,8 @@ def get_database_details(
     Get details of a database.
     """
     target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
-    driver.get(target_manager_url)
-    ten_second_wait = WebDriverWait(driver, 10)
+    driver.get(url=target_manager_url)
+    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
@@ -200,7 +212,7 @@ def get_database_details(
         ),
     )
 
-    search_input_element = driver.find_element(By.ID, "table_search")
+    search_input_element = driver.find_element(by=By.ID, value="table_search")
     original_first_database_cell_element = ten_second_wait.until(
         expected_conditions.element_to_be_clickable(
             (By.ID, "table_row_0_project_name"),
@@ -235,20 +247,20 @@ def get_database_details(
     time.sleep(1)
 
     client_access_key = driver.find_element(
-        By.CLASS_NAME,
-        "client-access-key",
+        by=By.CLASS_NAME,
+        value="client-access-key",
     ).text
     client_secret_key = driver.find_element(
-        By.CLASS_NAME,
-        "client-secret-key",
+        by=By.CLASS_NAME,
+        value="client-secret-key",
     ).text
     server_access_key = driver.find_element(
-        By.CLASS_NAME,
-        "server-access-key",
+        by=By.CLASS_NAME,
+        value="server-access-key",
     ).text
     server_secret_key = driver.find_element(
-        By.CLASS_NAME,
-        "server-secret-key",
+        by=By.CLASS_NAME,
+        value="server-secret-key",
     ).text
 
     return {
@@ -345,9 +357,9 @@ def show_database_details(
         }
 
         for key, value in env_var_format_details.items():
-            click.echo(f"{key}={value}")
+            click.echo(message=f"{key}={value}")
     else:
-        click.echo(yaml.dump(details), nl=False)
+        click.echo(message=yaml.dump(data=details), nl=False)
 
 
 vws_web_tools_group.add_command(create_vws_database)

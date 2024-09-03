@@ -31,6 +31,6 @@ def test_vws_command_help(
     runner = CliRunner()
     arguments = [*command, "--help"]
     group = vws_web_tools_group
-    result = runner.invoke(group, arguments, catch_exceptions=False)
+    result = runner.invoke(cli=group, args=arguments, catch_exceptions=False)
     assert result.exit_code == 0
     file_regression.check(contents=result.output)
