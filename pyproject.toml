@@ -278,6 +278,7 @@ exclude_also = [
 [tool.mypy]
 
 strict = true
+plugins = [ "mypy_plugin" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
