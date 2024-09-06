@@ -12,3 +12,12 @@ def get_database_details(driver: WebDriver) -> None:  # pragma: no cover
         By.CLASS_NAME,
         "client-access-key",
     )
+
+
+import pytest
+
+
+@pytest.mark.parametrize("foo", ["bar"])
+def test_example(foo: int) -> None:
+    """Test example."""
+    assert foo == "bar"

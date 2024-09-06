@@ -1,81 +1,154 @@
-"""mypy plugin to find positional uses where keyword arguments are allowed."""
-
+# mypy_pytest_plugin.py
+import logging
 from collections.abc import Callable
 
 from mypy.nodes import (
-    ARG_POS,
-    ArgKind,
     CallExpr,
+    Decorator,
+    Expression,
     FuncDef,
-    NameExpr,
-    SymbolTableNode,
+    ListExpr,
+    StrExpr,
 )
 from mypy.plugin import FunctionContext, Plugin
-from mypy.types import CallableType, Type
+from mypy.types import AnyType, TypeOfAny
+from mypy.types import Type as MypyType
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
-class _KeywordOnlyArgumentsPlugin(Plugin):
+class PytestPlugin(Plugin):
     def get_function_hook(
         self, fullname: str
-    ) -> Callable[[FunctionContext], Type] | None:
-        """Return the hook for function definitions."""
-        assert fullname
-        return _keyword_only_argument_checker
+    ) -> Callable[[FunctionContext], MypyType] | None:
+        def hook(ctx: FunctionContext) -> MypyType:
+            # Check if the function has decorators
+            if not isinstance(ctx.context, Decorator):
+                return ctx.default_return_type
 
+            decorator = ctx.context
+            func_name = getattr(decorator.func, "name", "<unnamed>")
+            logger.debug(f"Analyzing function: {func_name}")
 
-def _keyword_only_argument_checker(ctx: FunctionContext) -> Type:
-    # Ensure the function being called is a defined function
-    if not isinstance(ctx.context, CallExpr):
-        return ctx.default_return_type
+            for dec in decorator.decorators:
+                # Check if decorator is pytest.mark.parametrize
+                if isinstance(dec, CallExpr):
+                    callee_fullname = self.get_fullname(dec.callee)
+                    logger.debug(f"Found decorator: {callee_fullname}")
+                    if "pytest.mark.parametrize" in callee_fullname:
+                        self.check_parametrize(decorator.func, dec, ctx)
+            return ctx.default_return_type
 
-    call_expr: CallExpr = ctx.context
-    if not isinstance(call_expr.callee, NameExpr):
-        return ctx.default_return_type
+        return hook
 
-    # Attempt to lookup the callee in the symbol table
-    try:
-        callee_node: SymbolTableNode | None = ctx.api.lookup_qualified(
-            call_expr.callee.name
+    def check_parametrize(
+        self, func_def: FuncDef, dec: CallExpr, ctx: FunctionContext
+    ) -> None:
+        func_name = getattr(func_def, "name", "<unnamed>")
+        logger.debug(
+            f"Checking parametrize decorator on function: {func_name}"
         )
-    except KeyError:
-        return ctx.default_return_type
 
-    if not callee_node or not isinstance(callee_node.node, FuncDef):
-        return ctx.default_return_type
+        if len(dec.args) < 2:
+            logger.debug("Not enough arguments to parametrize decorator")
+            return
 
-    # Get the callable type and ensure it's not None
-    func_def: FuncDef = callee_node.node
-    callable_type: CallableType | Type | None = func_def.type
+        param_names_expr = dec.args[0]
+        param_values_expr = dec.args[1]
 
-    # If the type is not resolved, return the default return type
-    if callable_type is None or not isinstance(callable_type, CallableType):
-        return ctx.default_return_type
+        # Extract parameter names
+        if isinstance(param_names_expr, StrExpr):
+            param_names = [
+                name.strip() for name in param_names_expr.value.split(",")
+            ]
+        else:
+            logger.debug("Parameter names are not a string")
+            return
 
-    # Check the arguments passed
-    arg_kinds: list[ArgKind] = callable_type.arg_kinds
-    arg_names: list[str | None] = callable_type.arg_names
+        # Extract parameter values
+        param_values: list[Expression] = []
+        if isinstance(param_values_expr, ListExpr):
+            param_values.extend(param_values_expr.items)
+        else:
+            logger.debug("Parameter values are not a list")
+            return
 
-    for i, (arg_kind, arg_name) in enumerate(
-        zip(arg_kinds, arg_names, strict=False)
-    ):
-        if arg_kind == ARG_POS and arg_name is None:
-            # Skip positional-only arguments
-            continue
+        # Map parameter names to their types
+        param_types: dict[str, MypyType] = {}
+        for name in param_names:
+            # Get the type annotation of the parameter
+            for arg in func_def.arguments:
+                if arg.variable.name == name:
+                    if arg.variable.type is not None:
+                        param_types[name] = arg.variable.type
+                    else:
+                        logger.debug(
+                            f"No type annotation for parameter: {name}"
+                        )
+                        param_types[name] = AnyType(TypeOfAny.special_form)
+                    break
+            else:
+                logger.debug(
+                    f"Parameter '{name}' not found in function definition"
+                )
+                param_types[name] = AnyType(TypeOfAny.special_form)
 
-        # Check if the argument was passed positionally
-        if i < len(call_expr.args) and call_expr.arg_kinds[i] == ARG_POS:
-            ctx.api.fail(
-                msg=(
-                    f"Argument '{arg_name}' should be passed as a "
-                    "keyword argument"
-                ),
-                ctx=call_expr.args[i],
-            )
+        # Now check each parameter value against its expected type
+        for value_expr in param_values:
+            if isinstance(value_expr, ListExpr):
+                # Handle cases where values are tuples
+                for i, item in enumerate(value_expr.items):
+                    if i >= len(param_names):
+                        logger.debug(
+                            f"Index {i} out of range for parameter names"
+                        )
+                        continue
+                    param_name = param_names[i]
+                    expected_type = param_types.get(
+                        param_name, AnyType(TypeOfAny.special_form)
+                    )
+                    actual_type = ctx.api.expr_checker.accept(item)
+                    if not ctx.api.expr_checker.check_subtype(
+                        actual_type, expected_type, ctx.context, msg=None
+                    ):
+                        ctx.api.msg.fail(
+                            f"Incompatible type for parameter '{param_name}': "
+                            f"expected {expected_type}, got {actual_type}",
+                            ctx.context,
+                        )
+                        logger.debug(
+                            f"Type mismatch for '{param_name}': expected {expected_type}, got {actual_type}"
+                        )
+            else:
+                # Single parameter
+                param_name = param_names[0]
+                expected_type = param_types.get(
+                    param_name, AnyType(TypeOfAny.special_form)
+                )
+                actual_type = ctx.api.expr_checker.accept(value_expr)
+                if not ctx.api.expr_checker.check_subtype(
+                    actual_type, expected_type, ctx.context, msg=None
+                ):
+                    ctx.api.msg.fail(
+                        f"Incompatible type for parameter '{param_name}': "
+                        f"expected {expected_type}, got {actual_type}",
+                        ctx.context,
+                    )
+                    logger.debug(
+                        f"Type mismatch for '{param_name}': expected {expected_type}, got {actual_type}"
+                    )
 
-    return ctx.default_return_type
+    def get_fullname(self, expr: Expression) -> str:
+        """Helper method to get the fullname of an expression."""
+        if hasattr(expr, "fullname") and expr.fullname:
+            return expr.fullname
+        if hasattr(expr, "name") and expr.name:
+            return expr.name
+        return ""
 
 
-def plugin(version: str) -> type[Plugin]:
-    """Return the plugin class."""
+def plugin(version: str) -> type["PytestPlugin"]:
     assert version
-    return _KeywordOnlyArgumentsPlugin
+    return PytestPlugin
