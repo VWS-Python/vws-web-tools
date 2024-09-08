@@ -33,7 +33,7 @@ Usage
    vws-web-tools show-database-details \
      --database-name my-database-$TIME
 
-.. |Build Status| image:: https://github.com/VWS-Python/vws-web-tools/workflows/CI/badge.svg
+.. |Build Status| image:: https://github.com/VWS-Python/vws-web-tools/actions/workflows/ci.yml/badge.svg?branch=main
    :target: https://github.com/VWS-Python/vws-web-tools/actions
 .. |codecov| image:: https://codecov.io/gh/VWS-Python/vws-web-tools/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/VWS-Python/vws-web-tools
