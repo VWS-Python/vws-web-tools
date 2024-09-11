@@ -4,7 +4,7 @@
 Installation
 ------------
 
-.. code:: sh
+.. code-block:: sh
 
    pip install vws-web-tools
 

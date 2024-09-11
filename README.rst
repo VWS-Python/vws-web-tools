@@ -8,7 +8,7 @@ Tools for interacting with the VWS (Vuforia Web Services) website.
 Installation
 ------------
 
-.. code:: sh
+.. code-block:: sh
 
    pip install vws-web-tools
 
@@ -17,7 +17,7 @@ This is tested on Python 3.12+.
 Usage
 -----
 
-.. code:: sh
+.. code-block:: sh
 
    export VWS_EMAIL_ADDRESS=[YOUR-EMAIL]
    export VWS_PASSWORD=[YOUR-PASSWORD]
