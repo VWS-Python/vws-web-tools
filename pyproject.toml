@@ -66,7 +66,7 @@ optional-dependencies.dev = [
     "sphinx-copybutton==0.5.2",
     "sphinx-substitution-extensions==2024.8.6",
     "sphinxcontrib-spelling==8",
-    "types-pyyaml==6.0.12.20240808",
+    "types-pyyaml==6.0.12.20240917",
     "vulture==2.12",
 ]
 urls.Source = "https://github.com/VWS-Python/vws-web-tools"
