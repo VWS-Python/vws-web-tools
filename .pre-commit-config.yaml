@@ -198,3 +198,4 @@ ci:
   - ruff-format-fix-docs
   - spelling
   - vulture
+  - vulture-docs
