@@ -19,10 +19,9 @@ Usage
 
 .. code-block:: console
 
-   export VWS_EMAIL_ADDRESS="[YOUR-EMAIL]"
-   export VWS_PASSWORD="[YOUR-PASSWORD]"
-   TIME=$(date +%s%N | cut -b1-13)
-
+   $ export VWS_EMAIL_ADDRESS="[YOUR-EMAIL]"
+   $ export VWS_PASSWORD="[YOUR-PASSWORD]"
+   $ TIME="$(date +%s%N | cut -b1-13)"
    $ vws-web-tools create-vws-license --license-name "my-licence-$TIME"
    $ vws-web-tools create-vws-database --license-name "my-licence-$TIME" --database-name "my-database-$TIME"
    $ vws-web-tools show-database-details --database-name "my-database-$TIME"
