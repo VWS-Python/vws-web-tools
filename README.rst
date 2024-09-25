@@ -26,6 +26,11 @@ Usage
    $ vws-web-tools create-vws-database --license-name "my-licence-$TIME" --database-name "my-database-$TIME"
    $ vws-web-tools show-database-details --database-name "my-database-$TIME"
 
+Full documentation
+------------------
+
+See the `full documentation <https://vws-web-tools.readthedocs.io/en/latest>`__ for more information including how to contribute.
+
 .. |Build Status| image:: https://github.com/VWS-Python/vws-web-tools/actions/workflows/ci.yml/badge.svg?branch=main
    :target: https://github.com/VWS-Python/vws-web-tools/actions
 .. |codecov| image:: https://codecov.io/gh/VWS-Python/vws-web-tools/branch/main/graph/badge.svg
