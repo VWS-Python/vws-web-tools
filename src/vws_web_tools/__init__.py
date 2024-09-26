@@ -272,19 +272,19 @@ def get_database_details(
     }
 
 
-@beartype
 @click.group(name="vws-web")
+@beartype
 def vws_web_tools_group() -> None:
     """
     Commands for interacting with VWS.
     """
 
 
-@beartype
 @click.command()
 @click.option("--license-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
+@beartype
 def create_vws_license(
     license_name: str,
     email_address: str,
@@ -300,12 +300,12 @@ def create_vws_license(
     driver.close()
 
 
-@beartype
 @click.command()
 @click.option("--license-name", required=True)
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
+@beartype
 def create_vws_database(
     database_name: str,
     license_name: str,
@@ -326,12 +326,12 @@ def create_vws_database(
     driver.close()
 
 
-@beartype
 @click.command()
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @click.option("--env-var-format", is_flag=True)
+@beartype
 def show_database_details(
     database_name: str,
     email_address: str,
