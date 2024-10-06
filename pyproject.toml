@@ -70,6 +70,7 @@ optional-dependencies.dev = [
     "types-pyyaml==6.0.12.20240917",
     "vulture==2.13",
 ]
+optional-dependencies.release = [ "build", "check-wheel-contents" ]
 urls.Source = "https://github.com/VWS-Python/vws-web-tools"
 scripts.vws-web-tools = "vws_web_tools:vws_web_tools_group"
 
@@ -259,6 +260,7 @@ ignore = [
 [tool.deptry]
 pep621_dev_dependency_groups = [
     "dev",
+    "release",
 ]
 
 [tool.pyproject-fmt]
