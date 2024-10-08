@@ -59,8 +59,7 @@ def log_in(
 
 @beartype
 def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
-    """
-    Wait for the user to be logged in.
+    """Wait for the user to be logged in.
 
     Without this, we sometimes get a redirect to a post-login page.
     """
