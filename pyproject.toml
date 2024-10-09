@@ -69,6 +69,7 @@ optional-dependencies.dev = [
     "sphinxcontrib-spelling==8",
     "types-pyyaml==6.0.12.20240917",
     "vulture==2.13",
+    "yamlfix==1.17.0",
 ]
 optional-dependencies.release = [ "check-wheel-contents==0.6.0" ]
 urls.Source = "https://github.com/VWS-Python/vws-web-tools"
@@ -355,3 +356,7 @@ ignore_names = [
 
 # Duplicate some of .gitignore
 exclude = [ ".venv" ]
+
+[tool.yamlfix]
+section_whitelines = 1
+whitelines = 1
