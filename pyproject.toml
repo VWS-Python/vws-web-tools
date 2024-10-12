@@ -35,10 +35,10 @@ dynamic = [
     "version",
 ]
 dependencies = [
-    "beartype>=0.18.5",
-    "click",
-    "pyyaml",
-    "selenium",
+    "beartype>=0.19.0",
+    "click>=8.1.7",
+    "pyyaml>=6.0.2",
+    "selenium>=4.25.0",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.3.17",
