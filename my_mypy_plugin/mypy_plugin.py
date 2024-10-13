@@ -141,7 +141,9 @@ class PytestPlugin(Plugin):
                     )
 
     def get_fullname(self, expr: Expression) -> str:
-        """Helper method to get the fullname of an expression."""
+        """
+        Helper method to get the fullname of an expression.
+        """
         if hasattr(expr, "fullname") and expr.fullname:
             return expr.fullname
         if hasattr(expr, "name") and expr.name:

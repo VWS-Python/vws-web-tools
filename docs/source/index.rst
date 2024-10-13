@@ -4,11 +4,11 @@
 Installation
 ------------
 
-.. code:: sh
+.. code-block:: shell
 
    pip install vws-web-tools
 
-This is tested on Python 3.12+.
+This is tested on Python |minimum-python-version|\+.
 
 Usage
 -----

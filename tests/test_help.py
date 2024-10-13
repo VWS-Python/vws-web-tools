@@ -22,8 +22,7 @@ def test_vws_command_help(
     command: list[str],
     file_regression: FileRegressionFixture,
 ) -> None:
-    """
-    Expected help text is shown for ``vws`` commands.
+    """Expected help text is shown for ``vws`` commands.
 
     This help text is defined in files.
     To update these files, run ``pytest`` with the ``--regen-all`` flag.

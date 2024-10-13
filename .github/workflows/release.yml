@@ -22,7 +22,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ['3.12', '3.13']
 
     steps:
       - uses: actions/checkout@v4
@@ -31,34 +31,38 @@ jobs:
           # https://github.com/stefanzweifel/git-auto-commit-action?tab=readme-ov-file#push-to-protected-branches
           token: ${{ secrets.RELEASE_PAT }}
 
-      - name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
 
-      - name: "Calver calculate version"
+      - name: Calver calculate version
         uses: StephaneBour/actions-calver@master
         id: calver
         with:
-          date_format: "%Y.%m.%d"
+          date_format: '%Y.%m.%d'
           release: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "Update changelog"
+      - name: Get the changelog underline
+        id: changelog_underline
+        run: |
+          underline="$(echo "${{ steps.calver.outputs.release }}" | tr -c '\n' '-')"
+          echo "underline=${underline}" >> "$GITHUB_OUTPUT"
+
+      - name: Update changelog
         uses: jacobtomlinson/gha-find-replace@v3
-        env:
-          NEXT_VERSION: ${{ steps.calver.outputs.release }}
         with:
           find: "Next\n----"
-          replace: "Next\n----\n\n${{ env.NEXT_VERSION }}\n------------"
-          include: "CHANGELOG.rst"
+          replace: "Next\n----\n\n${{ steps.calver.outputs.release }}\n${{ steps.changelog_underline.outputs.underline\
+            \ }}"
+          include: CHANGELOG.rst
           regex: false
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         id: commit
         with:
           commit_message: Bump CHANGELOG
+          file_pattern: CHANGELOG.rst
 
       - name: Bump version and push tag
         id: tag_version
@@ -66,7 +70,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ steps.calver.outputs.release }}
-          tag_prefix: ""
+          tag_prefix: ''
           commit_sha: ${{ steps.commit.outputs.commit_hash }}
 
       - name: Create a GitHub release
@@ -78,12 +82,10 @@ jobs:
 
       - name: Build a binary wheel and a source tarball
         run: |
-          # Checkout the latest tag - the one we just created.
           git fetch --tags
-          git checkout "$(git describe --tags "$(git rev-list --tags --max-count=1)")"
-          python -m pip install build check-wheel-contents
-          python -m build --sdist --wheel --outdir dist/ .
-          check-wheel-contents dist/*.whl
+          git checkout ${{ steps.tag_version.outputs.new_tag }}
+          uv build --sdist --wheel --out-dir dist/
+          uv run --extra=release check-wheel-contents dist/*.whl
 
       # We use PyPI trusted publishing rather than a PyPI API token.
       # See https://github.com/pypa/gh-action-pypi-publish/tree/release/v1/?tab=readme-ov-file#trusted-publishing.
