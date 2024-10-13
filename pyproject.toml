@@ -83,6 +83,7 @@ zip-safe = false
 [tool.setuptools.packages.find]
 where = [
     "src",
+    "my_mypy_plugin",
 ]
 
 [tool.setuptools.package-data]
@@ -295,6 +296,7 @@ exclude_also = [
 strict = true
 files = [ "." ]
 exclude = [ "build" ]
+plugins = [ "my_mypy_plugin.mypy_plugin" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
