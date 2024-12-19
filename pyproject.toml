@@ -67,7 +67,7 @@ optional-dependencies.dev = [
     "sphinx-click==6.0.0",
     "sphinx-copybutton==0.5.2",
     "sphinx-substitution-extensions==2024.10.17",
-    "sphinxcontrib-spelling==8",
+    "sphinxcontrib-spelling==8.0.1",
     "types-pyyaml==6.0.12.20240917",
     "vulture==2.14",
     "yamlfix==1.17.0",
