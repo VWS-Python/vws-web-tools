@@ -7,17 +7,11 @@ from mypy.plugin import FunctionSigContext, Plugin
 from mypy.types import CallableType
 
 
-class KeywordOnlyPlugin(Plugin):
+class _KeywordOnlyPlugin(Plugin):
     def get_function_signature_hook(
-        self, fullname: str
+        self,
+        fullname: str,
     ) -> Callable[[FunctionSigContext], CallableType] | None:
-        """Transform the function signature to use keyword-only arguments where
-        possible.
-
-        Positional-only arguments (where arg_names[i] is None) are left
-        unchanged.
-        """
-
         def transform_function_signature(
             ctx: FunctionSigContext,
         ) -> CallableType:
@@ -43,5 +37,5 @@ class KeywordOnlyPlugin(Plugin):
         return transform_function_signature
 
 
-def plugin(version: str) -> type[KeywordOnlyPlugin]:
-    return KeywordOnlyPlugin
+def plugin(version: str) -> type[_KeywordOnlyPlugin]:
+    return _KeywordOnlyPlugin
