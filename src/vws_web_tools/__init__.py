@@ -52,6 +52,17 @@ def log_in(
 import pytest
 
 
+def greet(name: str, greeting: str = "Hello") -> None:
+    print(f"{greeting}, {name}!")
+
+
+# This call should now fail mypy checks because we're using positional arguments:
+greet("Alice", "Hi")
+
+# This call is fine since we're using keyword arguments:
+greet(name="Alice", greeting="Hi")
+
+
 @pytest.mark.parametrize("foo", ["bar"])
 def test_example(foo: int) -> None:
     """

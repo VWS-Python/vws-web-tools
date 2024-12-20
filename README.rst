@@ -1,3 +1,6 @@
+TODO: Use
+uv run --all-extras mypy --show-traceback --cache-dir=/dev/null src/vws_web_tools/__init__.py
+
 |Build Status| |codecov| |PyPI| |Documentation Status|
 
 VWS-Web-Tools
