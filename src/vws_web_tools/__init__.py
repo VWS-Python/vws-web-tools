@@ -66,7 +66,7 @@ def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
     ten_second_wait.until(
         expected_conditions.presence_of_element_located(
-            (By.CLASS_NAME, "userNameInHeaderSpan"),
+            locator=(By.CLASS_NAME, "userNameInHeaderSpan"),
         ),
     )
 
@@ -85,14 +85,14 @@ def create_license(
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
     ten_second_wait.until(
-        expected_conditions.presence_of_element_located(
-            (By.ID, "get-development-key"),
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "get-development-key"),
         ),
     )
 
     ten_second_wait.until(
-        expected_conditions.element_to_be_clickable(
-            (By.ID, "get-development-key"),
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "get-development-key"),
         ),
     )
 
@@ -109,8 +109,8 @@ def create_license(
         pass
 
     license_name_input_element = ten_second_wait.until(
-        expected_conditions.presence_of_element_located(
-            (By.ID, "license-name"),
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "license-name"),
         ),
     )
 
@@ -139,8 +139,8 @@ def create_database(
 
     add_database_button_id = "add-dialog-btn"
     ten_second_wait.until(
-        expected_conditions.presence_of_element_located(
-            (By.ID, add_database_button_id),
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, add_database_button_id),
         ),
     )
 
@@ -177,7 +177,7 @@ def create_database(
     cloud_type_radio_element.click()
 
     license_dropdown_element = Select(
-        driver.find_element(
+        webelement=driver.find_element(
             by=By.ID,
             value="cloud-license-dropdown",
         ),
@@ -266,10 +266,10 @@ def get_database_details(
 
     return {
         "database_name": database_name,
-        "server_access_key": str(object=server_access_key),
-        "server_secret_key": str(object=server_secret_key),
-        "client_access_key": str(object=client_access_key),
-        "client_secret_key": str(object=client_secret_key),
+        "server_access_key": server_access_key,
+        "server_secret_key": server_secret_key,
+        "client_access_key": client_access_key,
+        "client_secret_key": client_secret_key,
     }
 
 
