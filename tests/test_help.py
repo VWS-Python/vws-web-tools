@@ -14,8 +14,8 @@ _COMMANDS = _BASE_COMMAND + _SUBCOMMANDS
 
 
 @pytest.mark.parametrize(
-    "command",
-    _COMMANDS,
+    argnames="command",
+    argvalues=_COMMANDS,
     ids=[str(object=cmd) for cmd in _COMMANDS],
 )
 def test_vws_command_help(
