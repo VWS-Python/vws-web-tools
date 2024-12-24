@@ -65,7 +65,7 @@ def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
     """
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
     ten_second_wait.until(
-        expected_conditions.presence_of_element_located(
+        method=expected_conditions.presence_of_element_located(
             locator=(By.CLASS_NAME, "userNameInHeaderSpan"),
         ),
     )
@@ -145,7 +145,7 @@ def create_database(
     )
 
     ten_second_wait.until(
-        expected_conditions.element_to_be_clickable(
+        method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, add_database_button_id),
         ),
     )
@@ -206,14 +206,14 @@ def get_database_details(
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
     ten_second_wait.until(
-        expected_conditions.presence_of_element_located(
+        method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
         ),
     )
 
     search_input_element = driver.find_element(by=By.ID, value="table_search")
     original_first_database_cell_element = ten_second_wait.until(
-        expected_conditions.element_to_be_clickable(
+        method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
     )
@@ -222,14 +222,14 @@ def get_database_details(
     # The search has competed when the original first database cell element is
     # "stale".
     ten_second_wait.until(
-        expected_conditions.staleness_of(
+        method=expected_conditions.staleness_of(
             element=original_first_database_cell_element
         ),
     )
 
     # We assume that searching for the database name will return one result.
     database_cell_element = ten_second_wait.until(
-        expected_conditions.element_to_be_clickable(
+        method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
     )
@@ -237,7 +237,7 @@ def get_database_details(
     database_cell_element.click()
 
     access_keys_tab_item = ten_second_wait.until(
-        expected_conditions.presence_of_element_located(
+        method=expected_conditions.presence_of_element_located(
             locator=(By.LINK_TEXT, "Database Access Keys"),
         ),
     )
@@ -363,6 +363,6 @@ def show_database_details(
         click.echo(message=yaml.dump(data=details), nl=False)
 
 
-vws_web_tools_group.add_command(create_vws_database)
-vws_web_tools_group.add_command(create_vws_license)
-vws_web_tools_group.add_command(show_database_details)
+vws_web_tools_group.add_command(cmd=create_vws_database)
+vws_web_tools_group.add_command(cmd=create_vws_license)
+vws_web_tools_group.add_command(cmd=show_database_details)
