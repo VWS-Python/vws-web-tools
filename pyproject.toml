@@ -118,6 +118,9 @@ lint.ignore = [
     "D415",
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
+]
+
+lint.per-file-ignores."tests/*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
 ]
@@ -301,6 +304,7 @@ exclude_also = [
 strict = true
 files = [ "." ]
 exclude = [ "build" ]
+follow_untyped_imports = true
 
 [tool.pyright]
 enableTypeIgnoreComments = false
