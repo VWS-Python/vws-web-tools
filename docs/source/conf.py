@@ -50,7 +50,7 @@ pygments_style = "sphinx"
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "VWSWEBTOOLSdoc"
-autoclass_content = "init"
+autoclass_content = "both"
 intersphinx_mapping = {
     "python": (
         f"https://docs.python.org/{minimum_python_version}",
