@@ -71,10 +71,6 @@ html_theme_options = {
 
 # Retry link checking to avoid transient network errors.
 linkcheck_retries = 5
-linkcheck_ignore = [
-    # Requires login.
-    r"https://developer.vuforia.com/targetmanager",
-]
 
 spelling_word_list_filename = "../../spelling_private_dict.txt"
 
