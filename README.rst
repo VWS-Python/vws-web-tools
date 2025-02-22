@@ -1,4 +1,4 @@
-|Build Status| |codecov| |PyPI| |Documentation Status|
+|Build Status| |codecov| |PyPI|
 
 VWS-Web-Tools
 =============
@@ -29,15 +29,12 @@ Usage
 Full documentation
 ------------------
 
-See the `full documentation <https://vws-web-tools.readthedocs.io/en/latest>`__ for more information including how to contribute.
+See the `full documentation <https://vws-python.github.io/vws-web-tools/>`__ for more information including how to contribute.
 
 .. |Build Status| image:: https://github.com/VWS-Python/vws-web-tools/actions/workflows/ci.yml/badge.svg?branch=main
    :target: https://github.com/VWS-Python/vws-web-tools/actions
 .. |codecov| image:: https://codecov.io/gh/VWS-Python/vws-web-tools/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/VWS-Python/vws-web-tools
-.. |Documentation Status| image:: https://readthedocs.org/projects/vws-web-tools/badge/?version=latest
-   :target: https://vws-web-tools.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
 .. |PyPI| image:: https://badge.fury.io/py/VWS-Web-Tools.svg
    :target: https://badge.fury.io/py/VWS-Web-Tools
 .. |minimum-python-version| replace:: 3.12

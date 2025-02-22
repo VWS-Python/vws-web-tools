@@ -255,7 +255,6 @@ ignore = [
     ".pre-commit-config.yaml",
     "admin",
     "admin/**",
-    "readthedocs.yaml",
     "CHANGELOG.rst",
     "CODE_OF_CONDUCT.rst",
     "CONTRIBUTING.rst",
