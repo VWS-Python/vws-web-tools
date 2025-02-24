@@ -76,6 +76,7 @@ optional-dependencies.dev = [
     "yamlfix==1.17.0",
 ]
 optional-dependencies.release = [ "check-wheel-contents==0.6.1" ]
+urls.Documentation = "https://vws-python.github.io/vws-web-tools/"
 urls.Source = "https://github.com/VWS-Python/vws-web-tools"
 scripts.vws-web-tools = "vws_web_tools:vws_web_tools_group"
 
