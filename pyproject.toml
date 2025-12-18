@@ -72,7 +72,7 @@ optional-dependencies.dev = [
     "ty==0.0.3",
     "types-pyyaml==6.0.12.20250915",
     "vulture==2.14",
-    "yamlfix==1.19.0",
+    "yamlfix==1.19.1",
 ]
 optional-dependencies.release = [ "check-wheel-contents==0.6.3" ]
 urls.Documentation = "https://vws-python.github.io/vws-web-tools/"
