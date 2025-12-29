@@ -275,6 +275,7 @@ ignore = [
     "vuforia_secrets.env.example",
     "lint.mk",
     ".vscode/**",
+    "zizmor.yml",
 ]
 
 [tool.deptry]
