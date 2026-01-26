@@ -1,6 +1,4 @@
-"""
-Tools for interacting with the VWS (Vuforia Web Services) website.
-"""
+"""Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
 import time
@@ -21,9 +19,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 @beartype
 class DatabaseDict(TypedDict):
-    """
-    A dictionary type which represents a database.
-    """
+    """A dictionary type which represents a database."""
 
     database_name: str
     server_access_key: str
@@ -38,9 +34,7 @@ def log_in(
     email_address: str,
     password: str,
 ) -> None:  # pragma: no cover
-    """
-    Log in to Vuforia web services.
-    """
+    """Log in to Vuforia web services."""
     log_in_url = "https://developer.vuforia.com/vui/auth/login"
     driver.get(url=log_in_url)
     email_address_input_element = driver.find_element(
@@ -76,9 +70,7 @@ def create_license(
     driver: WebDriver,
     license_name: str,
 ) -> None:  # pragma: no cover
-    """
-    Create a license.
-    """
+    """Create a license."""
     licenses_url = "https://developer.vuforia.com/vui/develop/licenses"
     driver.get(url=licenses_url)
 
@@ -130,9 +122,7 @@ def create_database(
     database_name: str,
     license_name: str,
 ) -> None:  # pragma: no cover
-    """
-    Create a database.
-    """
+    """Create a database."""
     target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
     driver.get(url=target_manager_url)
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
@@ -198,9 +188,7 @@ def get_database_details(
     driver: WebDriver,
     database_name: str,
 ) -> DatabaseDict:  # pragma: no cover
-    """
-    Get details of a database.
-    """
+    """Get details of a database."""
     target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
     driver.get(url=target_manager_url)
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
@@ -276,9 +264,7 @@ def get_database_details(
 @click.group(name="vws-web")
 @beartype
 def vws_web_tools_group() -> None:
-    """
-    Commands for interacting with VWS.
-    """
+    """Commands for interacting with VWS."""
 
 
 @click.command()
@@ -291,9 +277,7 @@ def create_vws_license(
     email_address: str,
     password: str,
 ) -> None:  # pragma: no cover
-    """
-    Create a license.
-    """
+    """Create a license."""
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
@@ -313,9 +297,7 @@ def create_vws_database(
     email_address: str,
     password: str,
 ) -> None:  # pragma: no cover
-    """
-    Create a database.
-    """
+    """Create a database."""
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
@@ -340,9 +322,7 @@ def show_database_details(
     *,
     env_var_format: bool,
 ) -> None:  # pragma: no cover
-    """
-    Show the details of a database.
-    """
+    """Show the details of a database."""
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
