@@ -50,6 +50,7 @@ def log_in(
     )
     password_input_element.send_keys(password)
 
+    _dismiss_cookie_banner(driver=driver)
     login_button = driver.find_element(by=By.ID, value="login")
     login_button.click()
 
