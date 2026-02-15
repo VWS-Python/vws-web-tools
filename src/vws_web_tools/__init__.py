@@ -93,6 +93,7 @@ def create_license(
     """Create a license."""
     new_license_url = "https://developer.vuforia.com/develop/licenses/free/new"
     driver.get(url=new_license_url)
+    _dismiss_cookie_banner(driver=driver)
 
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
@@ -128,6 +129,7 @@ def create_database(
     """Create a database."""
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
+    _dismiss_cookie_banner(driver=driver)
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
     add_database_button_id = "add-dialog-btn"
@@ -200,6 +202,7 @@ def get_database_details(
     """Get details of a database."""
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
+    _dismiss_cookie_banner(driver=driver)
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
     ten_second_wait.until(
