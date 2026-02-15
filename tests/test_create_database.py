@@ -16,9 +16,9 @@ import vws_web_tools
 def fixture_chrome_driver() -> Iterator[WebDriver]:
     """Yield a headless Chrome WebDriver, quitting on tear down."""
     options: webdriver.ChromeOptions = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")  # type: ignore[misc]
-    options.add_argument("--no-sandbox")  # type: ignore[misc]
-    options.add_argument("--disable-dev-shm-usage")  # type: ignore[misc]
+    options.add_argument(argument="--headless=new")
+    options.add_argument(argument="--no-sandbox")
+    options.add_argument(argument="--disable-dev-shm-usage")
     driver = webdriver.Chrome(options=options)
     yield driver
     driver.quit()
