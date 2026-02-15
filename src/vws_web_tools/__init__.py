@@ -10,7 +10,6 @@ from beartype import beartype
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
@@ -35,11 +34,13 @@ def log_in(
     password: str,
 ) -> None:  # pragma: no cover
     """Log in to Vuforia web services."""
-    log_in_url = "https://developer.vuforia.com/vui/auth/login"
+    log_in_url = "https://developer.vuforia.com/auth/login"
     driver.get(url=log_in_url)
-    email_address_input_element = driver.find_element(
-        by=By.ID,
-        value="login_email",
+    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
+    email_address_input_element = ten_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "login_email"),
+        ),
     )
     email_address_input_element.send_keys(email_address)
 
@@ -48,7 +49,9 @@ def log_in(
         value="login_password",
     )
     password_input_element.send_keys(password)
-    password_input_element.send_keys(Keys.RETURN)
+
+    login_button = driver.find_element(by=By.ID, value="login")
+    login_button.click()
 
 
 @beartype
@@ -71,34 +74,10 @@ def create_license(
     license_name: str,
 ) -> None:  # pragma: no cover
     """Create a license."""
-    licenses_url = "https://developer.vuforia.com/vui/develop/licenses"
-    driver.get(url=licenses_url)
+    new_license_url = "https://developer.vuforia.com/develop/licenses/free/new"
+    driver.get(url=new_license_url)
 
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
-
-    ten_second_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, "get-development-key"),
-        ),
-    )
-
-    ten_second_wait.until(
-        method=expected_conditions.element_to_be_clickable(
-            mark=(By.ID, "get-development-key"),
-        ),
-    )
-
-    get_development_key_button_element = driver.find_element(
-        by=By.ID,
-        value="get-development-key",
-    )
-    get_development_key_button_element.click()
-    try:
-        get_development_key_button_element.click()
-        time.sleep(1)
-        get_development_key_button_element.click()
-    except WebDriverException:
-        pass
 
     license_name_input_element = ten_second_wait.until(
         method=expected_conditions.presence_of_element_located(
@@ -108,12 +87,19 @@ def create_license(
 
     license_name_input_element.send_keys(license_name)
 
-    agree_terms_id = "agree-terms-checkbox"
     agree_terms_checkbox_element = driver.find_element(
         by=By.ID,
-        value=agree_terms_id,
+        value="agree-terms-checkbox",
     )
-    agree_terms_checkbox_element.submit()
+    agree_terms_checkbox_element.click()
+
+    confirm_button = ten_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "confirm"),
+        ),
+    )
+    confirm_button.click()
+    time.sleep(5)
 
 
 @beartype
@@ -123,7 +109,7 @@ def create_database(
     license_name: str,
 ) -> None:  # pragma: no cover
     """Create a database."""
-    target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
+    target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
@@ -175,11 +161,17 @@ def create_database(
 
     # Sleeping 1 second here did not work, so we sleep 5 seconds.
     time.sleep(5)
-    license_dropdown_element.select_by_visible_text(text=license_name)
+    license_dropdown_element.select_by_visible_text(
+        text=license_name,
+    )
 
-    create_button = driver.find_element(by=By.ID, value="create-btn")
-    create_button.click()
-    # Without this we might close the driver before the database is created.
+    generate_button = driver.find_element(
+        by=By.ID,
+        value="generate-btn",
+    )
+    generate_button.click()
+    # Without this we might close the driver before the database
+    # is created.
     time.sleep(5)
 
 
@@ -189,7 +181,7 @@ def get_database_details(
     database_name: str,
 ) -> DatabaseDict:  # pragma: no cover
     """Get details of a database."""
-    target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
+    target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     ten_second_wait = WebDriverWait(driver=driver, timeout=10)
 
@@ -199,23 +191,26 @@ def get_database_details(
         ),
     )
 
-    search_input_element = driver.find_element(by=By.ID, value="table_search")
+    search_input_element = driver.find_element(
+        by=By.ID,
+        value="table_search",
+    )
     original_first_database_cell_element = ten_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
     )
     search_input_element.send_keys(database_name)
-    search_input_element.send_keys(Keys.RETURN)
-    # The search has competed when the original first database cell element is
-    # "stale".
+    # The search has competed when the original first database
+    # cell element is "stale".
     ten_second_wait.until(
         method=expected_conditions.staleness_of(
             element=original_first_database_cell_element
         ),
     )
 
-    # We assume that searching for the database name will return one result.
+    # We assume that searching for the database name will return
+    # one result.
     database_cell_element = ten_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
@@ -235,22 +230,27 @@ def get_database_details(
     # Without this we sometimes get empty strings for the keys.
     time.sleep(1)
 
-    client_access_key = driver.find_element(
-        by=By.CLASS_NAME,
+    client_key_div = driver.find_element(
+        by=By.ID,
         value="client-access-key",
-    ).text
-    client_secret_key = driver.find_element(
+    )
+    client_grey_boxes = client_key_div.find_elements(
         by=By.CLASS_NAME,
-        value="client-secret-key",
-    ).text
-    server_access_key = driver.find_element(
-        by=By.CLASS_NAME,
+        value="grey-box",
+    )
+    client_access_key = client_grey_boxes[0].text.strip()
+    client_secret_key = client_grey_boxes[1].text.strip()
+
+    server_key_div = driver.find_element(
+        by=By.ID,
         value="server-access-key",
-    ).text
-    server_secret_key = driver.find_element(
+    )
+    server_grey_boxes = server_key_div.find_elements(
         by=By.CLASS_NAME,
-        value="server-secret-key",
-    ).text
+        value="grey-box",
+    )
+    server_access_key = server_grey_boxes[0].text.strip()
+    server_secret_key = server_grey_boxes[1].text.strip()
 
     return {
         "database_name": database_name,
@@ -326,7 +326,10 @@ def show_database_details(
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
-    details = get_database_details(driver=driver, database_name=database_name)
+    details = get_database_details(
+        driver=driver,
+        database_name=database_name,
+    )
     driver.close()
     if env_var_format:
         env_var_format_details = {
