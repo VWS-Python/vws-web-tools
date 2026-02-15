@@ -36,18 +36,10 @@ jobs:
       - name: Run tests
         run: |
           uv run --extra=dev pytest -s -vvv --cov-fail-under 100 --cov=src/ --cov=tests .
-        if: runner.os == 'Linux'
         env:
           UV_PYTHON: ${{ matrix.python-version }}
           VWS_EMAIL_ADDRESS: ${{ secrets.VWS_EMAIL_ADDRESS }}
           VWS_PASSWORD: ${{ secrets.VWS_PASSWORD }}
-
-      - name: Run tests
-        run: |
-          uv run --extra=dev pytest -s -vvv --cov-fail-under 100 --cov=src/ --cov=tests --ignore=tests/test_create_database.py .
-        if: runner.os != 'Linux'
-        env:
-          UV_PYTHON: ${{ matrix.python-version }}
 
       - uses: pre-commit-ci/lite-action@v1.1.0
         if: always()
