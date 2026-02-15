@@ -214,26 +214,23 @@ def get_database_details(
         by=By.ID,
         value="table_search",
     )
-    original_first_database_cell_element = ten_second_wait.until(
+    ten_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
     )
     search_input_element.send_keys(database_name)
-    # The search has competed when the original first database
-    # cell element is "stale".
+    # Wait for the search results to show the expected database.
     ten_second_wait.until(
-        method=expected_conditions.staleness_of(
-            element=original_first_database_cell_element
+        method=expected_conditions.text_to_be_present_in_element(
+            locator=(By.ID, "table_row_0_project_name"),
+            text_=database_name,
         ),
     )
 
-    # We assume that searching for the database name will return
-    # one result.
-    database_cell_element = ten_second_wait.until(
-        method=expected_conditions.element_to_be_clickable(
-            mark=(By.ID, "table_row_0_project_name"),
-        ),
+    database_cell_element = driver.find_element(
+        by=By.ID,
+        value="table_row_0_project_name",
     )
 
     database_cell_element.click()
