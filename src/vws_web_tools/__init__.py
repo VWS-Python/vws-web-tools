@@ -32,7 +32,7 @@ def log_in(
     driver: WebDriver,
     email_address: str,
     password: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Log in to Vuforia web services."""
     log_in_url = "https://developer.vuforia.com/auth/login"
     driver.get(url=log_in_url)
@@ -58,7 +58,7 @@ def log_in(
 @beartype
 def _dismiss_cookie_banner(
     driver: WebDriver,
-) -> None:  # pragma: no cover
+) -> None:
     """Dismiss the OneTrust cookie consent banner if present."""
     driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
         """
@@ -86,7 +86,7 @@ def _dismiss_cookie_banner(
 
 
 @beartype
-def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
+def wait_for_logged_in(driver: WebDriver) -> None:
     """Wait for the user to be logged in.
 
     Without this, we sometimes get a redirect to a post-login page.
@@ -104,7 +104,7 @@ def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
 def create_license(
     driver: WebDriver,
     license_name: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Create a license."""
     new_license_url = "https://developer.vuforia.com/develop/licenses/free/new"
     driver.get(url=new_license_url)
@@ -140,7 +140,7 @@ def create_database(
     driver: WebDriver,
     database_name: str,
     license_name: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Create a database."""
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
@@ -213,7 +213,7 @@ def create_database(
 def get_database_details(
     driver: WebDriver,
     database_name: str,
-) -> DatabaseDict:  # pragma: no cover
+) -> DatabaseDict:
     """Get details of a database."""
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
@@ -304,7 +304,7 @@ def create_vws_license(
     license_name: str,
     email_address: str,
     password: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Create a license."""
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
@@ -324,7 +324,7 @@ def create_vws_database(
     license_name: str,
     email_address: str,
     password: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Create a database."""
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
@@ -349,7 +349,7 @@ def show_database_details(
     password: str,
     *,
     env_var_format: bool,
-) -> None:  # pragma: no cover
+) -> None:
     """Show the details of a database."""
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
