@@ -17,7 +17,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 
 @beartype
-def _create_chrome_driver() -> WebDriver:
+def create_chrome_driver() -> WebDriver:
     """Create a headless Chrome WebDriver."""
     options = webdriver.ChromeOptions()
     options.add_argument(argument="--headless=new")
@@ -316,7 +316,7 @@ def create_vws_license(
     password: str,
 ) -> None:
     """Create a license."""
-    driver = _create_chrome_driver()
+    driver = create_chrome_driver()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
     create_license(driver=driver, license_name=license_name)
@@ -336,7 +336,7 @@ def create_vws_database(
     password: str,
 ) -> None:
     """Create a database."""
-    driver = _create_chrome_driver()
+    driver = create_chrome_driver()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
     create_database(
@@ -361,7 +361,7 @@ def show_database_details(
     env_var_format: bool,
 ) -> None:
     """Show the details of a database."""
-    driver = _create_chrome_driver()
+    driver = create_chrome_driver()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
     details = get_database_details(
