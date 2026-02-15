@@ -10,7 +10,6 @@ from beartype import beartype
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
@@ -33,13 +32,15 @@ def log_in(
     driver: WebDriver,
     email_address: str,
     password: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Log in to Vuforia web services."""
-    log_in_url = "https://developer.vuforia.com/vui/auth/login"
+    log_in_url = "https://developer.vuforia.com/auth/login"
     driver.get(url=log_in_url)
-    email_address_input_element = driver.find_element(
-        by=By.ID,
-        value="login_email",
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
+    email_address_input_element = thirty_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "login_email"),
+        ),
     )
     email_address_input_element.send_keys(email_address)
 
@@ -48,59 +49,70 @@ def log_in(
         value="login_password",
     )
     password_input_element.send_keys(password)
-    password_input_element.send_keys(Keys.RETURN)
+
+    _dismiss_cookie_banner(driver=driver)
+    login_button = driver.find_element(by=By.ID, value="login")
+    login_button.click()
 
 
 @beartype
-def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
+def _dismiss_cookie_banner(
+    driver: WebDriver,
+) -> None:
+    """Dismiss the OneTrust cookie consent banner if present."""
+    driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
+        """
+        // Remove any existing banner immediately
+        var banner = document.getElementById('onetrust-banner-sdk');
+        if (banner) banner.remove();
+        var consent = document.getElementById('onetrust-consent-sdk');
+        if (consent) consent.remove();
+
+        // Set up observer to remove banner if it appears later
+        if (!window.__otObserver) {
+            window.__otObserver = new MutationObserver(function() {
+                var b = document.getElementById('onetrust-banner-sdk');
+                if (b) b.remove();
+                var c = document.getElementById('onetrust-consent-sdk');
+                if (c) c.remove();
+            });
+            window.__otObserver.observe(
+                document.documentElement,
+                {childList: true, subtree: true}
+            );
+        }
+        """
+    )
+
+
+@beartype
+def wait_for_logged_in(driver: WebDriver) -> None:
     """Wait for the user to be logged in.
 
     Without this, we sometimes get a redirect to a post-login page.
     """
-    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
-    ten_second_wait.until(
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
+    thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.CLASS_NAME, "userNameInHeaderSpan"),
         ),
     )
+    _dismiss_cookie_banner(driver=driver)
 
 
 @beartype
 def create_license(
     driver: WebDriver,
     license_name: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Create a license."""
-    licenses_url = "https://developer.vuforia.com/vui/develop/licenses"
-    driver.get(url=licenses_url)
+    new_license_url = "https://developer.vuforia.com/develop/licenses/free/new"
+    driver.get(url=new_license_url)
+    _dismiss_cookie_banner(driver=driver)
 
-    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
 
-    ten_second_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, "get-development-key"),
-        ),
-    )
-
-    ten_second_wait.until(
-        method=expected_conditions.element_to_be_clickable(
-            mark=(By.ID, "get-development-key"),
-        ),
-    )
-
-    get_development_key_button_element = driver.find_element(
-        by=By.ID,
-        value="get-development-key",
-    )
-    get_development_key_button_element.click()
-    try:
-        get_development_key_button_element.click()
-        time.sleep(1)
-        get_development_key_button_element.click()
-    except WebDriverException:
-        pass
-
-    license_name_input_element = ten_second_wait.until(
+    license_name_input_element = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "license-name"),
         ),
@@ -108,12 +120,19 @@ def create_license(
 
     license_name_input_element.send_keys(license_name)
 
-    agree_terms_id = "agree-terms-checkbox"
     agree_terms_checkbox_element = driver.find_element(
         by=By.ID,
-        value=agree_terms_id,
+        value="agree-terms-checkbox",
     )
-    agree_terms_checkbox_element.submit()
+    agree_terms_checkbox_element.click()
+
+    confirm_button = thirty_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "confirm"),
+        ),
+    )
+    confirm_button.click()
+    time.sleep(5)
 
 
 @beartype
@@ -121,20 +140,21 @@ def create_database(
     driver: WebDriver,
     database_name: str,
     license_name: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Create a database."""
-    target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
+    target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
-    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
+    _dismiss_cookie_banner(driver=driver)
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
 
     add_database_button_id = "add-dialog-btn"
-    ten_second_wait.until(
+    thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, add_database_button_id),
         ),
     )
 
-    ten_second_wait.until(
+    thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, add_database_button_id),
         ),
@@ -148,7 +168,7 @@ def create_database(
     with contextlib.suppress(WebDriverException):
         add_database_button_element.click()
     database_name_id = "database-name"
-    ten_second_wait.until(
+    thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, database_name_id),
         ),
@@ -175,11 +195,17 @@ def create_database(
 
     # Sleeping 1 second here did not work, so we sleep 5 seconds.
     time.sleep(5)
-    license_dropdown_element.select_by_visible_text(text=license_name)
+    license_dropdown_element.select_by_visible_text(
+        text=license_name,
+    )
 
-    create_button = driver.find_element(by=By.ID, value="create-btn")
-    create_button.click()
-    # Without this we might close the driver before the database is created.
+    generate_button = driver.find_element(
+        by=By.ID,
+        value="generate-btn",
+    )
+    generate_button.click()
+    # Without this we might close the driver before the database
+    # is created.
     time.sleep(5)
 
 
@@ -187,36 +213,33 @@ def create_database(
 def get_database_details(
     driver: WebDriver,
     database_name: str,
-) -> DatabaseDict:  # pragma: no cover
+) -> DatabaseDict:
     """Get details of a database."""
-    target_manager_url = "https://developer.vuforia.com/vui/develop/databases"
+    target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
-    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
+    _dismiss_cookie_banner(driver=driver)
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
 
-    ten_second_wait.until(
+    thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
         ),
     )
 
-    search_input_element = driver.find_element(by=By.ID, value="table_search")
-    original_first_database_cell_element = ten_second_wait.until(
+    search_input_element = driver.find_element(
+        by=By.ID,
+        value="table_search",
+    )
+    thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
     )
     search_input_element.send_keys(database_name)
-    search_input_element.send_keys(Keys.RETURN)
-    # The search has competed when the original first database cell element is
-    # "stale".
-    ten_second_wait.until(
-        method=expected_conditions.staleness_of(
-            element=original_first_database_cell_element
-        ),
-    )
+    # Wait for the search results to update.
+    time.sleep(2)
 
-    # We assume that searching for the database name will return one result.
-    database_cell_element = ten_second_wait.until(
+    database_cell_element = thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
@@ -224,7 +247,7 @@ def get_database_details(
 
     database_cell_element.click()
 
-    access_keys_tab_item = ten_second_wait.until(
+    access_keys_tab_item = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.LINK_TEXT, "Database Access Keys"),
         ),
@@ -235,22 +258,27 @@ def get_database_details(
     # Without this we sometimes get empty strings for the keys.
     time.sleep(1)
 
-    client_access_key = driver.find_element(
-        by=By.CLASS_NAME,
+    client_key_div = driver.find_element(
+        by=By.ID,
         value="client-access-key",
-    ).text
-    client_secret_key = driver.find_element(
+    )
+    client_grey_boxes = client_key_div.find_elements(
         by=By.CLASS_NAME,
-        value="client-secret-key",
-    ).text
-    server_access_key = driver.find_element(
-        by=By.CLASS_NAME,
+        value="grey-box",
+    )
+    client_access_key = client_grey_boxes[0].text.strip()
+    client_secret_key = client_grey_boxes[1].text.strip()
+
+    server_key_div = driver.find_element(
+        by=By.ID,
         value="server-access-key",
-    ).text
-    server_secret_key = driver.find_element(
+    )
+    server_grey_boxes = server_key_div.find_elements(
         by=By.CLASS_NAME,
-        value="server-secret-key",
-    ).text
+        value="grey-box",
+    )
+    server_access_key = server_grey_boxes[0].text.strip()
+    server_secret_key = server_grey_boxes[1].text.strip()
 
     return {
         "database_name": database_name,
@@ -272,11 +300,11 @@ def vws_web_tools_group() -> None:
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
-def create_vws_license(
+def create_vws_license(  # pragma: no cover
     license_name: str,
     email_address: str,
     password: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Create a license."""
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
@@ -291,12 +319,12 @@ def create_vws_license(
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
-def create_vws_database(
+def create_vws_database(  # pragma: no cover
     database_name: str,
     license_name: str,
     email_address: str,
     password: str,
-) -> None:  # pragma: no cover
+) -> None:
     """Create a database."""
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
@@ -315,18 +343,21 @@ def create_vws_database(
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @click.option("--env-var-format", is_flag=True)
 @beartype
-def show_database_details(
+def show_database_details(  # pragma: no cover
     database_name: str,
     email_address: str,
     password: str,
     *,
     env_var_format: bool,
-) -> None:  # pragma: no cover
+) -> None:
     """Show the details of a database."""
     driver = webdriver.Safari()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
-    details = get_database_details(driver=driver, database_name=database_name)
+    details = get_database_details(
+        driver=driver,
+        database_name=database_name,
+    )
     driver.close()
     if env_var_format:
         env_var_format_details = {
