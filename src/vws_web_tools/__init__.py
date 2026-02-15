@@ -1,7 +1,6 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
-import time
 from typing import TypedDict
 
 import click
@@ -132,7 +131,9 @@ def create_license(
         ),
     )
     confirm_button.click()
-    time.sleep(5)
+    thirty_second_wait.until(
+        method=expected_conditions.url_changes(url=new_license_url),
+    )
 
 
 @beartype
@@ -193,8 +194,17 @@ def create_database(
         ),
     )
 
-    # Sleeping 1 second here did not work, so we sleep 5 seconds.
-    time.sleep(5)
+    thirty_second_wait.until(
+        method=lambda d: any(
+            opt.text == license_name
+            for opt in Select(
+                webelement=d.find_element(
+                    by=By.ID,
+                    value="cloud-license-dropdown",
+                ),
+            ).options
+        ),
+    )
     license_dropdown_element.select_by_visible_text(
         text=license_name,
     )
@@ -204,9 +214,33 @@ def create_database(
         value="generate-btn",
     )
     generate_button.click()
-    # Without this we might close the driver before the database
-    # is created.
-    time.sleep(5)
+    thirty_second_wait.until(
+        method=expected_conditions.staleness_of(element=generate_button),
+    )
+
+    def _database_created(d: WebDriver) -> bool:
+        """Navigate to the databases page and check for the database."""
+        d.get(url=target_manager_url)
+        _dismiss_cookie_banner(driver=d)
+        try:
+            WebDriverWait(driver=d, timeout=15).until(
+                method=expected_conditions.element_to_be_clickable(
+                    mark=(By.ID, "table_row_0_project_name"),
+                ),
+            )
+        except WebDriverException:
+            return False
+        return (
+            database_name
+            in d.find_element(
+                by=By.TAG_NAME,
+                value="body",
+            ).text
+        )
+
+    WebDriverWait(driver=driver, timeout=60, poll_frequency=0).until(
+        method=_database_created,
+    )
 
 
 @beartype
@@ -236,8 +270,15 @@ def get_database_details(
         ),
     )
     search_input_element.send_keys(database_name)
-    # Wait for the search results to update.
-    time.sleep(2)
+    thirty_second_wait.until(
+        method=lambda d: (
+            database_name
+            in d.find_element(
+                by=By.ID,
+                value="table_row_0_project_name",
+            ).text
+        ),
+    )
 
     database_cell_element = thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
@@ -255,8 +296,16 @@ def get_database_details(
 
     access_keys_tab_item.click()
 
-    # Without this we sometimes get empty strings for the keys.
-    time.sleep(1)
+    thirty_second_wait.until(
+        method=lambda d: (
+            d.find_element(
+                by=By.ID,
+                value="server-access-key",
+            )
+            .find_elements(by=By.CLASS_NAME, value="grey-box")[0]
+            .text.strip()
+        ),
+    )
 
     client_key_div = driver.find_element(
         by=By.ID,
