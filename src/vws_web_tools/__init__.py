@@ -60,18 +60,14 @@ def _dismiss_cookie_banner(
     driver: WebDriver,
 ) -> None:  # pragma: no cover
     """Dismiss the OneTrust cookie consent banner if present."""
-    try:
-        short_wait = WebDriverWait(driver=driver, timeout=5)
-        accept_button = short_wait.until(
-            method=expected_conditions.element_to_be_clickable(
-                mark=(By.ID, "onetrust-accept-btn-handler"),
-            ),
-        )
-        accept_button.click()
-        # Wait for the banner to animate away.
-        time.sleep(2)
-    except WebDriverException:
-        pass
+    driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
+        """
+        var banner = document.getElementById('onetrust-banner-sdk');
+        if (banner) banner.remove();
+        var backdrop = document.getElementById('onetrust-consent-sdk');
+        if (backdrop) backdrop.remove();
+        """
+    )
 
 
 @beartype
