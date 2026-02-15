@@ -236,7 +236,7 @@ def create_database(
             ).text
         )
 
-    WebDriverWait(driver=driver, timeout=60, poll_frequency=0).until(
+    WebDriverWait(driver=driver, timeout=180).until(
         method=_database_created,
     )
 
