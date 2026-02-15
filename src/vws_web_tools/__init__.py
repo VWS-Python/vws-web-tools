@@ -217,24 +217,31 @@ def create_database(
     )
 
     def _database_created(d: WebDriver) -> bool:
-        """Navigate to the databases page and check for the database."""
+        """Navigate to the databases page and search for the database."""
         d.get(url=target_manager_url)
         _dismiss_cookie_banner(driver=d)
         try:
-            WebDriverWait(driver=d, timeout=15).until(
-                method=expected_conditions.element_to_be_clickable(
-                    mark=(By.ID, "table_row_0_project_name"),
+            search_input = WebDriverWait(driver=d, timeout=15).until(
+                method=expected_conditions.presence_of_element_located(
+                    locator=(By.ID, "table_search"),
                 ),
             )
         except WebDriverException:
             return False
-        return (
-            database_name
-            in d.find_element(
-                by=By.TAG_NAME,
-                value="body",
-            ).text
-        )
+        search_input.send_keys(database_name)
+        try:
+            WebDriverWait(driver=d, timeout=15).until(
+                method=lambda d2: (
+                    database_name
+                    in d2.find_element(
+                        by=By.ID,
+                        value="table_row_0_project_name",
+                    ).text
+                ),
+            )
+        except WebDriverException:
+            return False
+        return True
 
     WebDriverWait(driver=driver, timeout=180).until(
         method=_database_created,
