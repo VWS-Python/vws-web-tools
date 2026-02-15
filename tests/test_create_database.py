@@ -39,17 +39,15 @@ def test_create_databases(
     email_address = os.environ[_VWS_EMAIL_ADDRESS_VAR]
     password = os.environ[_VWS_PASSWORD_VAR]
     random_str = uuid.uuid4().hex[:5]
-    today_date = str(
-        datetime.datetime.now(tz=datetime.UTC).date(),
-    )
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
     output_file_path = tmp_path / f"databases_details_{random_str}.txt"
     license_name_start = f"license-ci-{today_date}-{random_str}-"
     database_name_start = f"database-ci-{today_date}-{random_str}-"
 
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
+    options: webdriver.ChromeOptions = webdriver.ChromeOptions()
+    options.add_argument("--headless=new")  # type: ignore[misc]
+    options.add_argument("--no-sandbox")  # type: ignore[misc]
+    options.add_argument("--disable-dev-shm-usage")  # type: ignore[misc]
     driver = webdriver.Chrome(options=options)
 
     vws_web_tools.log_in(
@@ -61,8 +59,8 @@ def test_create_databases(
     vws_web_tools.wait_for_logged_in(driver=driver)
 
     for index in range(100):
-        license_name = license_name_start + str(index)
-        database_name = database_name_start + str(index)
+        license_name = f"{license_name_start}{index}"
+        database_name = f"{database_name_start}{index}"
         vws_web_tools.create_license(
             driver=driver,
             license_name=license_name,
@@ -85,7 +83,7 @@ def test_create_databases(
         assert details["client_secret_key"]
 
         with output_file_path.open(mode="a") as handler:
-            handler.write(json.dumps(details))
+            handler.write(json.dumps(obj=details))
             handler.write("\n")
 
     driver.close()
