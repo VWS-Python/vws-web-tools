@@ -320,7 +320,7 @@ def create_vws_license(
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
     create_license(driver=driver, license_name=license_name)
-    driver.close()
+    driver.quit()
 
 
 @click.command()
@@ -344,7 +344,7 @@ def create_vws_database(
         database_name=database_name,
         license_name=license_name,
     )
-    driver.close()
+    driver.quit()
 
 
 @click.command()
@@ -368,7 +368,7 @@ def show_database_details(
         driver=driver,
         database_name=database_name,
     )
-    driver.close()
+    driver.quit()
     if env_var_format:
         env_var_format_details = {
             "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details["database_name"],
