@@ -36,8 +36,8 @@ def log_in(
     """Log in to Vuforia web services."""
     log_in_url = "https://developer.vuforia.com/auth/login"
     driver.get(url=log_in_url)
-    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
-    email_address_input_element = ten_second_wait.until(
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
+    email_address_input_element = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "login_email"),
         ),
@@ -96,8 +96,8 @@ def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
 
     Without this, we sometimes get a redirect to a post-login page.
     """
-    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
-    ten_second_wait.until(
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
+    thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.CLASS_NAME, "userNameInHeaderSpan"),
         ),
@@ -115,9 +115,9 @@ def create_license(
     driver.get(url=new_license_url)
     _dismiss_cookie_banner(driver=driver)
 
-    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
 
-    license_name_input_element = ten_second_wait.until(
+    license_name_input_element = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "license-name"),
         ),
@@ -131,7 +131,7 @@ def create_license(
     )
     agree_terms_checkbox_element.click()
 
-    confirm_button = ten_second_wait.until(
+    confirm_button = thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "confirm"),
         ),
@@ -150,16 +150,16 @@ def create_database(
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
-    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
 
     add_database_button_id = "add-dialog-btn"
-    ten_second_wait.until(
+    thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, add_database_button_id),
         ),
     )
 
-    ten_second_wait.until(
+    thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, add_database_button_id),
         ),
@@ -173,7 +173,7 @@ def create_database(
     with contextlib.suppress(WebDriverException):
         add_database_button_element.click()
     database_name_id = "database-name"
-    ten_second_wait.until(
+    thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, database_name_id),
         ),
@@ -223,9 +223,9 @@ def get_database_details(
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
-    ten_second_wait = WebDriverWait(driver=driver, timeout=10)
+    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
 
-    ten_second_wait.until(
+    thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
         ),
@@ -235,7 +235,7 @@ def get_database_details(
         by=By.ID,
         value="table_search",
     )
-    ten_second_wait.until(
+    thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
@@ -244,7 +244,7 @@ def get_database_details(
     # Wait for the search results to update.
     time.sleep(2)
 
-    database_cell_element = ten_second_wait.until(
+    database_cell_element = thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
@@ -252,7 +252,7 @@ def get_database_details(
 
     database_cell_element.click()
 
-    access_keys_tab_item = ten_second_wait.until(
+    access_keys_tab_item = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.LINK_TEXT, "Database Access Keys"),
         ),
