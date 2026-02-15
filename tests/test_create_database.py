@@ -3,31 +3,15 @@
 import datetime
 import os
 import uuid
-from collections.abc import Iterator
 
-import pytest
-from selenium import webdriver
-from selenium.webdriver.remote.webdriver import WebDriver
+import yaml
+from click.testing import CliRunner
 
-import vws_web_tools
+from vws_web_tools import vws_web_tools_group
 
 
-@pytest.fixture(name="chrome_driver")
-def fixture_chrome_driver() -> Iterator[WebDriver]:
-    """Yield a headless Chrome WebDriver, quitting on tear down."""
-    options: webdriver.ChromeOptions = webdriver.ChromeOptions()
-    options.add_argument(argument="--headless=new")
-    options.add_argument(argument="--no-sandbox")
-    options.add_argument(argument="--disable-dev-shm-usage")
-    driver = webdriver.Chrome(options=options)
-    yield driver
-    driver.quit()
-
-
-def test_create_databases(
-    chrome_driver: WebDriver,
-) -> None:
-    """Test creating licenses and databases."""
+def test_create_databases() -> None:
+    """Test creating licenses and databases via the CLI."""
     email_address = os.environ["VWS_EMAIL_ADDRESS"]
     password = os.environ["VWS_PASSWORD"]
     random_str = uuid.uuid4().hex[:5]
@@ -35,31 +19,82 @@ def test_create_databases(
     license_name = f"license-ci-{today_date}-{random_str}"
     database_name = f"database-ci-{today_date}-{random_str}"
 
-    vws_web_tools.log_in(
-        driver=chrome_driver,
-        email_address=email_address,
-        password=password,
-    )
+    runner = CliRunner()
 
-    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
-
-    vws_web_tools.create_license(
-        driver=chrome_driver,
-        license_name=license_name,
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "create-vws-license",
+            "--license-name",
+            license_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
     )
-    vws_web_tools.create_database(
-        driver=chrome_driver,
-        database_name=database_name,
-        license_name=license_name,
-    )
+    assert result.exit_code == 0
 
-    details = vws_web_tools.get_database_details(
-        driver=chrome_driver,
-        database_name=database_name,
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "create-vws-database",
+            "--license-name",
+            license_name,
+            "--database-name",
+            database_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
     )
+    assert result.exit_code == 0
 
-    assert details["database_name"]
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "show-database-details",
+            "--database-name",
+            database_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    details = yaml.safe_load(stream=result.output)
+    assert details["database_name"] == database_name
     assert details["server_access_key"]
     assert details["server_secret_key"]
     assert details["client_access_key"]
     assert details["client_secret_key"]
+
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "show-database-details",
+            "--database-name",
+            database_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+            "--env-var-format",
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    env_vars: dict[str, str] = dict(
+        line.split(sep="=", maxsplit=1)
+        for line in result.output.strip().split(sep="\n")
+    )
+    assert env_vars["VUFORIA_TARGET_MANAGER_DATABASE_NAME"] == database_name
+    assert env_vars["VUFORIA_SERVER_ACCESS_KEY"]
+    assert env_vars["VUFORIA_SERVER_SECRET_KEY"]
+    assert env_vars["VUFORIA_CLIENT_ACCESS_KEY"]
+    assert env_vars["VUFORIA_CLIENT_SECRET_KEY"]

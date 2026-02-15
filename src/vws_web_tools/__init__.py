@@ -17,6 +17,16 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 
 @beartype
+def _create_chrome_driver() -> WebDriver:
+    """Create a headless Chrome WebDriver."""
+    options = webdriver.ChromeOptions()
+    options.add_argument(argument="--headless=new")
+    options.add_argument(argument="--no-sandbox")
+    options.add_argument(argument="--disable-dev-shm-usage")
+    return webdriver.Chrome(options=options)
+
+
+@beartype
 class DatabaseDict(TypedDict):
     """A dictionary type which represents a database."""
 
@@ -300,13 +310,13 @@ def vws_web_tools_group() -> None:
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
-def create_vws_license(  # pragma: no cover
+def create_vws_license(
     license_name: str,
     email_address: str,
     password: str,
 ) -> None:
     """Create a license."""
-    driver = webdriver.Safari()
+    driver = _create_chrome_driver()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
     create_license(driver=driver, license_name=license_name)
@@ -319,14 +329,14 @@ def create_vws_license(  # pragma: no cover
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
-def create_vws_database(  # pragma: no cover
+def create_vws_database(
     database_name: str,
     license_name: str,
     email_address: str,
     password: str,
 ) -> None:
     """Create a database."""
-    driver = webdriver.Safari()
+    driver = _create_chrome_driver()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
     create_database(
@@ -343,7 +353,7 @@ def create_vws_database(  # pragma: no cover
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @click.option("--env-var-format", is_flag=True)
 @beartype
-def show_database_details(  # pragma: no cover
+def show_database_details(
     database_name: str,
     email_address: str,
     password: str,
@@ -351,7 +361,7 @@ def show_database_details(  # pragma: no cover
     env_var_format: bool,
 ) -> None:
     """Show the details of a database."""
-    driver = webdriver.Safari()
+    driver = _create_chrome_driver()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
     details = get_database_details(
