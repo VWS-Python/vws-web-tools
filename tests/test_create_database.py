@@ -12,7 +12,6 @@ import os
 import uuid
 from pathlib import Path
 
-import pytest
 from selenium import webdriver
 
 import vws_web_tools
@@ -20,18 +19,7 @@ import vws_web_tools
 _VWS_EMAIL_ADDRESS_VAR = "VWS_EMAIL_ADDRESS"
 _VWS_PASSWORD_VAR = "VWS_PASSWORD"  # noqa: S105
 
-_SKIP_REASON = (
-    f"Set {_VWS_EMAIL_ADDRESS_VAR} and "
-    f"{_VWS_PASSWORD_VAR} "
-    "environment variables to run this test."
-)
 
-
-@pytest.mark.skipif(
-    condition=_VWS_EMAIL_ADDRESS_VAR not in os.environ
-    or _VWS_PASSWORD_VAR not in os.environ,
-    reason=_SKIP_REASON,
-)
 def test_create_databases(
     tmp_path: Path,
 ) -> None:  # pragma: no cover

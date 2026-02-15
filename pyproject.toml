@@ -271,6 +271,9 @@ ini_options.log_cli = true
 
 [tool.coverage]
 run.branch = true
+run.omit = [
+    "tests/test_create_database.py",
+]
 report.exclude_also = [
     "if TYPE_CHECKING:",
 ]

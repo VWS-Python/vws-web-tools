@@ -35,7 +35,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run --extra=dev pytest -s -vvv --cov-fail-under 100 --cov=src/ --cov=tests .
+          uv run --extra=dev pytest -s -vvv --cov-fail-under 100 --cov=src/ --cov=tests --ignore=tests/test_create_database.py .
         env:
           UV_PYTHON: ${{ matrix.python-version }}
 
