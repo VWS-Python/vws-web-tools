@@ -68,6 +68,8 @@ def _dismiss_cookie_banner(
             ),
         )
         accept_button.click()
+        # Wait for the banner to animate away.
+        time.sleep(2)
     except WebDriverException:
         pass
 
@@ -220,17 +222,13 @@ def get_database_details(
         ),
     )
     search_input_element.send_keys(database_name)
-    # Wait for the search results to show the expected database.
-    ten_second_wait.until(
-        method=expected_conditions.text_to_be_present_in_element(
-            locator=(By.ID, "table_row_0_project_name"),
-            text_=database_name,
-        ),
-    )
+    # Wait for the search results to update.
+    time.sleep(2)
 
-    database_cell_element = driver.find_element(
-        by=By.ID,
-        value="table_row_0_project_name",
+    database_cell_element = ten_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "table_row_0_project_name"),
+        ),
     )
 
     database_cell_element.click()
