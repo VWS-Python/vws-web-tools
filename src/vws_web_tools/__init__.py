@@ -55,6 +55,19 @@ def log_in(
 
 
 @beartype
+def _dismiss_cookie_banner(
+    driver: WebDriver,
+) -> None:  # pragma: no cover
+    """Dismiss the OneTrust cookie consent banner if present."""
+    with contextlib.suppress(WebDriverException):
+        accept_button = driver.find_element(
+            by=By.ID,
+            value="onetrust-accept-btn-handler",
+        )
+        accept_button.click()
+
+
+@beartype
 def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
     """Wait for the user to be logged in.
 
@@ -66,6 +79,7 @@ def wait_for_logged_in(driver: WebDriver) -> None:  # pragma: no cover
             locator=(By.CLASS_NAME, "userNameInHeaderSpan"),
         ),
     )
+    _dismiss_cookie_banner(driver=driver)
 
 
 @beartype
