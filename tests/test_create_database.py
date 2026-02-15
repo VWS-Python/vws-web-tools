@@ -13,9 +13,6 @@ from selenium.webdriver.remote.webdriver import WebDriver
 
 import vws_web_tools
 
-_VWS_EMAIL_ADDRESS_VAR = "VWS_EMAIL_ADDRESS"
-_VWS_PASSWORD_VAR = "VWS_PASSWORD"  # noqa: S105
-
 
 @pytest.fixture
 def chrome_driver() -> Iterator[WebDriver]:
@@ -34,8 +31,8 @@ def test_create_databases(
     chrome_driver: WebDriver,
 ) -> None:
     """Test creating licenses and databases."""
-    email_address = os.environ[_VWS_EMAIL_ADDRESS_VAR]
-    password = os.environ[_VWS_PASSWORD_VAR]
+    email_address = os.environ["VWS_EMAIL_ADDRESS"]
+    password = os.environ["VWS_PASSWORD"]
     random_str = uuid.uuid4().hex[:5]
     today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
     output_file_path = tmp_path / f"databases_details_{random_str}.txt"
