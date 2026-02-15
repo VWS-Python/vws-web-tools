@@ -300,7 +300,7 @@ def vws_web_tools_group() -> None:
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
-def create_vws_license(
+def create_vws_license(  # pragma: no cover
     license_name: str,
     email_address: str,
     password: str,
@@ -319,7 +319,7 @@ def create_vws_license(
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
-def create_vws_database(
+def create_vws_database(  # pragma: no cover
     database_name: str,
     license_name: str,
     email_address: str,
@@ -343,7 +343,7 @@ def create_vws_database(
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @click.option("--env-var-format", is_flag=True)
 @beartype
-def show_database_details(
+def show_database_details(  # pragma: no cover
     database_name: str,
     email_address: str,
     password: str,
