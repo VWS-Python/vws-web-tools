@@ -4,9 +4,12 @@ import datetime
 import json
 import os
 import uuid
+from collections.abc import Iterator
 from pathlib import Path
 
+import pytest
 from selenium import webdriver
+from selenium.webdriver.remote.webdriver import WebDriver
 
 import vws_web_tools
 
@@ -14,8 +17,21 @@ _VWS_EMAIL_ADDRESS_VAR = "VWS_EMAIL_ADDRESS"
 _VWS_PASSWORD_VAR = "VWS_PASSWORD"  # noqa: S105
 
 
+@pytest.fixture
+def chrome_driver() -> Iterator[WebDriver]:  # pragma: no cover
+    """Yield a headless Chrome WebDriver, quitting on teardown."""
+    options: webdriver.ChromeOptions = webdriver.ChromeOptions()
+    options.add_argument("--headless=new")  # type: ignore[misc]
+    options.add_argument("--no-sandbox")  # type: ignore[misc]
+    options.add_argument("--disable-dev-shm-usage")  # type: ignore[misc]
+    driver = webdriver.Chrome(options=options)
+    yield driver
+    driver.quit()
+
+
 def test_create_databases(
     tmp_path: Path,
+    chrome_driver: WebDriver,
 ) -> None:  # pragma: no cover
     """Test creating licenses and databases."""
     email_address = os.environ[_VWS_EMAIL_ADDRESS_VAR]
@@ -26,32 +42,26 @@ def test_create_databases(
     license_name = f"license-ci-{today_date}-{random_str}"
     database_name = f"database-ci-{today_date}-{random_str}"
 
-    options: webdriver.ChromeOptions = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")  # type: ignore[misc]
-    options.add_argument("--no-sandbox")  # type: ignore[misc]
-    options.add_argument("--disable-dev-shm-usage")  # type: ignore[misc]
-    driver = webdriver.Chrome(options=options)
-
     vws_web_tools.log_in(
-        driver=driver,
+        driver=chrome_driver,
         email_address=email_address,
         password=password,
     )
 
-    vws_web_tools.wait_for_logged_in(driver=driver)
+    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
 
     vws_web_tools.create_license(
-        driver=driver,
+        driver=chrome_driver,
         license_name=license_name,
     )
     vws_web_tools.create_database(
-        driver=driver,
+        driver=chrome_driver,
         database_name=database_name,
         license_name=license_name,
     )
 
     details = vws_web_tools.get_database_details(
-        driver=driver,
+        driver=chrome_driver,
         database_name=database_name,
     )
 
@@ -64,5 +74,3 @@ def test_create_databases(
     with output_file_path.open(mode="a") as handler:
         handler.write(json.dumps(obj=details))
         handler.write("\n")
-
-    driver.close()
