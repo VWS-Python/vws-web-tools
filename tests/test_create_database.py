@@ -1,11 +1,9 @@
 """Tests which create real databases on Vuforia."""
 
 import datetime
-import json
 import os
 import uuid
 from collections.abc import Iterator
-from pathlib import Path
 
 import pytest
 from selenium import webdriver
@@ -27,7 +25,6 @@ def chrome_driver() -> Iterator[WebDriver]:
 
 
 def test_create_databases(
-    tmp_path: Path,
     chrome_driver: WebDriver,
 ) -> None:
     """Test creating licenses and databases."""
@@ -35,7 +32,6 @@ def test_create_databases(
     password = os.environ["VWS_PASSWORD"]
     random_str = uuid.uuid4().hex[:5]
     today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
-    output_file_path = tmp_path / f"databases_details_{random_str}.txt"
     license_name = f"license-ci-{today_date}-{random_str}"
     database_name = f"database-ci-{today_date}-{random_str}"
 
@@ -67,7 +63,3 @@ def test_create_databases(
     assert details["server_secret_key"]
     assert details["client_access_key"]
     assert details["client_secret_key"]
-
-    with output_file_path.open(mode="a") as handler:
-        handler.write(json.dumps(obj=details))
-        handler.write("\n")
