@@ -59,12 +59,7 @@ def log_in(
 def _dismiss_cookie_banner(
     driver: WebDriver,
 ) -> None:  # pragma: no cover
-    """Dismiss the OneTrust cookie consent banner if present.
-
-    Uses a MutationObserver to auto-remove the banner whenever
-    it appears in the DOM, handling the async loading of the
-    OneTrust SDK.
-    """
+    """Dismiss the OneTrust cookie consent banner if present."""
     driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
         """
         // Remove any existing banner immediately

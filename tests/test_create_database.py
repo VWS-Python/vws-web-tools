@@ -12,9 +12,9 @@ from selenium.webdriver.remote.webdriver import WebDriver
 import vws_web_tools
 
 
-@pytest.fixture
-def chrome_driver() -> Iterator[WebDriver]:
-    """Yield a headless Chrome WebDriver, quitting on teardown."""
+@pytest.fixture(name="chrome_driver")
+def fixture_chrome_driver() -> Iterator[WebDriver]:
+    """Yield a headless Chrome WebDriver, quitting on tear down."""
     options: webdriver.ChromeOptions = webdriver.ChromeOptions()
     options.add_argument("--headless=new")  # type: ignore[misc]
     options.add_argument("--no-sandbox")  # type: ignore[misc]
