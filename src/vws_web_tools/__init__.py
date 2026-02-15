@@ -60,12 +60,16 @@ def _dismiss_cookie_banner(
     driver: WebDriver,
 ) -> None:  # pragma: no cover
     """Dismiss the OneTrust cookie consent banner if present."""
-    with contextlib.suppress(WebDriverException):
-        accept_button = driver.find_element(
-            by=By.ID,
-            value="onetrust-accept-btn-handler",
+    try:
+        short_wait = WebDriverWait(driver=driver, timeout=5)
+        accept_button = short_wait.until(
+            method=expected_conditions.element_to_be_clickable(
+                mark=(By.ID, "onetrust-accept-btn-handler"),
+            ),
         )
         accept_button.click()
+    except WebDriverException:
+        pass
 
 
 @beartype
