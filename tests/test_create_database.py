@@ -18,7 +18,7 @@ _VWS_PASSWORD_VAR = "VWS_PASSWORD"  # noqa: S105
 
 
 @pytest.fixture
-def chrome_driver() -> Iterator[WebDriver]:  # pragma: no cover
+def chrome_driver() -> Iterator[WebDriver]:
     """Yield a headless Chrome WebDriver, quitting on teardown."""
     options: webdriver.ChromeOptions = webdriver.ChromeOptions()
     options.add_argument("--headless=new")  # type: ignore[misc]
@@ -32,7 +32,7 @@ def chrome_driver() -> Iterator[WebDriver]:  # pragma: no cover
 def test_create_databases(
     tmp_path: Path,
     chrome_driver: WebDriver,
-) -> None:  # pragma: no cover
+) -> None:
     """Test creating licenses and databases."""
     email_address = os.environ[_VWS_EMAIL_ADDRESS_VAR]
     password = os.environ[_VWS_PASSWORD_VAR]
