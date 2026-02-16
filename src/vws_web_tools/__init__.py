@@ -10,6 +10,7 @@ from selenium import webdriver
 from selenium.common.exceptions import (
     NoSuchElementException,
     StaleElementReferenceException,
+    TimeoutException,
     WebDriverException,
 )
 from selenium.webdriver.common.by import By
@@ -18,6 +19,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
+from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 
 @beartype
@@ -126,6 +128,23 @@ def wait_for_logged_in(driver: WebDriver) -> None:
         ),
     )
     _dismiss_cookie_banner(driver=driver)
+
+
+@retry(
+    retry=retry_if_exception_type(
+        exception_types=TimeoutException,
+    ),
+    stop=stop_after_attempt(max_attempt_number=3),
+)
+@beartype
+def _log_in_with_retry(
+    driver: WebDriver,
+    email_address: str,
+    password: str,
+) -> None:
+    """Log in to Vuforia, retrying on timeout."""
+    log_in(driver=driver, email_address=email_address, password=password)
+    wait_for_logged_in(driver=driver)
 
 
 @beartype
@@ -443,8 +462,11 @@ def create_vws_license(
     """Create a license."""
     driver = create_chrome_driver()
     try:
-        log_in(driver=driver, email_address=email_address, password=password)
-        wait_for_logged_in(driver=driver)
+        _log_in_with_retry(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
         create_license(driver=driver, license_name=license_name)
     finally:
         driver.quit()
@@ -465,8 +487,11 @@ def create_vws_database(
     """Create a database."""
     driver = create_chrome_driver()
     try:
-        log_in(driver=driver, email_address=email_address, password=password)
-        wait_for_logged_in(driver=driver)
+        _log_in_with_retry(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
         create_cloud_database(
             driver=driver,
             database_name=database_name,
@@ -492,8 +517,11 @@ def show_database_details(
     """Show the details of a database."""
     driver = create_chrome_driver()
     try:
-        log_in(driver=driver, email_address=email_address, password=password)
-        wait_for_logged_in(driver=driver)
+        _log_in_with_retry(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
         details = get_database_details(
             driver=driver,
             database_name=database_name,
