@@ -2,7 +2,7 @@
 
 import contextlib
 from pathlib import Path
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, cast
 
 import click
 import yaml
@@ -260,13 +260,16 @@ def create_database(
 
         if not vumark_selected:
             msg = "Could not find a VuMark database type option in the UI."
-            raise NoSuchElementException(msg)
+            raise NoSuchElementException(msg=msg)
     else:
         cloud_type_radio_element = driver.find_element(
             by=By.ID,
             value="cloud-radio-btn",
         )
         cloud_type_radio_element.click()
+        if license_name is None:
+            msg = "license_name is required for cloud databases."
+            raise ValueError(msg)
 
         thirty_second_wait.until(
             method=lambda d: any(
@@ -382,7 +385,9 @@ def upload_vumark_svg_template(
             locator=(By.CSS_SELECTOR, "input[type='file']"),
         ),
     )
-    svg_template_input.send_keys(str(svg_template_path.resolve(strict=True)))
+    svg_template_input.send_keys(
+        str(object=svg_template_path.resolve(strict=True)),
+    )
 
     target_name_input = one_minute_wait.until(
         method=expected_conditions.visibility_of_element_located(
@@ -569,9 +574,11 @@ def create_vws_database(
     password: str,
 ) -> None:
     """Create a database."""
-    if database_type.lower() == "cloud" and not license_name:
+    database_type_normalized = cast("DatabaseType", database_type.lower())
+
+    if database_type_normalized == "cloud" and not license_name:
         msg = "--license-name is required when --database-type is cloud."
-        raise click.UsageError(msg)
+        raise click.UsageError(message=msg)
 
     driver = create_chrome_driver()
     log_in(driver=driver, email_address=email_address, password=password)
@@ -580,7 +587,7 @@ def create_vws_database(
         driver=driver,
         database_name=database_name,
         license_name=license_name,
-        database_type=database_type.lower(),
+        database_type=database_type_normalized,
     )
     driver.quit()
 
