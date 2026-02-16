@@ -8,6 +8,8 @@ from click.testing import CliRunner
 import vws_web_tools
 from vws_web_tools import vws_web_tools_group
 
+USAGE_ERROR_EXIT_CODE = 2
+
 
 def test_create_vws_database_vumark_without_license_name(
     monkeypatch: pytest.MonkeyPatch,
@@ -124,3 +126,64 @@ def test_create_vws_database_cloud_calls_cloud_method(
         license_name="license-name",
     )
     create_vumark_database.assert_not_called()
+
+
+def test_create_vws_database_cloud_without_license_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cloud database creation without a license name fails with usage
+    error.
+    """
+    dummy_driver = Mock()
+    create_cloud_database = Mock()
+    create_vumark_database = Mock()
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="create_chrome_driver",
+        value=Mock(return_value=dummy_driver),
+    )
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="log_in",
+        value=Mock(),
+    )
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="wait_for_logged_in",
+        value=Mock(),
+    )
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="create_cloud_database",
+        value=create_cloud_database,
+    )
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="create_vumark_database",
+        value=create_vumark_database,
+    )
+
+    result = CliRunner().invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "create-vws-database",
+            "--database-name",
+            "cloud-db",
+            "--database-type",
+            "cloud",
+            "--email-address",
+            "user@example.com",
+            "--password",
+            "password",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == USAGE_ERROR_EXIT_CODE
+    assert (
+        "--license-name is required when --database-type is cloud."
+        in result.output
+    )
+    create_cloud_database.assert_not_called()
+    create_vumark_database.assert_not_called()
+    dummy_driver.quit.assert_called_once_with()
