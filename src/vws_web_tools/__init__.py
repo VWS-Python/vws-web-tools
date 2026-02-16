@@ -263,15 +263,15 @@ def create_database(
 
 
 @beartype
-def get_database_details(
+def navigate_to_database(
     driver: WebDriver,
     database_name: str,
-) -> DatabaseDict:
-    """Get details of a database."""
+) -> None:
+    """Navigate to a database's page in the target manager."""
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
-    thirty_second_wait = WebDriverWait(
+    long_wait = WebDriverWait(
         driver=driver,
         timeout=180,
         ignored_exceptions=(
@@ -282,12 +282,12 @@ def get_database_details(
 
     # The table search field needs ENTER to trigger filtering
     # in our Selenium runs.
-    thirty_second_wait.until(
+    long_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
         ),
     )
-    thirty_second_wait.until(
+    long_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
@@ -317,11 +317,28 @@ def get_database_details(
                 return True
         return False
 
-    thirty_second_wait.until(
+    long_wait.until(
         method=_click_database_row,
     )
 
-    access_keys_tab_item = thirty_second_wait.until(
+
+@beartype
+def get_database_details(
+    driver: WebDriver,
+    database_name: str,
+) -> DatabaseDict:
+    """Get details of a database."""
+    navigate_to_database(driver=driver, database_name=database_name)
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    access_keys_tab_item = long_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.LINK_TEXT, "Database Access Keys"),
         ),
@@ -331,7 +348,7 @@ def get_database_details(
 
     expected_key_boxes = 2
 
-    thirty_second_wait.until(
+    long_wait.until(
         method=lambda d: all(
             len(
                 boxes := d.find_element(
