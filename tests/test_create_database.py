@@ -13,6 +13,7 @@ from selenium.common.exceptions import (
     StaleElementReferenceException,
 )
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
@@ -107,37 +108,25 @@ def test_create_vumark_database_library(
             mark=(By.ID, "table_row_0_project_name"),
         ),
     )
-
-    def _database_exists_in_listing(
-        driver: WebDriver,
-    ) -> bool:
-        """Return True if the VuMark database appears in any listing
-        page.
-        """
-        rows = driver.find_elements(
-            by=By.XPATH,
-            value=(
-                "//span[starts-with(@id, 'table_row_')"
-                f" and contains(@id, '_project_name')"
-                f" and normalize-space(text())='{database_name}']"
-            ),
-        )
-        if rows:
-            return True
-        driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
-            """
-            const nextButton = document.querySelector(
-                "button.p-paginator-next:not(.p-disabled)"
-            );
-            const firstButton = document.querySelector(
-                "button.p-paginator-first:not(.p-disabled)"
-            );
-            (nextButton || firstButton)?.click();
-            """
-        )
-        return False
-
-    long_wait.until(method=_database_exists_in_listing)
+    search_input_element = chrome_driver.find_element(
+        by=By.ID,
+        value="table_search",
+    )
+    search_input_element.clear()
+    search_input_element.send_keys(database_name)
+    search_input_element.send_keys(Keys.ENTER)
+    long_wait.until(
+        method=lambda d: any(
+            row.text.strip() == database_name
+            for row in d.find_elements(
+                by=By.XPATH,
+                value=(
+                    "//span[starts-with(@id, 'table_row_')"
+                    " and contains(@id, '_project_name')]"
+                ),
+            )
+        ),
+    )
 
 
 def test_create_databases_cli() -> None:
