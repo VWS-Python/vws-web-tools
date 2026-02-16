@@ -8,7 +8,15 @@ from collections.abc import Iterator
 import pytest
 import yaml
 from click.testing import CliRunner
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    StaleElementReferenceException,
+)
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
 
 import vws_web_tools
 from vws_web_tools import vws_web_tools_group
@@ -61,6 +69,64 @@ def test_create_databases_library(
     assert details["server_secret_key"]
     assert details["client_access_key"]
     assert details["client_secret_key"]
+
+
+def test_create_vumark_database_library(
+    chrome_driver: WebDriver,
+) -> None:
+    """Test creating a VuMark database via the library."""
+    email_address = os.environ["VWS_EMAIL_ADDRESS"]
+    password = os.environ["VWS_PASSWORD"]
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    database_name = f"database-vumark-ci-{today_date}-{random_str}"
+
+    vws_web_tools.log_in(
+        driver=chrome_driver,
+        email_address=email_address,
+        password=password,
+    )
+    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
+
+    vws_web_tools.create_database(
+        driver=chrome_driver,
+        database_name=database_name,
+        license_name="",
+        database_type="vumark",
+    )
+
+    long_wait = WebDriverWait(
+        driver=chrome_driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+    long_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "table_row_0_project_name"),
+        ),
+    )
+    search_input_element = chrome_driver.find_element(
+        by=By.ID,
+        value="table_search",
+    )
+    search_input_element.clear()
+    search_input_element.send_keys(database_name)
+    search_input_element.send_keys(Keys.ENTER)
+    long_wait.until(
+        method=lambda d: any(
+            row.text.strip() == database_name
+            for row in d.find_elements(
+                by=By.XPATH,
+                value=(
+                    "//span[starts-with(@id, 'table_row_')"
+                    " and contains(@id, '_project_name')]"
+                ),
+            )
+        ),
+    )
 
 
 def test_create_databases_cli() -> None:
