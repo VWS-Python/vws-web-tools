@@ -169,7 +169,7 @@ def test_create_databases_cli(
     result = runner.invoke(
         cli=vws_web_tools_group,
         args=[
-            "create-vws-database",
+            "create-vws-cloud-database",
             "--license-name",
             license_name,
             "--database-name",

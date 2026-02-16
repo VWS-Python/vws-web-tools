@@ -6,7 +6,7 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  create-vws-database         Create a database.
+  create-vws-cloud-database   Create a cloud database.
   create-vws-license          Create a license.
   create-vws-vumark-database  Create a VuMark database.
   show-database-details       Show the details of a database.
