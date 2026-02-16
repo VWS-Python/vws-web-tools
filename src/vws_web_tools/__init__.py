@@ -463,6 +463,12 @@ def navigate_to_database(
     )
 
 
+@retry(
+    retry=retry_if_exception_type(
+        exception_types=TimeoutException,
+    ),
+    stop=stop_after_attempt(max_attempt_number=3),
+)
 @beartype
 def get_database_details(
     driver: WebDriver,
@@ -526,6 +532,12 @@ def get_database_details(
     }
 
 
+@retry(
+    retry=retry_if_exception_type(
+        exception_types=TimeoutException,
+    ),
+    stop=stop_after_attempt(max_attempt_number=3),
+)
 @beartype
 def get_vumark_database_details(
     driver: WebDriver,
