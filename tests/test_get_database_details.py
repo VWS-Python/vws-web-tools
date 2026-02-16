@@ -110,7 +110,7 @@ def test_get_database_details_refreshes_when_last_page_has_no_match(
     driver = _FakeDriver()
     unwrapped_get_database_details = cast(
         "Callable[..., object]",
-        inspect.unwrap(vws_web_tools.get_database_details),
+        inspect.unwrap(func=vws_web_tools.get_database_details),
     )
     with pytest.raises(expected_exception=TimeoutException):
         unwrapped_get_database_details(
