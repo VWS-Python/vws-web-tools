@@ -87,10 +87,14 @@ def test_create_vumark_database_library(
         database_name=database_name,
     )
 
-    vws_web_tools.navigate_to_database(
+    details = vws_web_tools.get_vumark_database_details(
         driver=chrome_driver,
         database_name=database_name,
     )
+
+    assert details["database_name"] == database_name
+    assert details["server_access_key"]
+    assert details["server_secret_key"]
 
 
 def test_create_databases_cli(
