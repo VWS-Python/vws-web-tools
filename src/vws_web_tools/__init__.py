@@ -1,6 +1,7 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
+from pathlib import Path
 from typing import TypedDict
 
 import click
@@ -329,6 +330,76 @@ def create_vumark_database(
     database_type_radio_element.click()
 
     _submit_add_database_dialog(driver=driver, wait=wait)
+
+
+@beartype
+def upload_vumark_template(
+    driver: WebDriver,
+    database_name: str,
+    svg_file_path: Path,
+    template_name: str,
+    width: float,
+) -> None:
+    """Upload a VuMark SVG template to a VuMark database."""
+    navigate_to_database(driver=driver, database_name=database_name)
+
+    thirty_second_wait = WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    add_target_button = thirty_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "add-dialog-btn"),
+        ),
+    )
+    add_target_button.click()
+
+    # Upload the SVG file via the file input element.
+    file_input = thirty_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.CSS_SELECTOR, "input[type='file']"),
+        ),
+    )
+    file_input.send_keys(f"{svg_file_path.resolve()}")
+
+    width_input = thirty_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.CSS_SELECTOR, "input[placeholder='Width']"),
+        ),
+    )
+    width_input.clear()
+    width_input.send_keys(f"{width}")
+
+    name_input = driver.find_element(
+        by=By.CSS_SELECTOR,
+        value="input[placeholder='Name']",
+    )
+    name_input.clear()
+    name_input.send_keys(template_name)
+
+    add_button = thirty_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "add"),
+        ),
+    )
+    add_button.click()
+
+    thirty_second_wait.until(
+        method=expected_conditions.staleness_of(element=add_button),
+    )
+
+    # Wait for the uploaded template to appear in the targets table.
+    thirty_second_wait.until(
+        method=expected_conditions.text_to_be_present_in_element(
+            locator=(By.ID, "table_row_0_target_name"),
+            text_=template_name,
+        ),
+    )
 
 
 @beartype
