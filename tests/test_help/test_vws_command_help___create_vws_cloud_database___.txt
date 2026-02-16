@@ -1,6 +1,6 @@
-Usage: vws-web create-vws-database [OPTIONS]
+Usage: vws-web create-vws-cloud-database [OPTIONS]
 
-  Create a database.
+  Create a cloud database.
 
 Options:
   --license-name TEXT   [required]
