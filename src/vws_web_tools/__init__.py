@@ -168,12 +168,15 @@ def create_license(
 
 
 @beartype
-def create_cloud_database(
+def _open_add_database_dialog(
     driver: WebDriver,
     database_name: str,
-    license_name: str,
-) -> None:
-    """Create a cloud database."""
+) -> WebDriverWait[WebDriver]:
+    """Navigate to databases page, open the add-database dialog, and enter
+    the name.
+
+    Returns a ``WebDriverWait`` for further use.
+    """
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
@@ -218,14 +221,44 @@ def create_cloud_database(
         value=database_name_id,
     )
     database_name_element.send_keys(database_name)
+    return thirty_second_wait
 
-    cloud_type_radio_element = driver.find_element(
+
+@beartype
+def _submit_add_database_dialog(
+    driver: WebDriver,
+    wait: WebDriverWait[WebDriver],
+) -> None:
+    """Click the generate button and wait for the dialog to close."""
+    generate_button = driver.find_element(
+        by=By.ID,
+        value="generate-btn",
+    )
+    generate_button.click()
+    wait.until(
+        method=expected_conditions.staleness_of(element=generate_button),
+    )
+
+
+@beartype
+def create_cloud_database(
+    driver: WebDriver,
+    database_name: str,
+    license_name: str,
+) -> None:
+    """Create a cloud database."""
+    wait = _open_add_database_dialog(
+        driver=driver,
+        database_name=database_name,
+    )
+
+    database_type_radio_element = driver.find_element(
         by=By.ID,
         value="cloud-radio-btn",
     )
-    cloud_type_radio_element.click()
+    database_type_radio_element.click()
 
-    thirty_second_wait.until(
+    wait.until(
         method=lambda d: any(
             opt.text == license_name
             for opt in Select(
@@ -245,14 +278,7 @@ def create_cloud_database(
         text=license_name,
     )
 
-    generate_button = driver.find_element(
-        by=By.ID,
-        value="generate-btn",
-    )
-    generate_button.click()
-    thirty_second_wait.until(
-        method=expected_conditions.staleness_of(element=generate_button),
-    )
+    _submit_add_database_dialog(driver=driver, wait=wait)
 
 
 @beartype
@@ -261,65 +287,18 @@ def create_vumark_database(
     database_name: str,
 ) -> None:
     """Create a VuMark database."""
-    target_manager_url = "https://developer.vuforia.com/develop/databases"
-    driver.get(url=target_manager_url)
-    _dismiss_cookie_banner(driver=driver)
-    thirty_second_wait = WebDriverWait(
+    wait = _open_add_database_dialog(
         driver=driver,
-        timeout=30,
-        ignored_exceptions=(
-            NoSuchElementException,
-            StaleElementReferenceException,
-        ),
+        database_name=database_name,
     )
 
-    add_database_button_id = "add-dialog-btn"
-    thirty_second_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, add_database_button_id),
-        ),
-    )
-
-    thirty_second_wait.until(
-        method=expected_conditions.element_to_be_clickable(
-            mark=(By.ID, add_database_button_id),
-        ),
-    )
-
-    add_database_button_element = driver.find_element(
-        by=By.ID,
-        value=add_database_button_id,
-    )
-    add_database_button_element.click()
-    with contextlib.suppress(WebDriverException):
-        add_database_button_element.click()
-    database_name_id = "database-name"
-    thirty_second_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, database_name_id),
-        ),
-    )
-
-    database_name_element = driver.find_element(
-        by=By.ID,
-        value=database_name_id,
-    )
-    database_name_element.send_keys(database_name)
-
-    vumark_type_radio_element = driver.find_element(
+    database_type_radio_element = driver.find_element(
         by=By.ID,
         value="vumark-radio-btn",
     )
-    vumark_type_radio_element.click()
+    database_type_radio_element.click()
 
-    generate_button = driver.find_element(
-        by=By.ID,
-        value="generate-btn",
-    )
-    generate_button.click()
-    thirty_second_wait.until(
-        method=expected_conditions.staleness_of(element=generate_button),
-    )
+    _submit_add_database_dialog(driver=driver, wait=wait)
 
 
 @beartype
