@@ -95,10 +95,23 @@ def wait_for_logged_in(driver: WebDriver) -> None:
 
     Without this, we sometimes get a redirect to a post-login page.
     """
-    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
-    thirty_second_wait.until(
-        method=expected_conditions.url_changes(
-            url="https://developer.vuforia.com/auth/login",
+    sixty_second_wait = WebDriverWait(
+        driver=driver,
+        timeout=60,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+    sixty_second_wait.until(
+        method=lambda d: (
+            "/auth/login" not in d.current_url
+            or bool(
+                d.find_elements(
+                    by=By.CSS_SELECTOR,
+                    value=".userNameInHeaderSpan",
+                ),
+            )
         ),
     )
     _dismiss_cookie_banner(driver=driver)
