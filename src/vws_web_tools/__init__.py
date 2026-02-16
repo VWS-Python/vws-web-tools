@@ -8,7 +8,10 @@ import click
 import yaml
 from beartype import beartype
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import (
+    StaleElementReferenceException,
+    WebDriverException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
@@ -277,7 +280,14 @@ def get_database_details(
         ).click()
         return False
 
-    database_cell_element = thirty_second_wait.until(
+    stale_tolerant_wait = WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=[
+            StaleElementReferenceException,
+        ],
+    )
+    database_cell_element = stale_tolerant_wait.until(
         method=_find_database_row,
     )
 
