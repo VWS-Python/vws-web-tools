@@ -13,6 +13,7 @@ from selenium.common.exceptions import (
     WebDriverException,
 )
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
@@ -230,22 +231,20 @@ def create_database(
     )
     database_name_element.send_keys(database_name)
 
-    if database_type == "vumark":
-        vumark_type_radio_element = driver.find_element(
-            by=By.ID,
-            value="vumark-radio-btn",
-        )
-        vumark_type_radio_element.click()
-    else:
-        cloud_type_radio_element = driver.find_element(
-            by=By.ID,
-            value="cloud-radio-btn",
-        )
-        cloud_type_radio_element.click()
+    database_type_radio_button_id = {
+        "cloud": "cloud-radio-btn",
+        "vumark": "vumark-radio-btn",
+    }[database_type]
+    database_type_radio_element = driver.find_element(
+        by=By.ID,
+        value=database_type_radio_button_id,
+    )
+    database_type_radio_element.click()
+
+    if database_type == "cloud":
         if license_name is None:
             msg = "license_name is required for cloud databases."
             raise ValueError(msg)
-
         thirty_second_wait.until(
             method=lambda d: any(
                 opt.text == license_name
@@ -294,47 +293,41 @@ def get_database_details(
         ),
     )
 
-    # We find the database by scanning table rows and paginating
-    # rather than using the table search input. The search input
-    # does not reliably trigger table filtering in headless Chrome
-    # (send_keys does not fire the expected change events).
+    # The table search field needs ENTER to trigger filtering
+    # in our Selenium runs.
+    thirty_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "table_search"),
+        ),
+    )
     thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
     )
+    search_input_element = driver.find_element(
+        by=By.ID,
+        value="table_search",
+    )
+    search_input_element.clear()
+    search_input_element.send_keys(database_name)
+    search_input_element.send_keys(Keys.ENTER)
 
     def _click_database_row(
         d: WebDriver,
     ) -> bool:
-        """Find the row matching database_name on the current page.
-
-        If not found, click the next-page button and return False to
-        retry. If there is no next page, reload the listing so that
-        newly created databases can appear.
-        """
+        """Find and click the row matching database_name."""
         rows = d.find_elements(
             by=By.XPATH,
             value=(
                 "//span[starts-with(@id, 'table_row_')"
-                f" and contains(@id, '_project_name')"
-                f" and normalize-space(text())='{database_name}']"
+                " and contains(@id, '_project_name')]"
             ),
         )
-        if rows:
-            rows[0].click()
-            return True
-        d.execute_script(  # pyright: ignore[reportUnknownMemberType]
-            """
-            const nextButton = document.querySelector(
-                "button.p-paginator-next:not(.p-disabled)"
-            );
-            const firstButton = document.querySelector(
-                "button.p-paginator-first:not(.p-disabled)"
-            );
-            (nextButton || firstButton)?.click();
-            """
-        )
+        for row in rows:
+            if row.text.strip() == database_name:
+                row.click()
+                return True
         return False
 
     thirty_second_wait.until(
@@ -406,10 +399,12 @@ def create_vws_license(
 ) -> None:
     """Create a license."""
     driver = create_chrome_driver()
-    log_in(driver=driver, email_address=email_address, password=password)
-    wait_for_logged_in(driver=driver)
-    create_license(driver=driver, license_name=license_name)
-    driver.quit()
+    try:
+        log_in(driver=driver, email_address=email_address, password=password)
+        wait_for_logged_in(driver=driver)
+        create_license(driver=driver, license_name=license_name)
+    finally:
+        driver.quit()
 
 
 @click.command()
@@ -439,15 +434,17 @@ def create_vws_database(
         raise click.UsageError(message=msg)
 
     driver = create_chrome_driver()
-    log_in(driver=driver, email_address=email_address, password=password)
-    wait_for_logged_in(driver=driver)
-    create_database(
-        driver=driver,
-        database_name=database_name,
-        license_name=license_name,
-        database_type=database_type_normalized,
-    )
-    driver.quit()
+    try:
+        log_in(driver=driver, email_address=email_address, password=password)
+        wait_for_logged_in(driver=driver)
+        create_database(
+            driver=driver,
+            database_name=database_name,
+            license_name=license_name,
+            database_type=database_type_normalized,
+        )
+    finally:
+        driver.quit()
 
 
 @click.command()
@@ -465,13 +462,15 @@ def show_database_details(
 ) -> None:
     """Show the details of a database."""
     driver = create_chrome_driver()
-    log_in(driver=driver, email_address=email_address, password=password)
-    wait_for_logged_in(driver=driver)
-    details = get_database_details(
-        driver=driver,
-        database_name=database_name,
-    )
-    driver.quit()
+    try:
+        log_in(driver=driver, email_address=email_address, password=password)
+        wait_for_logged_in(driver=driver)
+        details = get_database_details(
+            driver=driver,
+            database_name=database_name,
+        )
+    finally:
+        driver.quit()
     if env_var_format:
         env_var_format_details = {
             "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details["database_name"],
