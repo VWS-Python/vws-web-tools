@@ -143,6 +143,29 @@ def test_create_vumark_database_cli(
     assert details["server_access_key"]
     assert details["server_secret_key"]
 
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "show-vumark-database-details",
+            "--database-name",
+            database_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+            "--env-var-format",
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    env_vars: dict[str, str] = dict(
+        line.split(sep="=", maxsplit=1)
+        for line in result.output.strip().split(sep="\n")
+    )
+    assert env_vars["VUFORIA_TARGET_MANAGER_DATABASE_NAME"] == database_name
+    assert env_vars["VUFORIA_SERVER_ACCESS_KEY"]
+    assert env_vars["VUFORIA_SERVER_SECRET_KEY"]
+
 
 def test_create_databases_cli(
     vws_credentials: VWSCredentials,
