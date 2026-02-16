@@ -37,6 +37,7 @@ dependencies = [
     "click>=8.1.7",
     "pyyaml>=6.0.2",
     "selenium>=4.25.0",
+    "tenacity>=9.0.0",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.10.24",
