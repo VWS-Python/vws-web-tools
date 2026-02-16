@@ -47,6 +47,18 @@ class DatabaseDict(TypedDict):
 
 
 @beartype
+class VuMarkDatabaseDict(TypedDict):
+    """A dictionary type which represents a VuMark database.
+
+    VuMark databases only have server access keys.
+    """
+
+    database_name: str
+    server_access_key: str
+    server_secret_key: str
+
+
+@beartype
 def log_in(
     driver: WebDriver,
     email_address: str,
@@ -440,6 +452,62 @@ def get_database_details(
         "server_secret_key": server_secret_key,
         "client_access_key": client_access_key,
         "client_secret_key": client_secret_key,
+    }
+
+
+@beartype
+def get_vumark_database_details(
+    driver: WebDriver,
+    database_name: str,
+) -> VuMarkDatabaseDict:
+    """Get details of a VuMark database.
+
+    VuMark databases only have server access keys.
+    """
+    navigate_to_database(driver=driver, database_name=database_name)
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    access_keys_tab_item = long_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.LINK_TEXT, "Database Access Keys"),
+        ),
+    )
+
+    access_keys_tab_item.click()
+
+    expected_key_boxes = 2
+
+    long_wait.until(
+        method=lambda d: (
+            len(
+                boxes := d.find_element(
+                    by=By.ID,
+                    value="server-access-key",
+                ).find_elements(by=By.CLASS_NAME, value="grey-box"),
+            )
+            >= expected_key_boxes
+            and all(box.text.strip() for box in boxes[:expected_key_boxes])
+        ),
+    )
+
+    server_grey_boxes = driver.find_element(
+        by=By.ID,
+        value="server-access-key",
+    ).find_elements(by=By.CLASS_NAME, value="grey-box")
+    server_access_key = server_grey_boxes[0].text.strip()
+    server_secret_key = server_grey_boxes[1].text.strip()
+
+    return {
+        "database_name": database_name,
+        "server_access_key": server_access_key,
+        "server_secret_key": server_secret_key,
     }
 
 
