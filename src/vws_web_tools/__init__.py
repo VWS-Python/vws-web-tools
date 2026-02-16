@@ -18,8 +18,6 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 
-_DATABASE_APPEARANCE_TIMEOUT_SECONDS = 180
-
 
 @beartype
 def create_chrome_driver() -> WebDriver:
