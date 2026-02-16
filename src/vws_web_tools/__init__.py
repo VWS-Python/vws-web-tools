@@ -245,15 +245,8 @@ def get_database_details(
         ),
     )
     search_input_element.send_keys(database_name)
-    thirty_second_wait.until(
-        method=lambda d: (
-            database_name
-            in d.find_element(
-                by=By.ID,
-                value="table_row_0_project_name",
-            ).text
-        ),
-    )
+    # Wait for the search results to update.
+    time.sleep(2)
 
     database_cell_element = thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
@@ -271,8 +264,22 @@ def get_database_details(
 
     access_keys_tab_item.click()
 
-    # Without this we sometimes get empty strings for the keys.
-    time.sleep(1)
+    def _access_keys_loaded(d: WebDriver) -> bool:
+        """Check that all access key grey-box values are populated."""
+        expected_grey_box_count = 2
+        for div_id in ("client-access-key", "server-access-key"):
+            key_div = d.find_element(by=By.ID, value=div_id)
+            grey_boxes = key_div.find_elements(
+                by=By.CLASS_NAME,
+                value="grey-box",
+            )
+            if len(grey_boxes) < expected_grey_box_count:
+                return False
+            if not all(box.text.strip() for box in grey_boxes):
+                return False
+        return True
+
+    thirty_second_wait.until(method=_access_keys_loaded)
 
     client_key_div = driver.find_element(
         by=By.ID,
