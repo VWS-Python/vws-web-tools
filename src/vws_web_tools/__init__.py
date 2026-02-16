@@ -206,7 +206,11 @@ def create_database(
     )
     cloud_type_radio_element.click()
 
-    thirty_second_wait.until(
+    WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=[StaleElementReferenceException],
+    ).until(
         method=lambda d: any(
             opt.text == license_name
             for opt in Select(
