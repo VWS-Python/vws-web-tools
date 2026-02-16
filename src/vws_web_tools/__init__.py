@@ -456,13 +456,13 @@ def create_vws_license(
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
-def create_vws_database(
+def create_vws_cloud_database(
     database_name: str,
     license_name: str,
     email_address: str,
     password: str,
 ) -> None:
-    """Create a database."""
+    """Create a cloud database."""
     driver = create_chrome_driver()
     try:
         log_in(driver=driver, email_address=email_address, password=password)
@@ -515,6 +515,6 @@ def show_database_details(
         click.echo(message=yaml.dump(data=details), nl=False)
 
 
-vws_web_tools_group.add_command(cmd=create_vws_database)
+vws_web_tools_group.add_command(cmd=create_vws_cloud_database)
 vws_web_tools_group.add_command(cmd=create_vws_license)
 vws_web_tools_group.add_command(cmd=show_database_details)
