@@ -1,7 +1,6 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
-import time
 from typing import Literal, TypedDict
 
 import click
@@ -214,9 +213,9 @@ def create_database(
         value="generate-btn",
     )
     generate_button.click()
-    # Without this we might close the driver before the database
-    # is created.
-    time.sleep(5)
+    thirty_second_wait.until(
+        method=expected_conditions.staleness_of(element=generate_button),
+    )
 
 
 @beartype
@@ -246,7 +245,8 @@ def get_database_details(
         """Find the row matching database_name on the current page.
 
         If not found, click the next-page button and return False to
-        retry.
+        retry. If there is no next page, reload the listing so that
+        newly created databases can appear.
         """
         rows = d.find_elements(
             by=By.XPATH,
@@ -258,10 +258,17 @@ def get_database_details(
         for row in rows:
             if row.text == database_name:
                 return row
-        d.find_element(
+        if not rows:  # pragma: no cover
+            return False
+        next_buttons = d.find_elements(
             by=By.CSS_SELECTOR,
             value="button.p-paginator-next:not(.p-disabled)",
-        ).click()
+        )
+        if next_buttons:
+            next_buttons[0].click()
+        else:  # pragma: no cover
+            d.get(url=target_manager_url)
+            _dismiss_cookie_banner(driver=d)
         return False
 
     database_cell_element = thirty_second_wait.until(
