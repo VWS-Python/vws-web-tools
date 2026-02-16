@@ -179,13 +179,6 @@ def create_database(
     database_type: DatabaseType = "cloud",
 ) -> None:
     """Create a database."""
-    if database_type == "cloud" and not license_name:
-        msg = "license_name is required for cloud databases."
-        raise ValueError(msg)
-    if database_type not in {"cloud", "vumark"}:
-        msg = "database_type must be one of {'cloud', 'vumark'}."
-        raise ValueError(msg)
-
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
@@ -408,7 +401,7 @@ def create_vws_license(
 
 
 @click.command()
-@click.option("--license-name")
+@click.option("--license-name", help="Required when --database-type is cloud.")
 @click.option("--database-name", required=True)
 @click.option(
     "--database-type",
