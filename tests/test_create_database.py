@@ -7,15 +7,7 @@ from collections.abc import Iterator
 import pytest
 import yaml
 from click.testing import CliRunner
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    StaleElementReferenceException,
-)
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.wait import WebDriverWait
 
 import vws_web_tools
 from tests.credentials import VWSCredentials
@@ -95,37 +87,9 @@ def test_create_vumark_database_library(
         database_name=database_name,
     )
 
-    long_wait = WebDriverWait(
+    vws_web_tools.navigate_to_database(
         driver=chrome_driver,
-        timeout=180,
-        ignored_exceptions=(
-            NoSuchElementException,
-            StaleElementReferenceException,
-        ),
-    )
-    long_wait.until(
-        method=expected_conditions.element_to_be_clickable(
-            mark=(By.ID, "table_row_0_project_name"),
-        ),
-    )
-    search_input_element = chrome_driver.find_element(
-        by=By.ID,
-        value="table_search",
-    )
-    search_input_element.clear()
-    search_input_element.send_keys(database_name)
-    search_input_element.send_keys(Keys.ENTER)
-    long_wait.until(
-        method=lambda d: any(
-            row.text.strip() == database_name
-            for row in d.find_elements(
-                by=By.XPATH,
-                value=(
-                    "//span[starts-with(@id, 'table_row_')"
-                    " and contains(@id, '_project_name')]"
-                ),
-            )
-        ),
+        database_name=database_name,
     )
 
 
