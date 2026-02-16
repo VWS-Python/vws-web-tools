@@ -1,7 +1,7 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 import click
 import yaml
@@ -171,6 +171,8 @@ def create_database(
     driver: WebDriver,
     database_name: str,
     license_name: str,
+    *,
+    database_type: Literal["cloud", "vumark"] = "cloud",
 ) -> None:
     """Create a database."""
     target_manager_url = "https://developer.vuforia.com/develop/databases"
@@ -218,31 +220,36 @@ def create_database(
     )
     database_name_element.send_keys(database_name)
 
-    cloud_type_radio_element = driver.find_element(
+    database_type_radio_button_id = {
+        "cloud": "cloud-radio-btn",
+        "vumark": "vumark-radio-btn",
+    }[database_type]
+    database_type_radio_element = driver.find_element(
         by=By.ID,
-        value="cloud-radio-btn",
+        value=database_type_radio_button_id,
     )
-    cloud_type_radio_element.click()
+    database_type_radio_element.click()
 
-    thirty_second_wait.until(
-        method=lambda d: any(
-            opt.text == license_name
-            for opt in Select(
-                webelement=d.find_element(
-                    by=By.ID,
-                    value="cloud-license-dropdown",
-                ),
-            ).options
-        ),
-    )
-    Select(
-        webelement=driver.find_element(
-            by=By.ID,
-            value="cloud-license-dropdown",
-        ),
-    ).select_by_visible_text(
-        text=license_name,
-    )
+    if database_type == "cloud":
+        thirty_second_wait.until(
+            method=lambda d: any(
+                opt.text == license_name
+                for opt in Select(
+                    webelement=d.find_element(
+                        by=By.ID,
+                        value="cloud-license-dropdown",
+                    ),
+                ).options
+            ),
+        )
+        Select(
+            webelement=driver.find_element(
+                by=By.ID,
+                value="cloud-license-dropdown",
+            ),
+        ).select_by_visible_text(
+            text=license_name,
+        )
 
     generate_button = driver.find_element(
         by=By.ID,
