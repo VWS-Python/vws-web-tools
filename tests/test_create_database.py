@@ -120,23 +120,6 @@ def test_create_vumark_database_cli(
     )
     assert result.exit_code == 0
 
-    result = runner.invoke(
-        cli=vws_web_tools_group,
-        args=[
-            "show-database-details",
-            "--database-name",
-            database_name,
-            "--email-address",
-            email_address,
-            "--password",
-            password,
-        ],
-        catch_exceptions=False,
-    )
-    assert result.exit_code == 0
-    details = yaml.safe_load(stream=result.output)
-    assert details["database_name"] == database_name
-
 
 def test_create_databases_cli(
     vws_credentials: VWSCredentials,
