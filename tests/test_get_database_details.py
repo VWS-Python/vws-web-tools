@@ -1,6 +1,8 @@
 """Unit tests for ``get_database_details``."""
 
+import inspect
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
@@ -106,8 +108,12 @@ def test_get_database_details_refreshes_when_last_page_has_no_match(
     )
 
     driver = _FakeDriver()
+    unwrapped_get_database_details = cast(
+        "Callable[..., object]",
+        inspect.unwrap(vws_web_tools.get_database_details),
+    )
     with pytest.raises(expected_exception=TimeoutException):
-        vws_web_tools.get_database_details.__wrapped__(  # type: ignore[attr-defined]
+        unwrapped_get_database_details(
             driver=driver,
             database_name="database-does-not-exist",
         )
