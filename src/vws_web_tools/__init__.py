@@ -142,7 +142,9 @@ def create_license(
         ),
     )
     confirm_button.click()
-    time.sleep(5)
+    thirty_second_wait.until(
+        method=expected_conditions.url_changes(url=new_license_url),
+    )
 
 
 @beartype
@@ -196,16 +198,23 @@ def create_database(
     )
     cloud_type_radio_element.click()
 
-    license_dropdown_element = Select(
+    thirty_second_wait.until(
+        method=lambda d: any(
+            opt.text == license_name
+            for opt in Select(
+                webelement=d.find_element(
+                    by=By.ID,
+                    value="cloud-license-dropdown",
+                ),
+            ).options
+        ),
+    )
+    Select(
         webelement=driver.find_element(
             by=By.ID,
             value="cloud-license-dropdown",
         ),
-    )
-
-    # Sleeping 1 second here did not work, so we sleep 5 seconds.
-    time.sleep(5)
-    license_dropdown_element.select_by_visible_text(
+    ).select_by_visible_text(
         text=license_name,
     )
 
@@ -265,28 +274,33 @@ def get_database_details(
 
     access_keys_tab_item.click()
 
-    # Without this we sometimes get empty strings for the keys.
-    time.sleep(1)
+    expected_key_boxes = 2
 
-    client_key_div = driver.find_element(
+    thirty_second_wait.until(
+        method=lambda d: all(
+            len(
+                boxes := d.find_element(
+                    by=By.ID,
+                    value=key_id,
+                ).find_elements(by=By.CLASS_NAME, value="grey-box"),
+            )
+            >= expected_key_boxes
+            and all(box.text.strip() for box in boxes[:expected_key_boxes])
+            for key_id in ("client-access-key", "server-access-key")
+        ),
+    )
+
+    client_grey_boxes = driver.find_element(
         by=By.ID,
         value="client-access-key",
-    )
-    client_grey_boxes = client_key_div.find_elements(
-        by=By.CLASS_NAME,
-        value="grey-box",
-    )
+    ).find_elements(by=By.CLASS_NAME, value="grey-box")
     client_access_key = client_grey_boxes[0].text.strip()
     client_secret_key = client_grey_boxes[1].text.strip()
 
-    server_key_div = driver.find_element(
+    server_grey_boxes = driver.find_element(
         by=By.ID,
         value="server-access-key",
-    )
-    server_grey_boxes = server_key_div.find_elements(
-        by=By.CLASS_NAME,
-        value="grey-box",
-    )
+    ).find_elements(by=By.CLASS_NAME, value="grey-box")
     server_access_key = server_grey_boxes[0].text.strip()
     server_secret_key = server_grey_boxes[1].text.strip()
 
