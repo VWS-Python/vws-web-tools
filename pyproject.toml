@@ -286,6 +286,10 @@ plugins = [
 ]
 
 [tool.pyrefly]
+search_path = [
+    ".",
+    "src",
+]
 errors.non-exhaustive-match = "error"
 
 [tool.pyright]
