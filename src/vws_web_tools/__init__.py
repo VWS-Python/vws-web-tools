@@ -1,7 +1,7 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
-from typing import Literal, TypedDict, cast
+from typing import TypedDict
 
 import click
 import yaml
@@ -42,9 +42,6 @@ class DatabaseDict(TypedDict):
     server_secret_key: str
     client_access_key: str
     client_secret_key: str
-
-
-DatabaseType = Literal["cloud", "vumark"]
 
 
 @beartype
@@ -171,14 +168,12 @@ def create_license(
 
 
 @beartype
-def create_database(
+def create_cloud_database(
     driver: WebDriver,
     database_name: str,
-    license_name: str | None = None,
-    *,
-    database_type: DatabaseType = "cloud",
+    license_name: str,
 ) -> None:
-    """Create a database."""
+    """Create a cloud database."""
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
@@ -224,39 +219,98 @@ def create_database(
     )
     database_name_element.send_keys(database_name)
 
-    database_type_radio_button_id = {
-        "cloud": "cloud-radio-btn",
-        "vumark": "vumark-radio-btn",
-    }[database_type]
-    database_type_radio_element = driver.find_element(
+    cloud_type_radio_element = driver.find_element(
         by=By.ID,
-        value=database_type_radio_button_id,
+        value="cloud-radio-btn",
     )
-    database_type_radio_element.click()
+    cloud_type_radio_element.click()
 
-    if database_type == "cloud":
-        if license_name is None:
-            msg = "license_name is required for cloud databases."
-            raise ValueError(msg)
-        thirty_second_wait.until(
-            method=lambda d: any(
-                opt.text == license_name
-                for opt in Select(
-                    webelement=d.find_element(
-                        by=By.ID,
-                        value="cloud-license-dropdown",
-                    ),
-                ).options
-            ),
-        )
-        Select(
-            webelement=driver.find_element(
-                by=By.ID,
-                value="cloud-license-dropdown",
-            ),
-        ).select_by_visible_text(
-            text=license_name,
-        )
+    thirty_second_wait.until(
+        method=lambda d: any(
+            opt.text == license_name
+            for opt in Select(
+                webelement=d.find_element(
+                    by=By.ID,
+                    value="cloud-license-dropdown",
+                ),
+            ).options
+        ),
+    )
+    Select(
+        webelement=driver.find_element(
+            by=By.ID,
+            value="cloud-license-dropdown",
+        ),
+    ).select_by_visible_text(
+        text=license_name,
+    )
+
+    generate_button = driver.find_element(
+        by=By.ID,
+        value="generate-btn",
+    )
+    generate_button.click()
+    thirty_second_wait.until(
+        method=expected_conditions.staleness_of(element=generate_button),
+    )
+
+
+@beartype
+def create_vumark_database(
+    driver: WebDriver,
+    database_name: str,
+) -> None:
+    """Create a VuMark database."""
+    target_manager_url = "https://developer.vuforia.com/develop/databases"
+    driver.get(url=target_manager_url)
+    _dismiss_cookie_banner(driver=driver)
+    thirty_second_wait = WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    add_database_button_id = "add-dialog-btn"
+    thirty_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, add_database_button_id),
+        ),
+    )
+
+    thirty_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, add_database_button_id),
+        ),
+    )
+
+    add_database_button_element = driver.find_element(
+        by=By.ID,
+        value=add_database_button_id,
+    )
+    add_database_button_element.click()
+    with contextlib.suppress(WebDriverException):
+        add_database_button_element.click()
+    database_name_id = "database-name"
+    thirty_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, database_name_id),
+        ),
+    )
+
+    database_name_element = driver.find_element(
+        by=By.ID,
+        value=database_name_id,
+    )
+    database_name_element.send_keys(database_name)
+
+    vumark_type_radio_element = driver.find_element(
+        by=By.ID,
+        value="vumark-radio-btn",
+    )
+    vumark_type_radio_element.click()
 
     generate_button = driver.find_element(
         by=By.ID,
@@ -420,22 +474,28 @@ def create_vws_database(
     password: str,
 ) -> None:
     """Create a database."""
-    database_type_normalized = cast("DatabaseType", database_type.lower())
-
-    if database_type_normalized == "cloud" and not license_name:
-        msg = "--license-name is required when --database-type is cloud."
-        raise click.UsageError(message=msg)
+    database_type_normalized = database_type.lower()
 
     driver = create_chrome_driver()
     try:
         log_in(driver=driver, email_address=email_address, password=password)
         wait_for_logged_in(driver=driver)
-        create_database(
-            driver=driver,
-            database_name=database_name,
-            license_name=license_name,
-            database_type=database_type_normalized,
-        )
+        if database_type_normalized == "cloud":
+            if license_name is None:
+                msg = (
+                    "--license-name is required when --database-type is cloud."
+                )
+                raise click.UsageError(message=msg)
+            create_cloud_database(
+                driver=driver,
+                database_name=database_name,
+                license_name=license_name,
+            )
+        else:
+            create_vumark_database(
+                driver=driver,
+                database_name=database_name,
+            )
     finally:
         driver.quit()
 
