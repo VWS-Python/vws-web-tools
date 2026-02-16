@@ -54,7 +54,7 @@ def test_create_databases_library(
         driver=chrome_driver,
         license_name=license_name,
     )
-    vws_web_tools.create_database(
+    vws_web_tools.create_cloud_database(
         driver=chrome_driver,
         database_name=database_name,
         license_name=license_name,
@@ -90,11 +90,9 @@ def test_create_vumark_database_library(
     )
     vws_web_tools.wait_for_logged_in(driver=chrome_driver)
 
-    vws_web_tools.create_database(
+    vws_web_tools.create_vumark_database(
         driver=chrome_driver,
         database_name=database_name,
-        license_name="",
-        database_type="vumark",
     )
 
     long_wait = WebDriverWait(
