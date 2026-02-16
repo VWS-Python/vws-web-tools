@@ -9,6 +9,7 @@ import yaml
 from beartype import beartype
 from selenium import webdriver
 from selenium.common.exceptions import (
+    NoSuchElementException,
     StaleElementReferenceException,
     WebDriverException,
 )
@@ -262,7 +263,8 @@ def get_database_details(
         """Find the row matching database_name on the current page.
 
         If not found, click the next-page button and return False to
-        retry.
+        retry.  When no next page exists, reload the databases page to
+        refresh data and reset pagination back to page 1.
         """
         rows = d.find_elements(
             by=By.XPATH,
@@ -274,10 +276,16 @@ def get_database_details(
         for row in rows:
             if row.text == database_name:
                 return row
-        d.find_element(
-            by=By.CSS_SELECTOR,
-            value="button.p-paginator-next:not(.p-disabled)",
-        ).click()
+        try:
+            d.find_element(
+                by=By.CSS_SELECTOR,
+                value="button.p-paginator-next:not(.p-disabled)",
+            ).click()
+        except NoSuchElementException:
+            # Reached the last page without finding the database.
+            # Reload to refresh the table and reset to page 1.
+            d.get(url=target_manager_url)
+            _dismiss_cookie_banner(driver=d)
         return False
 
     stale_tolerant_wait = WebDriverWait(
