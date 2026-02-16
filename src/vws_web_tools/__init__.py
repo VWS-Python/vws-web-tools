@@ -140,7 +140,22 @@ def create_license(
     driver.get(url=new_license_url)
     _dismiss_cookie_banner(driver=driver)
 
-    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
+    # If navigating to the license page caused a redirect to login
+    # (e.g. session not yet propagated), wait for the auto-login
+    # redirect to complete, then re-navigate.
+    if "/auth/login" in driver.current_url:
+        wait_for_logged_in(driver=driver)
+        driver.get(url=new_license_url)
+        _dismiss_cookie_banner(driver=driver)
+
+    thirty_second_wait = WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
 
     license_name_input_element = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
@@ -180,6 +195,12 @@ def _open_add_database_dialog(
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
+
+    if "/auth/login" in driver.current_url:
+        wait_for_logged_in(driver=driver)
+        driver.get(url=target_manager_url)
+        _dismiss_cookie_banner(driver=driver)
+
     thirty_second_wait = WebDriverWait(
         driver=driver,
         timeout=30,
@@ -310,6 +331,12 @@ def navigate_to_database(
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
+
+    if "/auth/login" in driver.current_url:
+        wait_for_logged_in(driver=driver)
+        driver.get(url=target_manager_url)
+        _dismiss_cookie_banner(driver=driver)
+
     long_wait = WebDriverWait(
         driver=driver,
         timeout=180,
