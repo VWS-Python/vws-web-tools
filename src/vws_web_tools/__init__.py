@@ -119,7 +119,7 @@ def wait_for_logged_in(driver: WebDriver) -> None:
     sixty_second_wait.until(
         method=lambda d: (
             "/auth/login" not in d.current_url
-            or bool(
+            and bool(
                 d.find_elements(
                     by=By.CSS_SELECTOR,
                     value=".userNameInHeaderSpan",
