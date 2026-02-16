@@ -240,7 +240,7 @@ def get_database_details(
     _dismiss_cookie_banner(driver=driver)
     thirty_second_wait = WebDriverWait(
         driver=driver,
-        timeout=90,
+        timeout=180,
         ignored_exceptions=(
             NoSuchElementException,
             StaleElementReferenceException,
