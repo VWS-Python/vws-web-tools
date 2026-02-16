@@ -1,3 +1,4 @@
+SVG
 beartype
 changelog
 cli

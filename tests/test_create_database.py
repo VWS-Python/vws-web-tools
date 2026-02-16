@@ -93,6 +93,45 @@ def test_create_vumark_database_library(
     )
 
 
+def test_upload_vumark_template(
+    chrome_driver: WebDriver,
+    vws_credentials: VWSCredentials,
+    request: pytest.FixtureRequest,
+) -> None:
+    """Test uploading a VuMark SVG template via the library."""
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    database_name = f"database-vumark-ci-{today_date}-{random_str}"
+
+    vws_web_tools.log_in(
+        driver=chrome_driver,
+        email_address=email_address,
+        password=password,
+    )
+    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
+
+    vws_web_tools.create_vumark_database(
+        driver=chrome_driver,
+        database_name=database_name,
+    )
+
+    test_file_path = request.path
+    assert test_file_path is not None
+    svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
+    template_name = f"template-{random_str}"
+    vws_web_tools.upload_vumark_template(
+        driver=chrome_driver,
+        database_name=database_name,
+        svg_file_path=svg_path,
+        template_name=template_name,
+        width=1.0,
+    )
+
+    assert template_name in chrome_driver.page_source
+
+
 def test_create_databases_cli(
     vws_credentials: VWSCredentials,
 ) -> None:
