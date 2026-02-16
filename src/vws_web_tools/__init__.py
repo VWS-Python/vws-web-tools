@@ -188,16 +188,23 @@ def create_database(
     )
     cloud_type_radio_element.click()
 
-    license_dropdown_element = Select(
+    thirty_second_wait.until(
+        method=lambda d: any(
+            opt.text == license_name
+            for opt in Select(
+                webelement=d.find_element(
+                    by=By.ID,
+                    value="cloud-license-dropdown",
+                ),
+            ).options
+        ),
+    )
+    Select(
         webelement=driver.find_element(
             by=By.ID,
             value="cloud-license-dropdown",
         ),
-    )
-
-    # Sleeping 1 second here did not work, so we sleep 5 seconds.
-    time.sleep(5)
-    license_dropdown_element.select_by_visible_text(
+    ).select_by_visible_text(
         text=license_name,
     )
 
@@ -238,12 +245,8 @@ def get_database_details(
         ),
     )
     search_input_element.send_keys(database_name)
-    thirty_second_wait.until(
-        method=expected_conditions.text_to_be_present_in_element(
-            locator=(By.ID, "table_row_0_project_name"),
-            text_=database_name,
-        ),
-    )
+    # Wait for the search results to update.
+    time.sleep(2)
 
     database_cell_element = thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
