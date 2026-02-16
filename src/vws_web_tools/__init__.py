@@ -573,6 +573,32 @@ def create_vws_cloud_database(
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
+@beartype
+def create_vws_vumark_database(
+    database_name: str,
+    email_address: str,
+    password: str,
+) -> None:
+    """Create a VuMark database."""
+    driver = create_chrome_driver()
+    try:
+        _log_in_with_retry(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        create_vumark_database(
+            driver=driver,
+            database_name=database_name,
+        )
+    finally:
+        driver.quit()
+
+
+@click.command()
+@click.option("--database-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
 @click.option("--env-var-format", is_flag=True)
 @beartype
 def show_database_details(
@@ -611,6 +637,48 @@ def show_database_details(
         click.echo(message=yaml.dump(data=details), nl=False)
 
 
+@click.command()
+@click.option("--database-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
+@click.option("--env-var-format", is_flag=True)
+@beartype
+def show_vumark_database_details(
+    database_name: str,
+    email_address: str,
+    password: str,
+    *,
+    env_var_format: bool,
+) -> None:
+    """Show the details of a VuMark database."""
+    driver = create_chrome_driver()
+    try:
+        _log_in_with_retry(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        details = get_vumark_database_details(
+            driver=driver,
+            database_name=database_name,
+        )
+    finally:
+        driver.quit()
+    if env_var_format:
+        env_var_format_details = {
+            "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details["database_name"],
+            "VUFORIA_SERVER_ACCESS_KEY": details["server_access_key"],
+            "VUFORIA_SERVER_SECRET_KEY": details["server_secret_key"],
+        }
+
+        for key, value in env_var_format_details.items():
+            click.echo(message=f"{key}={value}")
+    else:
+        click.echo(message=yaml.dump(data=details), nl=False)
+
+
 vws_web_tools_group.add_command(cmd=create_vws_cloud_database)
 vws_web_tools_group.add_command(cmd=create_vws_license)
+vws_web_tools_group.add_command(cmd=create_vws_vumark_database)
 vws_web_tools_group.add_command(cmd=show_database_details)
+vws_web_tools_group.add_command(cmd=show_vumark_database_details)

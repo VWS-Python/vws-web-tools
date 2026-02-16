@@ -1,0 +1,10 @@
+Usage: vws-web show-vumark-database-details [OPTIONS]
+
+  Show the details of a VuMark database.
+
+Options:
+  --database-name TEXT  [required]
+  --email-address TEXT  [required]
+  --password TEXT       [required]
+  --env-var-format
+  --help                Show this message and exit.

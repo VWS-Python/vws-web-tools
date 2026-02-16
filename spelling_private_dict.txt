@@ -7,4 +7,5 @@ pragma
 pyright
 reportUnknownMemberType
 vuforia
+vumark
 vws
