@@ -230,6 +230,10 @@ def get_database_details(
     _dismiss_cookie_banner(driver=driver)
     thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
 
+    # We find the database by scanning table rows and paginating
+    # rather than using the table's search input. The search input
+    # does not reliably trigger Angular's table filtering in headless
+    # Chrome (send_keys does not fire the expected change events).
     thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
