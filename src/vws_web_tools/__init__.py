@@ -384,10 +384,12 @@ def create_vws_license(
 ) -> None:
     """Create a license."""
     driver = create_chrome_driver()
-    log_in(driver=driver, email_address=email_address, password=password)
-    wait_for_logged_in(driver=driver)
-    create_license(driver=driver, license_name=license_name)
-    driver.quit()
+    try:
+        log_in(driver=driver, email_address=email_address, password=password)
+        wait_for_logged_in(driver=driver)
+        create_license(driver=driver, license_name=license_name)
+    finally:
+        driver.quit()
 
 
 @click.command()
@@ -404,14 +406,16 @@ def create_vws_database(
 ) -> None:
     """Create a database."""
     driver = create_chrome_driver()
-    log_in(driver=driver, email_address=email_address, password=password)
-    wait_for_logged_in(driver=driver)
-    create_database(
-        driver=driver,
-        database_name=database_name,
-        license_name=license_name,
-    )
-    driver.quit()
+    try:
+        log_in(driver=driver, email_address=email_address, password=password)
+        wait_for_logged_in(driver=driver)
+        create_database(
+            driver=driver,
+            database_name=database_name,
+            license_name=license_name,
+        )
+    finally:
+        driver.quit()
 
 
 @click.command()
@@ -429,13 +433,15 @@ def show_database_details(
 ) -> None:
     """Show the details of a database."""
     driver = create_chrome_driver()
-    log_in(driver=driver, email_address=email_address, password=password)
-    wait_for_logged_in(driver=driver)
-    details = get_database_details(
-        driver=driver,
-        database_name=database_name,
-    )
-    driver.quit()
+    try:
+        log_in(driver=driver, email_address=email_address, password=password)
+        wait_for_logged_in(driver=driver)
+        details = get_database_details(
+            driver=driver,
+            database_name=database_name,
+        )
+    finally:
+        driver.quit()
     if env_var_format:
         env_var_format_details = {
             "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details["database_name"],
