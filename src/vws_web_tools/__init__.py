@@ -2,16 +2,19 @@
 
 import contextlib
 import time
-from typing import Literal, TypedDict
+from typing import TypedDict
 
 import click
 import yaml
 from beartype import beartype
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    StaleElementReferenceException,
+    WebDriverException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
@@ -148,7 +151,14 @@ def create_database(
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
-    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
+    thirty_second_wait = WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
 
     add_database_button_id = "add-dialog-btn"
     thirty_second_wait.until(
@@ -228,7 +238,14 @@ def get_database_details(
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
-    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
+    thirty_second_wait = WebDriverWait(
+        driver=driver,
+        timeout=90,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
 
     # We find the database by scanning table rows and paginating
     # rather than using the table search input. The search input
@@ -240,9 +257,9 @@ def get_database_details(
         ),
     )
 
-    def _find_database_row(
+    def _click_database_row(
         d: WebDriver,
-    ) -> WebElement | Literal[False]:
+    ) -> bool:
         """Find the row matching database_name on the current page.
 
         If not found, click the next-page button and return False to
@@ -252,23 +269,29 @@ def get_database_details(
             by=By.XPATH,
             value=(
                 "//span[starts-with(@id, 'table_row_')"
-                " and contains(@id, '_project_name')]"
+                f" and contains(@id, '_project_name')"
+                f" and normalize-space(text())='{database_name}']"
             ),
         )
-        for row in rows:
-            if row.text == database_name:
-                return row
-        d.find_element(
-            by=By.CSS_SELECTOR,
-            value="button.p-paginator-next:not(.p-disabled)",
-        ).click()
+        if rows:
+            rows[0].click()
+            return True
+        d.execute_script(  # pyright: ignore[reportUnknownMemberType]
+            """
+            const nextButton = document.querySelector(
+                "button.p-paginator-next:not(.p-disabled)"
+            );
+            const firstButton = document.querySelector(
+                "button.p-paginator-first:not(.p-disabled)"
+            );
+            (nextButton || firstButton)?.click();
+            """
+        )
         return False
 
-    database_cell_element = thirty_second_wait.until(
-        method=_find_database_row,
+    thirty_second_wait.until(
+        method=_click_database_row,
     )
-
-    database_cell_element.click()
 
     access_keys_tab_item = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
