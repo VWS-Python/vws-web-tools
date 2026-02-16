@@ -255,8 +255,6 @@ def get_database_details(
         ),
     )
     search_input_element.send_keys(database_name)
-    # Wait for the search results to update.
-    time.sleep(2)
 
     database_cell_element = thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
