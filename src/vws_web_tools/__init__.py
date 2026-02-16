@@ -301,21 +301,21 @@ def get_database_details(
 
     access_keys_tab_item.click()
 
-    def _keys_loaded(d: WebDriver) -> bool:
-        """Check that all access key values have loaded."""
-        expected_key_boxes = 2
-        for key_id in ("server-access-key", "client-access-key"):
-            boxes = d.find_element(
-                by=By.ID,
-                value=key_id,
-            ).find_elements(by=By.CLASS_NAME, value="grey-box")
-            if len(boxes) < expected_key_boxes or not all(
-                box.text.strip() for box in boxes[:expected_key_boxes]
-            ):
-                return False
-        return True
+    expected_key_boxes = 2
 
-    thirty_second_wait.until(method=_keys_loaded)
+    thirty_second_wait.until(
+        method=lambda d: all(
+            len(
+                boxes := d.find_element(
+                    by=By.ID,
+                    value=key_id,
+                ).find_elements(by=By.CLASS_NAME, value="grey-box"),
+            )
+            >= expected_key_boxes
+            and all(box.text.strip() for box in boxes[:expected_key_boxes])
+            for key_id in ("client-access-key", "server-access-key")
+        ),
+    )
 
     client_grey_boxes = driver.find_element(
         by=By.ID,
