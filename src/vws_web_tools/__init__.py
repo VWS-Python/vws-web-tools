@@ -239,12 +239,9 @@ def get_database_details(
     )
     search_input_element.send_keys(database_name)
     thirty_second_wait.until(
-        method=lambda d: (
-            database_name
-            in d.find_element(
-                by=By.ID,
-                value="table_row_0_project_name",
-            ).text
+        method=expected_conditions.text_to_be_present_in_element(
+            locator=(By.ID, "table_row_0_project_name"),
+            text_=database_name,
         ),
     )
 
