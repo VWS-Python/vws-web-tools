@@ -1,7 +1,6 @@
 """Tests which create real databases on Vuforia."""
 
 import datetime
-import os
 import uuid
 from collections.abc import Iterator
 
@@ -11,6 +10,7 @@ from click.testing import CliRunner
 from selenium.webdriver.remote.webdriver import WebDriver
 
 import vws_web_tools
+from tests.credentials import VWSCredentials
 from vws_web_tools import vws_web_tools_group
 
 
@@ -24,10 +24,11 @@ def fixture_chrome_driver() -> Iterator[WebDriver]:
 
 def test_create_databases_library(
     chrome_driver: WebDriver,
+    vws_credentials: VWSCredentials,
 ) -> None:
     """Test creating licenses and databases via the library."""
-    email_address = os.environ["VWS_EMAIL_ADDRESS"]
-    password = os.environ["VWS_PASSWORD"]
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
     today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
     license_name = f"license-ci-{today_date}-{random_str}"
@@ -45,7 +46,7 @@ def test_create_databases_library(
         driver=chrome_driver,
         license_name=license_name,
     )
-    vws_web_tools.create_database(
+    vws_web_tools.create_cloud_database(
         driver=chrome_driver,
         database_name=database_name,
         license_name=license_name,
@@ -65,10 +66,11 @@ def test_create_databases_library(
 
 def test_create_vumark_database_library(
     chrome_driver: WebDriver,
+    vws_credentials: VWSCredentials,
 ) -> None:
     """Test creating a VuMark database via the library."""
-    email_address = os.environ["VWS_EMAIL_ADDRESS"]
-    password = os.environ["VWS_PASSWORD"]
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
     today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
     database_name = f"database-vumark-ci-{today_date}-{random_str}"
@@ -80,11 +82,9 @@ def test_create_vumark_database_library(
     )
     vws_web_tools.wait_for_logged_in(driver=chrome_driver)
 
-    vws_web_tools.create_database(
+    vws_web_tools.create_vumark_database(
         driver=chrome_driver,
         database_name=database_name,
-        license_name="",
-        database_type="vumark",
     )
 
     vws_web_tools.navigate_to_database(
@@ -93,10 +93,12 @@ def test_create_vumark_database_library(
     )
 
 
-def test_create_databases_cli() -> None:
+def test_create_databases_cli(
+    vws_credentials: VWSCredentials,
+) -> None:
     """Test creating licenses and databases via the CLI."""
-    email_address = os.environ["VWS_EMAIL_ADDRESS"]
-    password = os.environ["VWS_PASSWORD"]
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
     today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
     license_name = f"license-ci-{today_date}-{random_str}"

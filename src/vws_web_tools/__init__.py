@@ -1,7 +1,7 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
-from typing import Literal, TypedDict
+from typing import TypedDict
 
 import click
 import yaml
@@ -168,14 +168,15 @@ def create_license(
 
 
 @beartype
-def create_database(
+def _open_add_database_dialog(
     driver: WebDriver,
     database_name: str,
-    license_name: str,
-    *,
-    database_type: Literal["cloud", "vumark"] = "cloud",
-) -> None:
-    """Create a database."""
+) -> WebDriverWait[WebDriver]:
+    """Navigate to databases page, open the add-database dialog, and enter
+    the name.
+
+    Returns a ``WebDriverWait`` for further use.
+    """
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
@@ -220,46 +221,84 @@ def create_database(
         value=database_name_id,
     )
     database_name_element.send_keys(database_name)
+    return thirty_second_wait
 
-    database_type_radio_button_id = {
-        "cloud": "cloud-radio-btn",
-        "vumark": "vumark-radio-btn",
-    }[database_type]
-    database_type_radio_element = driver.find_element(
-        by=By.ID,
-        value=database_type_radio_button_id,
-    )
-    database_type_radio_element.click()
 
-    if database_type == "cloud":
-        thirty_second_wait.until(
-            method=lambda d: any(
-                opt.text == license_name
-                for opt in Select(
-                    webelement=d.find_element(
-                        by=By.ID,
-                        value="cloud-license-dropdown",
-                    ),
-                ).options
-            ),
-        )
-        Select(
-            webelement=driver.find_element(
-                by=By.ID,
-                value="cloud-license-dropdown",
-            ),
-        ).select_by_visible_text(
-            text=license_name,
-        )
-
+@beartype
+def _submit_add_database_dialog(
+    driver: WebDriver,
+    wait: WebDriverWait[WebDriver],
+) -> None:
+    """Click the generate button and wait for the dialog to close."""
     generate_button = driver.find_element(
         by=By.ID,
         value="generate-btn",
     )
     generate_button.click()
-    thirty_second_wait.until(
+    wait.until(
         method=expected_conditions.staleness_of(element=generate_button),
     )
+
+
+@beartype
+def create_cloud_database(
+    driver: WebDriver,
+    database_name: str,
+    license_name: str,
+) -> None:
+    """Create a cloud database."""
+    wait = _open_add_database_dialog(
+        driver=driver,
+        database_name=database_name,
+    )
+
+    database_type_radio_element = driver.find_element(
+        by=By.ID,
+        value="cloud-radio-btn",
+    )
+    database_type_radio_element.click()
+
+    wait.until(
+        method=lambda d: any(
+            opt.text == license_name
+            for opt in Select(
+                webelement=d.find_element(
+                    by=By.ID,
+                    value="cloud-license-dropdown",
+                ),
+            ).options
+        ),
+    )
+    Select(
+        webelement=driver.find_element(
+            by=By.ID,
+            value="cloud-license-dropdown",
+        ),
+    ).select_by_visible_text(
+        text=license_name,
+    )
+
+    _submit_add_database_dialog(driver=driver, wait=wait)
+
+
+@beartype
+def create_vumark_database(
+    driver: WebDriver,
+    database_name: str,
+) -> None:
+    """Create a VuMark database."""
+    wait = _open_add_database_dialog(
+        driver=driver,
+        database_name=database_name,
+    )
+
+    database_type_radio_element = driver.find_element(
+        by=By.ID,
+        value="vumark-radio-btn",
+    )
+    database_type_radio_element.click()
+
+    _submit_add_database_dialog(driver=driver, wait=wait)
 
 
 @beartype
@@ -428,7 +467,7 @@ def create_vws_database(
     try:
         log_in(driver=driver, email_address=email_address, password=password)
         wait_for_logged_in(driver=driver)
-        create_database(
+        create_cloud_database(
             driver=driver,
             database_name=database_name,
             license_name=license_name,
