@@ -2,7 +2,7 @@
 
 import contextlib
 import time
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 import click
 import yaml
@@ -11,6 +11,7 @@ from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
@@ -23,6 +24,9 @@ def create_chrome_driver() -> WebDriver:
     options.add_argument(argument="--headless=new")
     options.add_argument(argument="--no-sandbox")
     options.add_argument(argument="--disable-dev-shm-usage")
+    # Use a large window so that pagination controls are visible
+    # and clickable without scrolling.
+    options.add_argument(argument="--window-size=1920,1080")
     return webdriver.Chrome(options=options)
 
 
@@ -239,27 +243,42 @@ def get_database_details(
     _dismiss_cookie_banner(driver=driver)
     thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
 
-    thirty_second_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, "table_search"),
-        ),
-    )
-
-    search_input_element = driver.find_element(
-        by=By.ID,
-        value="table_search",
-    )
+    # We find the database by scanning table rows and paginating
+    # rather than using the table search input. The search input
+    # does not reliably trigger table filtering in headless Chrome
+    # (send_keys does not fire the expected change events).
     thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
     )
-    search_input_element.send_keys(database_name)
+
+    def _find_database_row(
+        d: WebDriver,
+    ) -> WebElement | Literal[False]:
+        """Find the row matching database_name on the current page.
+
+        If not found, click the next-page button and return False to
+        retry.
+        """
+        rows = d.find_elements(
+            by=By.XPATH,
+            value=(
+                "//span[starts-with(@id, 'table_row_')"
+                " and contains(@id, '_project_name')]"
+            ),
+        )
+        for row in rows:
+            if row.text == database_name:
+                return row
+        d.find_element(
+            by=By.CSS_SELECTOR,
+            value="button.p-paginator-next:not(.p-disabled)",
+        ).click()
+        return False
 
     database_cell_element = thirty_second_wait.until(
-        method=expected_conditions.element_to_be_clickable(
-            mark=(By.ID, "table_row_0_project_name"),
-        ),
+        method=_find_database_row,
     )
 
     database_cell_element.click()
