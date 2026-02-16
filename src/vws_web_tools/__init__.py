@@ -245,8 +245,11 @@ def get_database_details(
         retry.
         """
         rows = d.find_elements(
-            by=By.CSS_SELECTOR,
-            value="span[id$='_project_name']",
+            by=By.XPATH,
+            value=(
+                "//span[starts-with(@id, 'table_row_')"
+                " and contains(@id, '_project_name')]"
+            ),
         )
         for row in rows:
             if row.text == database_name:
