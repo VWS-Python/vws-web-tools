@@ -143,7 +143,7 @@ def create_license(
     # If navigating to the license page caused a redirect to login
     # (e.g. session not yet propagated), wait for the auto-login
     # redirect to complete, then re-navigate.
-    if "/auth/login" in driver.current_url:
+    if "/auth/login" in driver.current_url:  # pragma: no cover
         wait_for_logged_in(driver=driver)
         driver.get(url=new_license_url)
         _dismiss_cookie_banner(driver=driver)
@@ -196,7 +196,7 @@ def _open_add_database_dialog(
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
 
-    if "/auth/login" in driver.current_url:
+    if "/auth/login" in driver.current_url:  # pragma: no cover
         wait_for_logged_in(driver=driver)
         driver.get(url=target_manager_url)
         _dismiss_cookie_banner(driver=driver)
@@ -332,7 +332,7 @@ def navigate_to_database(
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
 
-    if "/auth/login" in driver.current_url:
+    if "/auth/login" in driver.current_url:  # pragma: no cover
         wait_for_logged_in(driver=driver)
         driver.get(url=target_manager_url)
         _dismiss_cookie_banner(driver=driver)
