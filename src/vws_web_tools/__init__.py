@@ -265,7 +265,7 @@ def get_database_details(
     access_keys_tab_item.click()
 
     def _access_keys_loaded(d: WebDriver) -> bool:
-        """Check that all access key grey-box values are populated."""
+        """Check that all access key values are populated."""
         expected_grey_box_count = 2
         for div_id in ("client-access-key", "server-access-key"):
             key_div = d.find_element(by=By.ID, value=div_id)
