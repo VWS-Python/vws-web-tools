@@ -188,16 +188,23 @@ def create_database(
     )
     cloud_type_radio_element.click()
 
-    license_dropdown_element = Select(
+    thirty_second_wait.until(
+        method=lambda d: any(
+            opt.text == license_name
+            for opt in Select(
+                webelement=d.find_element(
+                    by=By.ID,
+                    value="cloud-license-dropdown",
+                ),
+            ).options
+        ),
+    )
+    Select(
         webelement=driver.find_element(
             by=By.ID,
             value="cloud-license-dropdown",
         ),
-    )
-
-    # Sleeping 1 second here did not work, so we sleep 5 seconds.
-    time.sleep(5)
-    license_dropdown_element.select_by_visible_text(
+    ).select_by_visible_text(
         text=license_name,
     )
 
