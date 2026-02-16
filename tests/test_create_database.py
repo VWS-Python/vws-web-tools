@@ -19,6 +19,7 @@ def fixture_chrome_driver() -> Iterator[WebDriver]:
     options.add_argument(argument="--headless=new")
     options.add_argument(argument="--no-sandbox")
     options.add_argument(argument="--disable-dev-shm-usage")
+    options.add_argument(argument="--window-size=1920,1080")
     driver = webdriver.Chrome(options=options)
     yield driver
     driver.quit()
