@@ -6,7 +6,6 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  create-vws-database     Create a database.
-  create-vws-license      Create a license.
-  show-database-details   Show the details of a database.
-  upload-vumark-template  Upload a VuMark SVG template to a database.
+  create-vws-database    Create a database.
+  create-vws-license     Create a license.
+  show-database-details  Show the details of a database.
