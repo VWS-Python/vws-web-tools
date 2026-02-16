@@ -1,7 +1,8 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
-from typing import TypedDict
+from pathlib import Path
+from typing import Literal, TypedDict
 
 import click
 import yaml
@@ -41,6 +42,9 @@ class DatabaseDict(TypedDict):
     server_secret_key: str
     client_access_key: str
     client_secret_key: str
+
+
+DatabaseType = Literal["cloud", "vumark"]
 
 
 @beartype
@@ -170,9 +174,18 @@ def create_license(
 def create_database(
     driver: WebDriver,
     database_name: str,
-    license_name: str,
+    license_name: str | None = None,
+    *,
+    database_type: DatabaseType = "cloud",
 ) -> None:
     """Create a database."""
+    if database_type == "cloud" and not license_name:
+        msg = "license_name is required for cloud databases."
+        raise ValueError(msg)
+    if database_type not in {"cloud", "vumark"}:
+        msg = "database_type must be one of {'cloud', 'vumark'}."
+        raise ValueError(msg)
+
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
     _dismiss_cookie_banner(driver=driver)
@@ -218,31 +231,62 @@ def create_database(
     )
     database_name_element.send_keys(database_name)
 
-    cloud_type_radio_element = driver.find_element(
-        by=By.ID,
-        value="cloud-radio-btn",
-    )
-    cloud_type_radio_element.click()
-
-    thirty_second_wait.until(
-        method=lambda d: any(
-            opt.text == license_name
-            for opt in Select(
-                webelement=d.find_element(
+    # Vuforia has changed radio IDs before, so we first try known IDs and
+    # then fall back to matching visible type labels.
+    if database_type == "vumark":
+        vumark_selected = False
+        for vumark_radio_id in ("vumark-radio-btn", "vu-mark-radio-btn"):
+            with contextlib.suppress(NoSuchElementException):
+                vumark_type_radio_element = driver.find_element(
                     by=By.ID,
-                    value="cloud-license-dropdown",
+                    value=vumark_radio_id,
+                )
+                vumark_type_radio_element.click()
+                vumark_selected = True
+                break
+
+        if not vumark_selected:
+            vumark_label_matches = driver.find_elements(
+                by=By.XPATH,
+                value=(
+                    "//label[normalize-space()='VuMark']"
+                    "|//*[self::span or self::div]"
+                    "[normalize-space()='VuMark']"
                 ),
-            ).options
-        ),
-    )
-    Select(
-        webelement=driver.find_element(
+            )
+            if vumark_label_matches:
+                vumark_label_matches[0].click()
+                vumark_selected = True
+
+        if not vumark_selected:
+            msg = "Could not find a VuMark database type option in the UI."
+            raise NoSuchElementException(msg)
+    else:
+        cloud_type_radio_element = driver.find_element(
             by=By.ID,
-            value="cloud-license-dropdown",
-        ),
-    ).select_by_visible_text(
-        text=license_name,
-    )
+            value="cloud-radio-btn",
+        )
+        cloud_type_radio_element.click()
+
+        thirty_second_wait.until(
+            method=lambda d: any(
+                opt.text == license_name
+                for opt in Select(
+                    webelement=d.find_element(
+                        by=By.ID,
+                        value="cloud-license-dropdown",
+                    ),
+                ).options
+            ),
+        )
+        Select(
+            webelement=driver.find_element(
+                by=By.ID,
+                value="cloud-license-dropdown",
+            ),
+        ).select_by_visible_text(
+            text=license_name,
+        )
 
     generate_button = driver.find_element(
         by=By.ID,
@@ -251,6 +295,121 @@ def create_database(
     generate_button.click()
     thirty_second_wait.until(
         method=expected_conditions.staleness_of(element=generate_button),
+    )
+
+
+@beartype
+def upload_vumark_svg_template(
+    driver: WebDriver,
+    database_name: str,
+    svg_template_path: Path,
+    target_name: str,
+) -> None:
+    """Upload a VuMark SVG template to a VuMark database."""
+    target_manager_url = "https://developer.vuforia.com/develop/databases"
+    driver.get(url=target_manager_url)
+    _dismiss_cookie_banner(driver=driver)
+    three_minute_wait = WebDriverWait(
+        driver=driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+    three_minute_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "table_row_0_project_name"),
+        ),
+    )
+
+    def _click_database_row(
+        d: WebDriver,
+    ) -> bool:
+        """Click the database row when visible, paging until it
+        appears.
+        """
+        rows = d.find_elements(
+            by=By.XPATH,
+            value=(
+                "//span[starts-with(@id, 'table_row_')"
+                f" and contains(@id, '_project_name')"
+                f" and normalize-space(text())='{database_name}']"
+            ),
+        )
+        if rows:
+            rows[0].click()
+            return True
+        d.execute_script(  # pyright: ignore[reportUnknownMemberType]
+            """
+            const nextButton = document.querySelector(
+                "button.p-paginator-next:not(.p-disabled)"
+            );
+            const firstButton = document.querySelector(
+                "button.p-paginator-first:not(.p-disabled)"
+            );
+            (nextButton || firstButton)?.click();
+            """
+        )
+        return False
+
+    three_minute_wait.until(
+        method=_click_database_row,
+    )
+
+    one_minute_wait = WebDriverWait(
+        driver=driver,
+        timeout=60,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    add_target_button = one_minute_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(
+                By.XPATH,
+                "//button[contains(normalize-space(), 'Add Target')]"
+                "|//a[contains(normalize-space(), 'Add Target')]",
+            ),
+        ),
+    )
+    add_target_button.click()
+
+    svg_template_input = one_minute_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.CSS_SELECTOR, "input[type='file']"),
+        ),
+    )
+    svg_template_input.send_keys(str(svg_template_path.resolve(strict=True)))
+
+    target_name_input = one_minute_wait.until(
+        method=expected_conditions.visibility_of_element_located(
+            locator=(
+                By.XPATH,
+                "//input[@id='target-name' or @name='target-name'"
+                " or @id='name' or @name='name']",
+            ),
+        ),
+    )
+    target_name_input.clear()
+    target_name_input.send_keys(target_name)
+
+    add_button = one_minute_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(
+                By.XPATH,
+                "//div[@role='dialog']//button[normalize-space()='Add'"
+                " or normalize-space()='Add Target']"
+                "|//button[normalize-space()='Add'"
+                " or normalize-space()='Add Target']",
+            ),
+        ),
+    )
+    add_button.click()
+    one_minute_wait.until(
+        method=expected_conditions.staleness_of(element=add_button),
     )
 
 
@@ -391,18 +550,29 @@ def create_vws_license(
 
 
 @click.command()
-@click.option("--license-name", required=True)
+@click.option("--license-name")
 @click.option("--database-name", required=True)
+@click.option(
+    "--database-type",
+    default="cloud",
+    show_default=True,
+    type=click.Choice(choices=["cloud", "vumark"], case_sensitive=False),
+)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
 def create_vws_database(
     database_name: str,
-    license_name: str,
+    license_name: str | None,
+    database_type: str,
     email_address: str,
     password: str,
 ) -> None:
     """Create a database."""
+    if database_type.lower() == "cloud" and not license_name:
+        msg = "--license-name is required when --database-type is cloud."
+        raise click.UsageError(msg)
+
     driver = create_chrome_driver()
     log_in(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
@@ -410,6 +580,42 @@ def create_vws_database(
         driver=driver,
         database_name=database_name,
         license_name=license_name,
+        database_type=database_type.lower(),
+    )
+    driver.quit()
+
+
+@click.command()
+@click.option("--database-name", required=True)
+@click.option(
+    "--svg-template-path",
+    required=True,
+    type=click.Path(
+        exists=True,
+        dir_okay=False,
+        path_type=Path,
+    ),
+)
+@click.option("--target-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
+@beartype
+def upload_vumark_template(
+    database_name: str,
+    svg_template_path: Path,
+    target_name: str,
+    email_address: str,
+    password: str,
+) -> None:
+    """Upload a VuMark SVG template to a database."""
+    driver = create_chrome_driver()
+    log_in(driver=driver, email_address=email_address, password=password)
+    wait_for_logged_in(driver=driver)
+    upload_vumark_svg_template(
+        driver=driver,
+        database_name=database_name,
+        svg_template_path=svg_template_path,
+        target_name=target_name,
     )
     driver.quit()
 
@@ -454,3 +660,4 @@ def show_database_details(
 vws_web_tools_group.add_command(cmd=create_vws_database)
 vws_web_tools_group.add_command(cmd=create_vws_license)
 vws_web_tools_group.add_command(cmd=show_database_details)
+vws_web_tools_group.add_command(cmd=upload_vumark_template)

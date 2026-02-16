@@ -3,8 +3,9 @@ Usage: vws-web create-vws-database [OPTIONS]
   Create a database.
 
 Options:
-  --license-name TEXT   [required]
-  --database-name TEXT  [required]
-  --email-address TEXT  [required]
-  --password TEXT       [required]
-  --help                Show this message and exit.
+  --license-name TEXT
+  --database-name TEXT            [required]
+  --database-type [cloud|vumark]  [default: cloud]
+  --email-address TEXT            [required]
+  --password TEXT                 [required]
+  --help                          Show this message and exit.
