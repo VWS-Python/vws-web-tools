@@ -226,11 +226,7 @@ def create_database(
     )
     cloud_type_radio_element.click()
 
-    WebDriverWait(
-        driver=driver,
-        timeout=30,
-        ignored_exceptions=[StaleElementReferenceException],
-    ).until(
+    thirty_second_wait.until(
         method=lambda d: any(
             opt.text == license_name
             for opt in Select(
@@ -271,7 +267,7 @@ def get_database_details(
     _dismiss_cookie_banner(driver=driver)
     thirty_second_wait = WebDriverWait(
         driver=driver,
-        timeout=_DATABASE_APPEARANCE_TIMEOUT_SECONDS,
+        timeout=180,
         ignored_exceptions=(
             NoSuchElementException,
             StaleElementReferenceException,
@@ -294,8 +290,8 @@ def get_database_details(
         """Find the row matching database_name on the current page.
 
         If not found, click the next-page button and return False to
-        retry. When no next page exists, reload the listing so newly
-        created databases can appear.
+        retry. If there is no next page, reload the listing so that
+        newly created databases can appear.
         """
         rows = d.find_elements(
             by=By.XPATH,
@@ -308,16 +304,17 @@ def get_database_details(
         if rows:
             rows[0].click()
             return True
-        try:
-            d.find_element(
-                by=By.CSS_SELECTOR,
-                value="button.p-paginator-next:not(.p-disabled)",
-            ).click()
-        except NoSuchElementException:
-            # Reached the last page without finding the database.
-            # Reload to refresh the table and reset to page 1.
-            d.get(url=target_manager_url)
-            _dismiss_cookie_banner(driver=d)
+        d.execute_script(  # pyright: ignore[reportUnknownMemberType]
+            """
+            const nextButton = document.querySelector(
+                "button.p-paginator-next:not(.p-disabled)"
+            );
+            const firstButton = document.querySelector(
+                "button.p-paginator-first:not(.p-disabled)"
+            );
+            (nextButton || firstButton)?.click();
+            """
+        )
         return False
 
     thirty_second_wait.until(
