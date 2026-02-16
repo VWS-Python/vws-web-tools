@@ -93,6 +93,34 @@ def test_create_vumark_database_library(
     )
 
 
+def test_create_vumark_database_cli(
+    vws_credentials: VWSCredentials,
+) -> None:
+    """Test creating a VuMark database via the CLI."""
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    database_name = f"database-vumark-ci-{today_date}-{random_str}"
+
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "create-vws-vumark-database",
+            "--database-name",
+            database_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+
+
 def test_create_databases_cli(
     vws_credentials: VWSCredentials,
 ) -> None:

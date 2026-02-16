@@ -505,6 +505,32 @@ def create_vws_database(
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
+@beartype
+def create_vws_vumark_database(
+    database_name: str,
+    email_address: str,
+    password: str,
+) -> None:
+    """Create a VuMark database."""
+    driver = create_chrome_driver()
+    try:
+        _log_in_with_retry(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        create_vumark_database(
+            driver=driver,
+            database_name=database_name,
+        )
+    finally:
+        driver.quit()
+
+
+@click.command()
+@click.option("--database-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
 @click.option("--env-var-format", is_flag=True)
 @beartype
 def show_database_details(
@@ -545,4 +571,5 @@ def show_database_details(
 
 vws_web_tools_group.add_command(cmd=create_vws_database)
 vws_web_tools_group.add_command(cmd=create_vws_license)
+vws_web_tools_group.add_command(cmd=create_vws_vumark_database)
 vws_web_tools_group.add_command(cmd=show_database_details)
