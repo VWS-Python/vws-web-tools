@@ -97,8 +97,8 @@ def wait_for_logged_in(driver: WebDriver) -> None:
     """
     thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
     thirty_second_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.CLASS_NAME, "userNameInHeaderSpan"),
+        method=expected_conditions.url_changes(
+            url="https://developer.vuforia.com/auth/login",
         ),
     )
     _dismiss_cookie_banner(driver=driver)
