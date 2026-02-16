@@ -132,7 +132,9 @@ def create_license(
         ),
     )
     confirm_button.click()
-    time.sleep(5)
+    thirty_second_wait.until(
+        method=expected_conditions.url_changes(url=new_license_url),
+    )
 
 
 @beartype
