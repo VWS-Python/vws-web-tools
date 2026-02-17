@@ -1,10 +1,13 @@
 """Tests for VuMark target lookup flows."""
 
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support.relative_locator import RelativeBy
 
 import vws_web_tools
 
@@ -32,17 +35,25 @@ class _FakeDriver(WebDriver):
         """Initialise captured XPath queries."""
         self.xpath_queries: list[str] = []
 
-    def find_element(self, by: str, value: str) -> _FakeElement:
+    def find_element(
+        self,
+        by: str | RelativeBy = "id",
+        value: str | None = None,
+    ) -> WebElement:
         """Return an element while capturing XPath lookups."""
-        if by == "xpath":
+        if by == "xpath" and value is not None:
             self.xpath_queries.append(value)
-        return _FakeElement()
+        return cast("WebElement", _FakeElement())
 
-    def find_elements(self, by: str, value: str) -> list[_FakeElement]:
+    def find_elements(
+        self,
+        by: str | RelativeBy = "id",
+        value: str | None = None,
+    ) -> list[WebElement]:
         """Return elements while capturing XPath lookups."""
-        if by == "xpath":
+        if by == "xpath" and value is not None:
             self.xpath_queries.append(value)
-            return [_FakeElement()]
+            return [cast("WebElement", _FakeElement())]
         return []
 
 

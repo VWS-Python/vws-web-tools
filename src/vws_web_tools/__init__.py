@@ -437,7 +437,7 @@ def _xpath_literal(
     apostrophe_literal = '"\'"'
     value_parts = value.split(sep="'")
     concat_arguments: list[str] = []
-    for index, value_part in enumerate(value_parts):
+    for index, value_part in enumerate(iterable=value_parts):
         concat_arguments.append(f"'{value_part}'")
         if index != len(value_parts) - 1:
             concat_arguments.append(apostrophe_literal)
