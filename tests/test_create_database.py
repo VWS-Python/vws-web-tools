@@ -247,7 +247,7 @@ def test_upload_vumark_template_cli(
             "--database-name",
             database_name,
             "--svg-file-path",
-            str(svg_path),
+            str(object=svg_path),
             "--template-name",
             template_name,
             "--width",
