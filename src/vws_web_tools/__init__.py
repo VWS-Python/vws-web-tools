@@ -440,28 +440,6 @@ class _VuMarkTargetIdLookupError(RuntimeError):
 
 
 @beartype
-def _assert_on_database_page(
-    *,
-    driver: WebDriver,
-    database_name: str,
-) -> None:
-    """Raise if the current page does not appear to be the requested
-    database page.
-    """
-    current_url = str(object=driver.current_url)
-    if (
-        "/develop/databases/" in current_url
-        and database_name in driver.page_source
-    ):
-        return
-    msg = (
-        f"Driver is not on the requested database page '{database_name}'. "
-        "Call navigate_to_database or wait_for_vumark_target_link first."
-    )
-    raise _VuMarkTargetIdLookupError(msg)
-
-
-@beartype
 def _xpath_literal(
     *,
     value: str,
@@ -602,20 +580,58 @@ def get_vumark_target_id(
     """Get the ID for a VuMark target in a database.
 
     Limitation:
-        This does not navigate or wait for readiness. It hard-errors if
-        the target name is not yet rendered as a clickable link. While a
-        target is still processing, VWS often renders plain text in that
-        column and no target ID link is available.
+        This navigates to the requested database but does not wait for
+        readiness. It hard-errors if the target name is not yet rendered
+        as a clickable link. While a target is still processing, VWS
+        often renders plain text in that column and no target ID link is
+        available.
     """
     LOGGER.debug(
         "Getting VuMark target ID for database '%s' and target '%s'.",
         database_name,
         target_name,
     )
-    _assert_on_database_page(
+    navigate_to_database(
         driver=driver,
         database_name=database_name,
     )
+    short_wait = WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+    target_key_tab = short_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "target-key-tab"),
+        ),
+    )
+    target_key_tab.click()
+    short_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "table_search"),
+        ),
+    )
+    target_name_xpath_literal = _xpath_literal(value=target_name)
+    target_row_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+    try:
+        short_wait.until(
+            method=expected_conditions.presence_of_element_located(
+                locator=(By.XPATH, f"//*[{target_row_predicate}]"),
+            ),
+        )
+    except TimeoutException as exception:
+        msg = "VuMark target row was not found."
+        raise _VuMarkTargetIdLookupError(msg) from exception
 
     try:
         target_link = _find_vumark_target_link(
