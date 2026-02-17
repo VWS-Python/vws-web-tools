@@ -503,12 +503,17 @@ def wait_for_vumark_target_link(
         ),
     )
 
-    target_key_tab = long_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, "target-key-tab"),
-        ),
+    def _click_target_key_tab(d: WebDriver) -> bool:
+        """Click the target-key tab once it is interactable."""
+        target_key_tab = d.find_element(by=By.ID, value="target-key-tab")
+        if not (target_key_tab.is_displayed() and target_key_tab.is_enabled()):
+            return False
+        target_key_tab.click()
+        return True
+
+    long_wait.until(
+        method=_click_target_key_tab,
     )
-    target_key_tab.click()
 
     target_name_xpath_literal = _xpath_literal(value=target_name)
     target_row_predicate = (
@@ -566,12 +571,18 @@ def get_vumark_target_id(
             StaleElementReferenceException,
         ),
     )
-    target_key_tab = short_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, "target-key-tab"),
-        ),
+
+    def _click_target_key_tab(d: WebDriver) -> bool:
+        """Click the target-key tab once it is interactable."""
+        target_key_tab = d.find_element(by=By.ID, value="target-key-tab")
+        if not (target_key_tab.is_displayed() and target_key_tab.is_enabled()):
+            return False
+        target_key_tab.click()
+        return True
+
+    short_wait.until(
+        method=_click_target_key_tab,
     )
-    target_key_tab.click()
     short_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
