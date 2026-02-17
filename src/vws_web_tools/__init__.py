@@ -203,6 +203,12 @@ def create_license(
     )
 
 
+@retry(
+    retry=retry_if_exception_type(
+        exception_types=TimeoutException,
+    ),
+    stop=stop_after_attempt(max_attempt_number=3),
+)
 @beartype
 def _open_add_database_dialog(
     *,
@@ -692,6 +698,46 @@ def create_vws_vumark_database(
         driver.quit()
 
 
+@click.command(name="upload-vumark-template")
+@click.option("--database-name", required=True)
+@click.option(
+    "--svg-file-path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+)
+@click.option("--template-name", required=True)
+@click.option("--width", type=float, required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
+@beartype
+def upload_vumark_template_to_database(  # noqa: PLR0913
+    *,
+    database_name: str,
+    svg_file_path: Path,
+    template_name: str,
+    width: float,
+    email_address: str,
+    password: str,
+) -> None:
+    """Upload a VuMark SVG template to a VuMark database."""
+    driver = create_chrome_driver()
+    try:
+        _log_in_with_retry(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        upload_vumark_template(
+            driver=driver,
+            database_name=database_name,
+            svg_file_path=svg_file_path,
+            template_name=template_name,
+            width=width,
+        )
+    finally:
+        driver.quit()
+
+
 @click.command()
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
@@ -779,3 +825,4 @@ vws_web_tools_group.add_command(cmd=create_vws_license)
 vws_web_tools_group.add_command(cmd=create_vws_vumark_database)
 vws_web_tools_group.add_command(cmd=show_database_details)
 vws_web_tools_group.add_command(cmd=show_vumark_database_details)
+vws_web_tools_group.add_command(cmd=upload_vumark_template_to_database)

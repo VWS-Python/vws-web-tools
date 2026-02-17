@@ -210,6 +210,61 @@ def test_upload_vumark_template(
     assert template_name in chrome_driver.page_source
 
 
+def test_upload_vumark_template_cli(
+    vws_credentials: VWSCredentials,
+    request: pytest.FixtureRequest,
+) -> None:
+    """Test uploading a VuMark SVG template via the CLI."""
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    database_name = f"database-vumark-ci-{today_date}-{random_str}"
+    template_name = f"template-{random_str}"
+
+    test_file_path = request.path
+    assert test_file_path is not None
+    svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
+
+    runner = CliRunner()
+
+    create_database_result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "create-vws-vumark-database",
+            "--database-name",
+            database_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert create_database_result.exit_code == 0
+
+    upload_template_result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "upload-vumark-template",
+            "--database-name",
+            database_name,
+            "--svg-file-path",
+            str(object=svg_path),
+            "--template-name",
+            template_name,
+            "--width",
+            "1.0",
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert upload_template_result.exit_code == 0
+
+
 def test_create_databases_cli(
     *,
     vws_credentials: VWSCredentials,
