@@ -197,6 +197,12 @@ def create_license(
     )
 
 
+@retry(
+    retry=retry_if_exception_type(
+        exception_types=TimeoutException,
+    ),
+    stop=stop_after_attempt(max_attempt_number=3),
+)
 @beartype
 def _open_add_database_dialog(
     driver: WebDriver,
