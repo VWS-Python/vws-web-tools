@@ -529,9 +529,8 @@ def wait_for_vumark_target_link(
     """Wait for a VuMark target row to be rendered on the target-key
     tab.
 
-    This waits until the matching target row is present either as a
-    clickable link or as plain text (which usually means it is still
-    processing).
+    This waits until the matching target row is rendered as a clickable
+    link.
     """
     navigate_to_database(driver=driver, database_name=database_name)
     long_wait = WebDriverWait(
@@ -550,23 +549,21 @@ def wait_for_vumark_target_link(
     )
     target_key_tab.click()
 
-    def _target_link_or_non_link_found(d: WebDriver) -> bool:
-        """Return whether the target row is visible as a link or plain
-        text.
-        """
+    def _target_link_found(d: WebDriver) -> bool:
+        """Return whether the target row is visible as a link."""
         try:
             _find_vumark_target_link(
                 driver=d,
                 target_name=target_name,
             )
         except _VuMarkTargetNameNotLinkError:
-            return True
+            return False
         except _VuMarkTargetLinkNotFoundError:
             return False
         return True
 
     long_wait.until(
-        method=_target_link_or_non_link_found,
+        method=_target_link_found,
     )
 
 
@@ -579,19 +576,15 @@ def get_vumark_target_id(
     """Get the ID for a VuMark target in a database.
 
     Limitation:
-        This only works once VWS renders the target name as a clickable link.
-        While a target is still processing, VWS often renders plain text in
-        that column and no target ID link is available.
+        This does not navigate or wait for readiness. It hard-errors if
+        the target name is not yet rendered as a clickable link. While a
+        target is still processing, VWS often renders plain text in that
+        column and no target ID link is available.
     """
     LOGGER.debug(
         "Getting VuMark target ID for database '%s' and target '%s'.",
         database_name,
         target_name,
-    )
-    wait_for_vumark_target_link(
-        driver=driver,
-        database_name=database_name,
-        target_name=target_name,
     )
 
     try:
