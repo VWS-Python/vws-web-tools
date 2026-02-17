@@ -405,15 +405,29 @@ def upload_vumark_template(
     )
     add_button.click()
 
-    thirty_second_wait.until(
-        method=expected_conditions.staleness_of(element=add_button),
-    )
-
     # Wait for the uploaded template to appear in the targets table.
-    thirty_second_wait.until(
-        method=expected_conditions.text_to_be_present_in_element(
-            locator=(By.ID, "table_row_0_target_name"),
-            text_=template_name,
+    # The add button can remain attached to the DOM after submission,
+    # so waiting for staleness here is flaky.
+    target_name_xpath_literal = _xpath_literal(value=template_name)
+    target_name_cell_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+    long_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.XPATH, f"//*[{target_name_cell_predicate}]"),
         ),
     )
 
