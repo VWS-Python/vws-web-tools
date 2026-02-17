@@ -3,7 +3,7 @@
 import contextlib
 import logging
 from pathlib import Path
-from typing import TypedDict, cast
+from typing import TypedDict
 from urllib.parse import urlparse
 
 import click
@@ -466,7 +466,7 @@ def _find_vumark_target_link(
         target_link,
         target_name,
     )
-    return cast("str", target_link)
+    return str(object=target_link)
 
 
 @retry(
