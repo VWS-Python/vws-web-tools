@@ -23,6 +23,7 @@ def fixture_chrome_driver() -> Iterator[WebDriver]:
 
 
 def test_create_databases_library(
+    *,
     chrome_driver: WebDriver,
     vws_credentials: VWSCredentials,
 ) -> None:
@@ -65,6 +66,7 @@ def test_create_databases_library(
 
 
 def test_create_vumark_database_library(
+    *,
     chrome_driver: WebDriver,
     vws_credentials: VWSCredentials,
 ) -> None:
@@ -98,6 +100,7 @@ def test_create_vumark_database_library(
 
 
 def test_create_vumark_database_cli(
+    *,
     vws_credentials: VWSCredentials,
 ) -> None:
     """Test creating a VuMark database via the CLI."""
@@ -168,6 +171,7 @@ def test_create_vumark_database_cli(
 
 
 def test_upload_vumark_template(
+    *,
     chrome_driver: WebDriver,
     vws_credentials: VWSCredentials,
     request: pytest.FixtureRequest,
@@ -207,6 +211,7 @@ def test_upload_vumark_template(
 
 
 def test_upload_vumark_template_cli(
+    *,
     vws_credentials: VWSCredentials,
     request: pytest.FixtureRequest,
 ) -> None:
@@ -221,7 +226,6 @@ def test_upload_vumark_template_cli(
     test_file_path = request.path
     assert test_file_path is not None
     svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
-
     runner = CliRunner()
 
     create_database_result = runner.invoke(
@@ -260,11 +264,62 @@ def test_upload_vumark_template_cli(
     )
     assert upload_template_result.exit_code == 0
 
-    # Upload success is validated by exit code; a separate library test
-    # verifies template visibility in the target table.
+
+def test_get_vumark_target_id(
+    *,
+    chrome_driver: WebDriver,
+    vws_credentials: VWSCredentials,
+    request: pytest.FixtureRequest,
+) -> None:
+    """Test getting a VuMark target ID via the library."""
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    database_name = f"database-vumark-ci-{today_date}-{random_str}"
+
+    vws_web_tools.log_in(
+        driver=chrome_driver,
+        email_address=email_address,
+        password=password,
+    )
+    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
+
+    vws_web_tools.create_vumark_database(
+        driver=chrome_driver,
+        database_name=database_name,
+    )
+
+    test_file_path = request.path
+    assert test_file_path is not None
+    svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
+    template_name = f"template-{random_str}"
+    vws_web_tools.upload_vumark_template(
+        driver=chrome_driver,
+        database_name=database_name,
+        svg_file_path=svg_path,
+        template_name=template_name,
+        width=1.0,
+    )
+
+    vws_web_tools.wait_for_vumark_target_link(
+        driver=chrome_driver,
+        database_name=database_name,
+        target_name=template_name,
+    )
+
+    target_id = vws_web_tools.get_vumark_target_id(
+        driver=chrome_driver,
+        database_name=database_name,
+        target_name=template_name,
+    )
+    expected_target_id_length = 32
+    assert len(target_id) == expected_target_id_length
+    assert target_id.isalnum()
 
 
 def test_create_databases_cli(
+    *,
     vws_credentials: VWSCredentials,
 ) -> None:
     """Test creating licenses and databases via the CLI."""

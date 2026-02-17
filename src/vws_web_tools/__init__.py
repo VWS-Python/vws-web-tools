@@ -1,8 +1,10 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
+import logging
 from pathlib import Path
 from typing import TypedDict
+from urllib.parse import urlparse
 
 import click
 import yaml
@@ -21,6 +23,15 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
+
+LOGGER = logging.getLogger(name=__name__)
+
+_TIMEOUT_RETRY_DECORATOR = retry(
+    retry=retry_if_exception_type(
+        exception_types=TimeoutException,
+    ),
+    stop=stop_after_attempt(max_attempt_number=3),
+)
 
 
 @beartype
@@ -61,6 +72,7 @@ class VuMarkDatabaseDict(TypedDict):
 
 @beartype
 def log_in(
+    *,
     driver: WebDriver,
     email_address: str,
     password: str,
@@ -89,6 +101,7 @@ def log_in(
 
 @beartype
 def _dismiss_cookie_banner(
+    *,
     driver: WebDriver,
 ) -> None:
     """Dismiss the OneTrust cookie consent banner if present."""
@@ -118,7 +131,7 @@ def _dismiss_cookie_banner(
 
 
 @beartype
-def wait_for_logged_in(driver: WebDriver) -> None:
+def wait_for_logged_in(*, driver: WebDriver) -> None:
     """Wait for the user to be logged in.
 
     Without this, we sometimes get a redirect to a post-login page.
@@ -143,14 +156,10 @@ def wait_for_logged_in(driver: WebDriver) -> None:
     _dismiss_cookie_banner(driver=driver)
 
 
-@retry(
-    retry=retry_if_exception_type(
-        exception_types=TimeoutException,
-    ),
-    stop=stop_after_attempt(max_attempt_number=3),
-)
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def _log_in_with_retry(
+    *,
     driver: WebDriver,
     email_address: str,
     password: str,
@@ -162,6 +171,7 @@ def _log_in_with_retry(
 
 @beartype
 def create_license(
+    *,
     driver: WebDriver,
     license_name: str,
 ) -> None:
@@ -197,8 +207,10 @@ def create_license(
     )
 
 
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def _open_add_database_dialog(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> WebDriverWait[WebDriver]:
@@ -257,6 +269,7 @@ def _open_add_database_dialog(
 
 @beartype
 def _submit_add_database_dialog(
+    *,
     driver: WebDriver,
     wait: WebDriverWait[WebDriver],
 ) -> None:
@@ -273,6 +286,7 @@ def _submit_add_database_dialog(
 
 @beartype
 def create_cloud_database(
+    *,
     driver: WebDriver,
     database_name: str,
     license_name: str,
@@ -314,6 +328,7 @@ def create_cloud_database(
 
 @beartype
 def create_vumark_database(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> None:
@@ -334,6 +349,7 @@ def create_vumark_database(
 
 @beartype
 def upload_vumark_template(
+    *,
     driver: WebDriver,
     database_name: str,
     svg_file_path: Path,
@@ -403,7 +419,177 @@ def upload_vumark_template(
 
 
 @beartype
+def _xpath_literal(
+    *,
+    value: str,
+) -> str:
+    """Return an XPath string literal."""
+    return f"'{value}'"
+
+
+@beartype
+def _find_vumark_target_link(
+    *,
+    driver: WebDriver,
+    target_name: str,
+) -> str:
+    """Find and return a target-name link."""
+    target_name_xpath_literal = _xpath_literal(value=target_name)
+    target_row_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+    target_link_elements = driver.find_elements(
+        by=By.XPATH,
+        value=f"//a[{target_row_predicate}]",
+    )
+    LOGGER.debug(
+        "Found %d matching target-name links while searching for '%s'.",
+        len(target_link_elements),
+        target_name,
+    )
+    target_link_element = target_link_elements[0]
+    target_link = target_link_element.get_attribute(  # pyright: ignore[reportUnknownMemberType]
+        name="href",
+    )
+    LOGGER.debug(
+        "Found VuMark target link '%s' for '%s'.",
+        target_link,
+        target_name,
+    )
+    return str(object=target_link)
+
+
+@_TIMEOUT_RETRY_DECORATOR
+@beartype
+def wait_for_vumark_target_link(
+    *,
+    driver: WebDriver,
+    database_name: str,
+    target_name: str,
+    timeout: int = 180,
+) -> None:
+    """Wait for a VuMark target row to be rendered on the target-key
+    tab.
+
+    This waits until the matching target row is rendered as a clickable
+    link.
+    """
+    navigate_to_database(driver=driver, database_name=database_name)
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=timeout,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    target_key_tab = long_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "target-key-tab"),
+        ),
+    )
+    target_key_tab.click()
+
+    target_name_xpath_literal = _xpath_literal(value=target_name)
+    target_row_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+
+    def _target_link_found(d: WebDriver) -> bool:
+        """Return whether the target row is visible as a link."""
+        return bool(
+            d.find_elements(
+                by=By.XPATH,
+                value=f"//a[{target_row_predicate}]",
+            ),
+        )
+
+    long_wait.until(
+        method=_target_link_found,
+    )
+
+
+@beartype
+def get_vumark_target_id(
+    driver: WebDriver,
+    database_name: str,
+    target_name: str,
+) -> str:
+    """Get the ID for a VuMark target in a database.
+
+    Limitation:
+        This navigates to the requested database but does not wait for
+        readiness. It hard-errors if the target name is not yet rendered
+        as a clickable link. While a target is still processing, VWS
+        often renders plain text in that column and no target ID link is
+        available.
+    """
+    LOGGER.debug(
+        "Getting VuMark target ID for database '%s' and target '%s'.",
+        database_name,
+        target_name,
+    )
+    navigate_to_database(
+        driver=driver,
+        database_name=database_name,
+    )
+    short_wait = WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+    target_key_tab = short_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "target-key-tab"),
+        ),
+    )
+    target_key_tab.click()
+    short_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "table_search"),
+        ),
+    )
+    target_name_xpath_literal = _xpath_literal(value=target_name)
+    target_row_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+    short_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.XPATH, f"//*[{target_row_predicate}]"),
+        ),
+    )
+
+    target_link = _find_vumark_target_link(
+        driver=driver,
+        target_name=target_name,
+    )
+
+    url_path = urlparse(url=target_link).path
+    return url_path.rstrip("/").split(sep="/")[-1]
+
+
+@beartype
 def navigate_to_database(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> None:
@@ -442,10 +628,11 @@ def navigate_to_database(
     search_input_element.send_keys(Keys.ENTER)
 
     def _click_database_row(
-        d: WebDriver,
+        *,
+        driver: WebDriver,
     ) -> bool:
         """Find and click the row matching database_name."""
-        rows = d.find_elements(
+        rows = driver.find_elements(
             by=By.XPATH,
             value=(
                 "//span[starts-with(@id, 'table_row_')"
@@ -458,19 +645,13 @@ def navigate_to_database(
                 return True
         return False
 
-    long_wait.until(
-        method=_click_database_row,
-    )
+    long_wait.until(method=lambda d: _click_database_row(driver=d))
 
 
-@retry(
-    retry=retry_if_exception_type(
-        exception_types=TimeoutException,
-    ),
-    stop=stop_after_attempt(max_attempt_number=3),
-)
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def get_database_details(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> DatabaseDict:
@@ -532,14 +713,10 @@ def get_database_details(
     }
 
 
-@retry(
-    retry=retry_if_exception_type(
-        exception_types=TimeoutException,
-    ),
-    stop=stop_after_attempt(max_attempt_number=3),
-)
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def get_vumark_database_details(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> VuMarkDatabaseDict:
@@ -606,6 +783,7 @@ def vws_web_tools_group() -> None:
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
 def create_vws_license(
+    *,
     license_name: str,
     email_address: str,
     password: str,
@@ -630,6 +808,7 @@ def create_vws_license(
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
 def create_vws_cloud_database(
+    *,
     database_name: str,
     license_name: str,
     email_address: str,
@@ -658,6 +837,7 @@ def create_vws_cloud_database(
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
 def create_vws_vumark_database(
+    *,
     database_name: str,
     email_address: str,
     password: str,
@@ -725,10 +905,10 @@ def upload_vumark_template_to_database(  # noqa: PLR0913
 @click.option("--env-var-format", is_flag=True)
 @beartype
 def show_database_details(
+    *,
     database_name: str,
     email_address: str,
     password: str,
-    *,
     env_var_format: bool,
 ) -> None:
     """Show the details of a database."""
@@ -767,10 +947,10 @@ def show_database_details(
 @click.option("--env-var-format", is_flag=True)
 @beartype
 def show_vumark_database_details(
+    *,
     database_name: str,
     email_address: str,
     password: str,
-    *,
     env_var_format: bool,
 ) -> None:
     """Show the details of a VuMark database."""
