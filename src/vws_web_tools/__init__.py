@@ -436,6 +436,28 @@ class _VuMarkTargetIdLookupError(RuntimeError):
 
 
 @beartype
+def _assert_on_database_page(
+    *,
+    driver: WebDriver,
+    database_name: str,
+) -> None:
+    """Raise if the current page does not appear to be the requested
+    database page.
+    """
+    current_url = str(object=driver.current_url)
+    if (
+        "/develop/databases/" in current_url
+        and database_name in driver.page_source
+    ):
+        return
+    msg = (
+        f"Driver is not on the requested database page '{database_name}'. "
+        "Call navigate_to_database or wait_for_vumark_target_link first."
+    )
+    raise _VuMarkTargetIdLookupError(msg)
+
+
+@beartype
 def _xpath_literal(
     *,
     value: str,
@@ -585,6 +607,10 @@ def get_vumark_target_id(
         "Getting VuMark target ID for database '%s' and target '%s'.",
         database_name,
         target_name,
+    )
+    _assert_on_database_page(
+        driver=driver,
+        database_name=database_name,
     )
 
     try:
