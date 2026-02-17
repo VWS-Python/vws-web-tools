@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 # mypy: ignore-errors
+# pyright: reportIncompatibleMethodOverride=false, reportPrivateUsage=false, reportUnknownArgumentType=false, reportUnknownLambdaType=false
 # ruff: noqa: ARG005,PLR2004,SLF001,TC003
 # pylint: disable=protected-access,super-init-not-called
 from collections.abc import Callable
