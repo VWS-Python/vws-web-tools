@@ -431,6 +431,10 @@ class _VuMarkTargetNameNotLinkError(Exception):
     """
 
 
+class _VuMarkTargetIdLookupError(RuntimeError):
+    """Raised when a VuMark target ID cannot be retrieved from the UI."""
+
+
 @beartype
 def _find_vumark_target_link(
     *,
@@ -555,20 +559,20 @@ def get_vumark_target_id(
             "VuMark target ID is only available when the target name is "
             "rendered as a link. The target may still be processing."
         )
-        raise TypeError(msg) from exception
+        raise _VuMarkTargetIdLookupError(msg) from exception
     except _VuMarkTargetLinkNotFoundError as exception:
         msg = "VuMark target link was not found."
-        raise TypeError(msg) from exception
+        raise _VuMarkTargetIdLookupError(msg) from exception
 
     if not target_link:
         msg = "VuMark target link was not found."
-        raise TypeError(msg)
+        raise _VuMarkTargetIdLookupError(msg)
 
     url_path = urlparse(url=target_link).path
     target_id = url_path.rstrip("/").split(sep="/")[-1]
     if not target_id:
         msg = "VuMark target ID was not found in the target link."
-        raise TypeError(msg)
+        raise _VuMarkTargetIdLookupError(msg)
 
     return target_id
 

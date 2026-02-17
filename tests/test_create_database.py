@@ -311,7 +311,7 @@ def test_get_vumark_target_id(
             database_name=database_name,
             target_name=template_name,
         )
-    except TypeError as exception:
+    except RuntimeError as exception:
         limitation_message = str(object=exception)
 
     if target_id is not None:
