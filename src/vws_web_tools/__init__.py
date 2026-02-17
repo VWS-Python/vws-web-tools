@@ -61,6 +61,7 @@ class VuMarkDatabaseDict(TypedDict):
 
 @beartype
 def log_in(
+    *,
     driver: WebDriver,
     email_address: str,
     password: str,
@@ -89,6 +90,7 @@ def log_in(
 
 @beartype
 def _dismiss_cookie_banner(
+    *,
     driver: WebDriver,
 ) -> None:
     """Dismiss the OneTrust cookie consent banner if present."""
@@ -118,7 +120,7 @@ def _dismiss_cookie_banner(
 
 
 @beartype
-def wait_for_logged_in(driver: WebDriver) -> None:
+def wait_for_logged_in(*, driver: WebDriver) -> None:
     """Wait for the user to be logged in.
 
     Without this, we sometimes get a redirect to a post-login page.
@@ -151,6 +153,7 @@ def wait_for_logged_in(driver: WebDriver) -> None:
 )
 @beartype
 def _log_in_with_retry(
+    *,
     driver: WebDriver,
     email_address: str,
     password: str,
@@ -162,6 +165,7 @@ def _log_in_with_retry(
 
 @beartype
 def create_license(
+    *,
     driver: WebDriver,
     license_name: str,
 ) -> None:
@@ -199,6 +203,7 @@ def create_license(
 
 @beartype
 def _open_add_database_dialog(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> WebDriverWait[WebDriver]:
@@ -257,6 +262,7 @@ def _open_add_database_dialog(
 
 @beartype
 def _submit_add_database_dialog(
+    *,
     driver: WebDriver,
     wait: WebDriverWait[WebDriver],
 ) -> None:
@@ -273,6 +279,7 @@ def _submit_add_database_dialog(
 
 @beartype
 def create_cloud_database(
+    *,
     driver: WebDriver,
     database_name: str,
     license_name: str,
@@ -314,6 +321,7 @@ def create_cloud_database(
 
 @beartype
 def create_vumark_database(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> None:
@@ -334,6 +342,7 @@ def create_vumark_database(
 
 @beartype
 def upload_vumark_template(
+    *,
     driver: WebDriver,
     database_name: str,
     svg_file_path: Path,
@@ -404,6 +413,7 @@ def upload_vumark_template(
 
 @beartype
 def navigate_to_database(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> None:
@@ -442,10 +452,11 @@ def navigate_to_database(
     search_input_element.send_keys(Keys.ENTER)
 
     def _click_database_row(
-        d: WebDriver,
+        *,
+        driver: WebDriver,
     ) -> bool:
         """Find and click the row matching database_name."""
-        rows = d.find_elements(
+        rows = driver.find_elements(
             by=By.XPATH,
             value=(
                 "//span[starts-with(@id, 'table_row_')"
@@ -458,9 +469,7 @@ def navigate_to_database(
                 return True
         return False
 
-    long_wait.until(
-        method=_click_database_row,
-    )
+    long_wait.until(method=lambda d: _click_database_row(driver=d))
 
 
 @retry(
@@ -471,6 +480,7 @@ def navigate_to_database(
 )
 @beartype
 def get_database_details(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> DatabaseDict:
@@ -540,6 +550,7 @@ def get_database_details(
 )
 @beartype
 def get_vumark_database_details(
+    *,
     driver: WebDriver,
     database_name: str,
 ) -> VuMarkDatabaseDict:
@@ -606,6 +617,7 @@ def vws_web_tools_group() -> None:
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
 def create_vws_license(
+    *,
     license_name: str,
     email_address: str,
     password: str,
@@ -630,6 +642,7 @@ def create_vws_license(
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
 def create_vws_cloud_database(
+    *,
     database_name: str,
     license_name: str,
     email_address: str,
@@ -658,6 +671,7 @@ def create_vws_cloud_database(
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
 @beartype
 def create_vws_vumark_database(
+    *,
     database_name: str,
     email_address: str,
     password: str,
@@ -685,10 +699,10 @@ def create_vws_vumark_database(
 @click.option("--env-var-format", is_flag=True)
 @beartype
 def show_database_details(
+    *,
     database_name: str,
     email_address: str,
     password: str,
-    *,
     env_var_format: bool,
 ) -> None:
     """Show the details of a database."""
@@ -727,10 +741,10 @@ def show_database_details(
 @click.option("--env-var-format", is_flag=True)
 @beartype
 def show_vumark_database_details(
+    *,
     database_name: str,
     email_address: str,
     password: str,
-    *,
     env_var_format: bool,
 ) -> None:
     """Show the details of a VuMark database."""

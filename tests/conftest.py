@@ -18,8 +18,13 @@ def fixture_vws_credentials() -> VWSCredentials:
 
 
 @beartype
-def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+def pytest_collection_modifyitems(
+    session: pytest.Session,
+    config: pytest.Config,
+    items: list[pytest.Item],
+) -> None:
     """Apply the beartype decorator to all collected test functions."""
+    del session, config
     for item in items:
         assert isinstance(item, pytest.Function)
         item.obj = beartype(obj=item.obj)

@@ -23,6 +23,7 @@ def fixture_chrome_driver() -> Iterator[WebDriver]:
 
 
 def test_create_databases_library(
+    *,
     chrome_driver: WebDriver,
     vws_credentials: VWSCredentials,
 ) -> None:
@@ -65,6 +66,7 @@ def test_create_databases_library(
 
 
 def test_create_vumark_database_library(
+    *,
     chrome_driver: WebDriver,
     vws_credentials: VWSCredentials,
 ) -> None:
@@ -98,6 +100,7 @@ def test_create_vumark_database_library(
 
 
 def test_create_vumark_database_cli(
+    *,
     vws_credentials: VWSCredentials,
 ) -> None:
     """Test creating a VuMark database via the CLI."""
@@ -168,6 +171,7 @@ def test_create_vumark_database_cli(
 
 
 def test_upload_vumark_template(
+    *,
     chrome_driver: WebDriver,
     vws_credentials: VWSCredentials,
     request: pytest.FixtureRequest,
@@ -207,6 +211,7 @@ def test_upload_vumark_template(
 
 
 def test_create_databases_cli(
+    *,
     vws_credentials: VWSCredentials,
 ) -> None:
     """Test creating licenses and databases via the CLI."""
