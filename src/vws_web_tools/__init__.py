@@ -207,12 +207,7 @@ def create_license(
     )
 
 
-@retry(
-    retry=retry_if_exception_type(
-        exception_types=TimeoutException,
-    ),
-    stop=stop_after_attempt(max_attempt_number=3),
-)
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def _open_add_database_dialog(
     *,
@@ -469,12 +464,7 @@ def _find_vumark_target_link(
     return cast("str", target_link)
 
 
-@retry(
-    retry=retry_if_exception_type(
-        exception_types=TimeoutException,
-    ),
-    stop=stop_after_attempt(max_attempt_number=3),
-)
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def wait_for_vumark_target_link(
     *,
