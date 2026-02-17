@@ -458,7 +458,7 @@ def get_vumark_target_id(
                 continue
 
             target_id_element_id = (
-                f"{row_id.removesuffix(suffix='_target_name')}_target_id"
+                f"{row_id.removesuffix('_target_name')}_target_id"
             )
             target_id = d.find_element(
                 by=By.ID,
