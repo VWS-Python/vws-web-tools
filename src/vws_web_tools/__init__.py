@@ -506,8 +506,6 @@ def wait_for_vumark_target_link(
     def _click_target_key_tab(d: WebDriver) -> bool:
         """Click the target-key tab once it is interactable."""
         target_key_tab = d.find_element(by=By.ID, value="target-key-tab")
-        if not (target_key_tab.is_displayed() and target_key_tab.is_enabled()):
-            return False
         target_key_tab.click()
         return True
 
@@ -575,8 +573,6 @@ def get_vumark_target_id(
     def _click_target_key_tab(d: WebDriver) -> bool:
         """Click the target-key tab once it is interactable."""
         target_key_tab = d.find_element(by=By.ID, value="target-key-tab")
-        if not (target_key_tab.is_displayed() and target_key_tab.is_enabled()):
-            return False
         target_key_tab.click()
         return True
 
