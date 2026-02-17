@@ -445,7 +445,7 @@ def _xpath_literal(
         return f"'{value}'"
     if '"' not in value:
         return f'"{value}"'
-    parts = value.split("'")
+    parts = value.split(sep="'")
     quoted_parts = [f"'{part}'" for part in parts]
     return "concat(" + ', "\'", '.join(quoted_parts) + ")"
 
