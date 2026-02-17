@@ -432,7 +432,9 @@ class _VuMarkTargetNameNotLinkError(Exception):
 
 
 class _VuMarkTargetIdLookupError(RuntimeError):
-    """Raised when a VuMark target ID cannot be retrieved from the UI."""
+    """Raised when a VuMark target ID cannot be retrieved from the web
+    interface.
+    """
 
 
 @beartype
@@ -462,7 +464,7 @@ def _xpath_literal(
     *,
     value: str,
 ) -> str:
-    """Return an XPath string literal for a Python string."""
+    """Return a path-expression string literal for a Python string."""
     if "'" not in value:
         return f"'{value}'"
     if '"' not in value:
