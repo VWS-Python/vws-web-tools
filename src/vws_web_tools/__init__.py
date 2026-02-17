@@ -22,6 +22,13 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
+_TIMEOUT_RETRY_DECORATOR = retry(
+    retry=retry_if_exception_type(
+        exception_types=TimeoutException,
+    ),
+    stop=stop_after_attempt(max_attempt_number=3),
+)
+
 
 @beartype
 def create_chrome_driver() -> WebDriver:
@@ -145,12 +152,7 @@ def wait_for_logged_in(*, driver: WebDriver) -> None:
     _dismiss_cookie_banner(driver=driver)
 
 
-@retry(
-    retry=retry_if_exception_type(
-        exception_types=TimeoutException,
-    ),
-    stop=stop_after_attempt(max_attempt_number=3),
-)
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def _log_in_with_retry(
     *,
@@ -472,12 +474,7 @@ def navigate_to_database(
     long_wait.until(method=lambda d: _click_database_row(driver=d))
 
 
-@retry(
-    retry=retry_if_exception_type(
-        exception_types=TimeoutException,
-    ),
-    stop=stop_after_attempt(max_attempt_number=3),
-)
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def get_database_details(
     *,
@@ -542,12 +539,7 @@ def get_database_details(
     }
 
 
-@retry(
-    retry=retry_if_exception_type(
-        exception_types=TimeoutException,
-    ),
-    stop=stop_after_attempt(max_attempt_number=3),
-)
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def get_vumark_database_details(
     *,
