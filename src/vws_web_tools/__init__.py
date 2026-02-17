@@ -3,7 +3,7 @@
 import contextlib
 import logging
 from pathlib import Path
-from typing import TypedDict, cast
+from typing import TypedDict
 from urllib.parse import urlparse
 
 import click
@@ -407,169 +407,48 @@ def upload_vumark_template(
 
 
 @beartype
-def _get_logged_in_user_id(
-    driver: WebDriver,
-) -> str:
-    """Get the logged-in user's Vuforia account ID."""
-    logged_in_user_raw: object = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
-        """
-        const done = arguments[0];
-        fetch('/targetmanager/vuforiaUtil/getLoggedInUser')
-          .then(response => response.json())
-          .then(done)
-          .catch(error => done({error: String(error)}));
-        """
-    )
-    if not isinstance(logged_in_user_raw, dict):
-        msg = "Could not load logged-in user details."
-        raise TypeError(msg)
-    logged_in_user = cast("dict[str, object]", logged_in_user_raw)
-    user_id = logged_in_user.get("userId")
-    if not isinstance(user_id, str | int):
-        msg = "Could not determine Vuforia account ID."
-        raise TypeError(msg)
-    account_id = str(object=user_id)
-    if not account_id:
-        msg = "Could not determine Vuforia account ID."
-        raise TypeError(msg)
-    return account_id
-
-
-@beartype
-def _find_vumark_target_id_from_link(
+def _find_vumark_target_link(
     driver: WebDriver,
     target_name: str,
-) -> str | None:
-    """Find and return the target ID from a target-name link if
-    present.
+) -> tuple[str | None, bool]:
+    """Find and return a target-name link if present.
+
+    Returns:
+        Tuple:
+            - target link href (if available)
+            - whether a matching target row was found but was not a link
     """
-    links = driver.find_elements(
+    target_name_elements = driver.find_elements(
         by=By.XPATH,
         value=(
-            "//a[starts-with(@id, 'table_row_')"
+            "//*[starts-with(@id, 'table_row_')"
             " and contains(@id, '_target_name')]"
         ),
     )
     LOGGER.debug(
-        "Found %d candidate target-name links while searching for '%s'.",
-        len(links),
+        "Found %d candidate target-name elements while searching for '%s'.",
+        len(target_name_elements),
         target_name,
     )
-    for link in links:
-        if link.text.strip() != target_name:
+    for target_name_element in target_name_elements:
+        if target_name_element.text.strip() != target_name:
             continue
 
-        target_link = link.get_attribute(  # pyright: ignore[reportUnknownMemberType]
+        if target_name_element.tag_name.lower() != "a":
+            return None, True
+
+        target_link = target_name_element.get_attribute(  # pyright: ignore[reportUnknownMemberType]
             name="href",
         )
         if isinstance(target_link, str) and target_link:
-            url_path = urlparse(url=target_link).path
-            target_id = url_path.rstrip("/").split(sep="/")[-1]
-            if target_id:
-                LOGGER.debug(
-                    "Found VuMark target ID '%s' from link '%s'.",
-                    target_id,
-                    target_link,
-                )
-                return target_id
-    return None
-
-
-@beartype
-def _find_vumark_target_id_from_api(
-    driver: WebDriver,
-    target_name: str,
-    project_id: str,
-    account_id: str,
-) -> str | None:
-    """Find and return the target ID from the VuMark target list API."""
-    target_list_data_raw: object = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
-        """
-        const projectId = arguments[0];
-        const accountId = arguments[1];
-        const done = arguments[2];
-        const payload = {
-          dataToBeShownForUser: accountId,
-          sEcho: 1,
-          iColumns: 6,
-          sColumns: '',
-          iDisplayStart: 0,
-          iDisplayLength: 25,
-          amDataProp: [0,1,2,3,4,5],
-          sSearch: '',
-          bRegex: false,
-          asSearch: ['', '', '', '', '', ''],
-          abRegex: [false, false, false, false, false, false],
-          abSearchable: [true, true, true, true, true, true],
-          aiSortCol: [4],
-          asSortDir: ['desc'],
-          iSortingCols: 1,
-          abSortable: [false, false, false, false, false, false],
-          synch: false,
-          projectId: projectId,
-          projectIds: [1,2,3],
-          isLegacyProject: false,
-          dbListingType: 'vumark',
-        };
-        fetch('/targetmanager/project/getVumarkTargetList', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(payload),
-        })
-          .then(response => response.json())
-          .then(done)
-          .catch(error => done({error: String(error)}));
-        """,
-        project_id,
-        account_id,
-    )
-    if not isinstance(target_list_data_raw, dict):
-        return None
-
-    target_list_data = cast("dict[str, object]", target_list_data_raw)
-    rows = target_list_data.get("aaData")
-    if not isinstance(rows, list):
-        return None
-
-    for row_object in rows:
-        if not isinstance(row_object, dict):
-            continue
-        row = cast("dict[str, object]", row_object)
-        if row.get("target_name") != target_name:
-            continue
-        target_id = row.get("target_id")
-        if isinstance(target_id, str) and target_id:
             LOGGER.debug(
-                "Found VuMark target ID '%s' from API row for '%s'.",
-                target_id,
+                "Found VuMark target link '%s' for '%s'.",
+                target_link,
                 target_name,
             )
-            return target_id
-    return None
-
-
-@beartype
-def _resolve_vumark_target_id(
-    driver: WebDriver,
-    target_name: str,
-    project_id: str,
-    account_id: str,
-) -> str | None:
-    """Resolve a VuMark target ID from either link href or API
-    response.
-    """
-    target_id = _find_vumark_target_id_from_link(
-        driver=driver,
-        target_name=target_name,
-    )
-    if target_id is not None:
-        return target_id
-    return _find_vumark_target_id_from_api(
-        driver=driver,
-        target_name=target_name,
-        project_id=project_id,
-        account_id=account_id,
-    )
+            return target_link, False
+        return None, True
+    return None, False
 
 
 @retry(
@@ -584,7 +463,13 @@ def get_vumark_target_id(
     database_name: str,
     target_name: str,
 ) -> str:
-    """Get the ID for a VuMark target in a database."""
+    """Get the ID for a VuMark target in a database.
+
+    Limitation:
+        This only works once VWS renders the target name as a clickable link.
+        While a target is still processing, VWS often renders plain text in
+        that column and no target ID link is available.
+    """
     LOGGER.debug(
         "Getting VuMark target ID for database '%s' and target '%s'.",
         database_name,
@@ -607,32 +492,37 @@ def get_vumark_target_id(
     )
     target_key_tab.click()
 
-    current_url = str(object=driver.current_url)
-    target_list_url_path = urlparse(url=current_url).path.rstrip("/")
-    target_list_url_parts = target_list_url_path.split(sep="/")
-    project_id = target_list_url_parts[-2]
-    account_id = _get_logged_in_user_id(driver=driver)
-
     long_wait.until(
         method=lambda d: (
-            _resolve_vumark_target_id(
-                driver=d,
-                target_name=target_name,
-                project_id=project_id,
-                account_id=account_id,
-            )
+            (
+                target_link_and_state := _find_vumark_target_link(
+                    driver=d,
+                    target_name=target_name,
+                )
+            )[0]
             is not None
+            or target_link_and_state[1]
         ),
     )
 
-    target_id = _resolve_vumark_target_id(
+    target_link, matching_non_link_row_found = _find_vumark_target_link(
         driver=driver,
         target_name=target_name,
-        project_id=project_id,
-        account_id=account_id,
     )
+    if not target_link:
+        if matching_non_link_row_found:
+            msg = (
+                "VuMark target ID is only available when the target name is "
+                "rendered as a link. The target may still be processing."
+            )
+            raise TypeError(msg)
+        msg = "VuMark target link was not found."
+        raise TypeError(msg)
+
+    url_path = urlparse(url=target_link).path
+    target_id = url_path.rstrip("/").split(sep="/")[-1]
     if not target_id:
-        msg = "VuMark target ID was not found."
+        msg = "VuMark target ID was not found in the target link."
         raise TypeError(msg)
 
     return target_id

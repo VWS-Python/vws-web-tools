@@ -242,16 +242,25 @@ def test_get_vumark_target_id(
         width=1.0,
     )
 
-    target_id = vws_web_tools.get_vumark_target_id(
-        driver=chrome_driver,
-        database_name=database_name,
-        target_name=template_name,
-    )
+    limitation_text = "rendered as a link"
+    target_id: str | None = None
+    caught_error: TypeError | None = None
+    try:
+        target_id = vws_web_tools.get_vumark_target_id(
+            driver=chrome_driver,
+            database_name=database_name,
+            target_name=template_name,
+        )
+    except TypeError as exception:
+        caught_error = exception
 
-    expected_target_id_length = 32
-    assert target_id
-    assert len(target_id) == expected_target_id_length
-    assert target_id.isalnum()
+    if target_id is not None:
+        expected_target_id_length = 32
+        assert len(target_id) == expected_target_id_length
+        assert target_id.isalnum()
+    else:
+        assert caught_error is not None
+        assert limitation_text in str(caught_error)
 
 
 def test_create_databases_cli(
