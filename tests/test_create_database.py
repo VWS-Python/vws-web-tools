@@ -260,9 +260,6 @@ def test_upload_vumark_template_cli(
     )
     assert upload_template_result.exit_code == 0
 
-    # Upload success is validated by exit code; a separate library test
-    # verifies template visibility in the target table.
-
 
 def test_create_databases_cli(
     vws_credentials: VWSCredentials,
