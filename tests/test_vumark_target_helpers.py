@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+# mypy: disable-error-code=attr-defined,call-overload,misc,override
 # ruff: noqa: ARG005,PLR2004,SLF001,TC003
 # pylint: disable=protected-access,super-init-not-called
 from collections.abc import Callable
@@ -358,8 +359,7 @@ def test_get_vumark_target_id_raises_for_missing_target_row(
             del method
             self._until_calls += 1
             if self._until_calls == 3:
-                msg = "Target row not found."
-                raise TimeoutException(msg)
+                raise TimeoutException
             return _FakeClickableElement()
 
     monkeypatch.setattr(
