@@ -440,8 +440,8 @@ def get_vumark_target_id(
 
     def _get_target_id(
         d: WebDriver,
-    ) -> str | bool:
-        """Find and return the target ID for target_name."""
+    ) -> str | None:
+        """Find and return the target ID for target_name if present."""
         rows = d.find_elements(
             by=By.XPATH,
             value=(
@@ -468,12 +468,14 @@ def get_vumark_target_id(
             ).text.strip()
             if target_id:
                 return target_id
-        return False
+        return None
 
-    target_id = long_wait.until(
-        method=_get_target_id,
+    long_wait.until(
+        method=lambda d: _get_target_id(d=d) is not None,
     )
-    if not isinstance(target_id, str):
+
+    target_id = _get_target_id(d=driver)
+    if target_id is None:
         msg = "VuMark target ID should be a string."
         raise TypeError(msg)
     return target_id
