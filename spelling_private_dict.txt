@@ -1,4 +1,5 @@
 SVG
+XPath
 beartype
 changelog
 cli

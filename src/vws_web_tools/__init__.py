@@ -1,8 +1,10 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
+import logging
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, cast
+from urllib.parse import urlparse
 
 import click
 import yaml
@@ -21,6 +23,8 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
+
+LOGGER = logging.getLogger(name=__name__)
 
 _TIMEOUT_RETRY_DECORATOR = retry(
     retry=retry_if_exception_type(
@@ -417,6 +421,180 @@ def upload_vumark_template(
             text_=template_name,
         ),
     )
+
+
+@beartype
+def _xpath_literal(
+    *,
+    value: str,
+) -> str:
+    """Return an XPath string literal."""
+    return f"'{value}'"
+
+
+@beartype
+def _find_vumark_target_link(
+    *,
+    driver: WebDriver,
+    target_name: str,
+) -> str:
+    """Find and return a target-name link."""
+    target_name_xpath_literal = _xpath_literal(value=target_name)
+    target_row_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+    target_link_elements = driver.find_elements(
+        by=By.XPATH,
+        value=f"//a[{target_row_predicate}]",
+    )
+    LOGGER.debug(
+        "Found %d matching target-name links while searching for '%s'.",
+        len(target_link_elements),
+        target_name,
+    )
+    target_link_element = target_link_elements[0]
+    target_link = target_link_element.get_attribute(  # pyright: ignore[reportUnknownMemberType]
+        name="href",
+    )
+    LOGGER.debug(
+        "Found VuMark target link '%s' for '%s'.",
+        target_link,
+        target_name,
+    )
+    return cast("str", target_link)
+
+
+@retry(
+    retry=retry_if_exception_type(
+        exception_types=TimeoutException,
+    ),
+    stop=stop_after_attempt(max_attempt_number=3),
+)
+@beartype
+def wait_for_vumark_target_link(
+    *,
+    driver: WebDriver,
+    database_name: str,
+    target_name: str,
+    timeout: int = 180,
+) -> None:
+    """Wait for a VuMark target row to be rendered on the target-key
+    tab.
+
+    This waits until the matching target row is rendered as a clickable
+    link.
+    """
+    navigate_to_database(driver=driver, database_name=database_name)
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=timeout,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    target_key_tab = long_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "target-key-tab"),
+        ),
+    )
+    target_key_tab.click()
+
+    target_name_xpath_literal = _xpath_literal(value=target_name)
+    target_row_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+
+    def _target_link_found(d: WebDriver) -> bool:
+        """Return whether the target row is visible as a link."""
+        return bool(
+            d.find_elements(
+                by=By.XPATH,
+                value=f"//a[{target_row_predicate}]",
+            ),
+        )
+
+    long_wait.until(
+        method=_target_link_found,
+    )
+
+
+@beartype
+def get_vumark_target_id(
+    driver: WebDriver,
+    database_name: str,
+    target_name: str,
+) -> str:
+    """Get the ID for a VuMark target in a database.
+
+    Limitation:
+        This navigates to the requested database but does not wait for
+        readiness. It hard-errors if the target name is not yet rendered
+        as a clickable link. While a target is still processing, VWS
+        often renders plain text in that column and no target ID link is
+        available.
+    """
+    LOGGER.debug(
+        "Getting VuMark target ID for database '%s' and target '%s'.",
+        database_name,
+        target_name,
+    )
+    navigate_to_database(
+        driver=driver,
+        database_name=database_name,
+    )
+    short_wait = WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+    target_key_tab = short_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "target-key-tab"),
+        ),
+    )
+    target_key_tab.click()
+    short_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "table_search"),
+        ),
+    )
+    target_name_xpath_literal = _xpath_literal(value=target_name)
+    target_row_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+    short_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.XPATH, f"//*[{target_row_predicate}]"),
+        ),
+    )
+
+    target_link = _find_vumark_target_link(
+        driver=driver,
+        target_name=target_name,
+    )
+
+    url_path = urlparse(url=target_link).path
+    return url_path.rstrip("/").split(sep="/")[-1]
 
 
 @beartype
