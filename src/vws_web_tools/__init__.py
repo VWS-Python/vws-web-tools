@@ -898,6 +898,76 @@ def upload_vumark_template_to_database(  # noqa: PLR0913
         driver.quit()
 
 
+@click.command(name="get-vumark-instance-id")
+@click.option("--database-name", required=True)
+@click.option("--target-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
+@beartype
+def get_vumark_instance_id(
+    *,
+    database_name: str,
+    target_name: str,
+    email_address: str,
+    password: str,
+) -> None:
+    """Get the VuMark instance ID for a target."""
+    driver = create_chrome_driver()
+    try:
+        _log_in_with_retry(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        instance_id = get_vumark_target_id(
+            driver=driver,
+            database_name=database_name,
+            target_name=target_name,
+        )
+    finally:
+        driver.quit()
+    click.echo(message=instance_id)
+
+
+@click.command(name="wait-for-vumark-instance-id")
+@click.option("--database-name", required=True)
+@click.option("--target-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
+@click.option("--timeout", type=int, default=180, show_default=True)
+@beartype
+def wait_for_vumark_instance_id(
+    *,
+    database_name: str,
+    target_name: str,
+    email_address: str,
+    password: str,
+    timeout: int,
+) -> None:
+    """Wait for and get the VuMark instance ID for a target."""
+    driver = create_chrome_driver()
+    try:
+        _log_in_with_retry(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        wait_for_vumark_target_link(
+            driver=driver,
+            database_name=database_name,
+            target_name=target_name,
+            timeout=timeout,
+        )
+        instance_id = get_vumark_target_id(
+            driver=driver,
+            database_name=database_name,
+            target_name=target_name,
+        )
+    finally:
+        driver.quit()
+    click.echo(message=instance_id)
+
+
 @click.command()
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
@@ -983,6 +1053,8 @@ def show_vumark_database_details(
 vws_web_tools_group.add_command(cmd=create_vws_cloud_database)
 vws_web_tools_group.add_command(cmd=create_vws_license)
 vws_web_tools_group.add_command(cmd=create_vws_vumark_database)
+vws_web_tools_group.add_command(cmd=get_vumark_instance_id)
 vws_web_tools_group.add_command(cmd=show_database_details)
 vws_web_tools_group.add_command(cmd=show_vumark_database_details)
 vws_web_tools_group.add_command(cmd=upload_vumark_template_to_database)
+vws_web_tools_group.add_command(cmd=wait_for_vumark_instance_id)

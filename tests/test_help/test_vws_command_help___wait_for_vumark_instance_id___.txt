@@ -1,0 +1,11 @@
+Usage: vws-web wait-for-vumark-instance-id [OPTIONS]
+
+  Wait for and get the VuMark instance ID for a target.
+
+Options:
+  --database-name TEXT  [required]
+  --target-name TEXT    [required]
+  --email-address TEXT  [required]
+  --password TEXT       [required]
+  --timeout INTEGER     [default: 180]
+  --help                Show this message and exit.
