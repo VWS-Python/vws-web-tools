@@ -436,6 +436,21 @@ class _VuMarkTargetIdLookupError(RuntimeError):
 
 
 @beartype
+def _xpath_literal(
+    *,
+    value: str,
+) -> str:
+    """Return an XPath string literal for a Python string."""
+    if "'" not in value:
+        return f"'{value}'"
+    if '"' not in value:
+        return f'"{value}"'
+    parts = value.split("'")
+    quoted_parts = [f"'{part}'" for part in parts]
+    return "concat(" + ', "\'", '.join(quoted_parts) + ")"
+
+
+@beartype
 def _find_vumark_target_link(
     *,
     driver: WebDriver,
@@ -449,31 +464,27 @@ def _find_vumark_target_link(
         _VuMarkTargetLinkNotFoundError:
             Matching target row was not found.
     """
-    target_name_elements = driver.find_elements(
+    target_name_xpath_literal = _xpath_literal(value=target_name)
+    target_name_column_suffix = "_target_name"
+    target_row_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+    target_link_elements = driver.find_elements(
         by=By.XPATH,
-        value=(
-            "//*[starts-with(@id, 'table_row_')"
-            " and contains(@id, '_target_name')]"
-        ),
+        value=f"//a[{target_row_predicate}]",
     )
     LOGGER.debug(
-        "Found %d candidate target-name elements while searching for '%s'.",
-        len(target_name_elements),
+        "Found %d matching target-name links while searching for '%s'.",
+        len(target_link_elements),
         target_name,
     )
-    for target_name_element in target_name_elements:
-        if target_name_element.text.strip() != target_name:
-            continue
-
-        if target_name_element.tag_name.lower() != "a":
-            msg = (
-                f"Matching target '{target_name}' is present but not a "
-                "clickable "
-                "link."
-            )
-            raise _VuMarkTargetNameNotLinkError(msg)
-
-        target_link = target_name_element.get_attribute(  # pyright: ignore[reportUnknownMemberType]
+    if target_link_elements:
+        target_link = target_link_elements[0].get_attribute(  # pyright: ignore[reportUnknownMemberType]
             name="href",
         )
         if isinstance(target_link, str) and target_link:
@@ -485,6 +496,18 @@ def _find_vumark_target_link(
             return target_link
         msg = f"Matching target '{target_name}' link has no href."
         raise _VuMarkTargetNameNotLinkError(msg)
+
+    target_name_non_link_elements = driver.find_elements(
+        by=By.XPATH,
+        value=f"//*[{target_row_predicate} and not(self::a)]",
+    )
+    if target_name_non_link_elements:
+        msg = (
+            f"Matching target '{target_name}' is present in "
+            f"{target_name_column_suffix} but not a clickable link."
+        )
+        raise _VuMarkTargetNameNotLinkError(msg)
+
     msg = f"Could not find target row for '{target_name}'."
     raise _VuMarkTargetLinkNotFoundError(msg)
 
