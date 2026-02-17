@@ -421,17 +421,29 @@ def upload_vumark_template(
     )
 
 
+class _VuMarkTargetLinkNotFoundError(Exception):
+    """Raised when no matching VuMark target row is found."""
+
+
+class _VuMarkTargetNameNotLinkError(Exception):
+    """Raised when a matching VuMark target row is not rendered as a
+    link.
+    """
+
+
 @beartype
 def _find_vumark_target_link(
+    *,
     driver: WebDriver,
     target_name: str,
-) -> tuple[str | None, bool]:
-    """Find and return a target-name link if present.
+) -> str:
+    """Find and return a target-name link.
 
-    Returns:
-        Tuple:
-            - target link href (if available)
-            - whether a matching target row was found but was not a link
+    Raises:
+        _VuMarkTargetNameNotLinkError:
+            Matching target row was found but was not a link.
+        _VuMarkTargetLinkNotFoundError:
+            Matching target row was not found.
     """
     target_name_elements = driver.find_elements(
         by=By.XPATH,
@@ -450,7 +462,12 @@ def _find_vumark_target_link(
             continue
 
         if target_name_element.tag_name.lower() != "a":
-            return None, True
+            msg = (
+                f"Matching target '{target_name}' is present but not a "
+                "clickable "
+                "link."
+            )
+            raise _VuMarkTargetNameNotLinkError(msg)
 
         target_link = target_name_element.get_attribute(  # pyright: ignore[reportUnknownMemberType]
             name="href",
@@ -461,9 +478,11 @@ def _find_vumark_target_link(
                 target_link,
                 target_name,
             )
-            return target_link, False
-        return None, True
-    return None, False
+            return target_link
+        msg = f"Matching target '{target_name}' link has no href."
+        raise _VuMarkTargetNameNotLinkError(msg)
+    msg = f"Could not find target row for '{target_name}'."
+    raise _VuMarkTargetLinkNotFoundError(msg)
 
 
 @retry(
@@ -507,30 +526,41 @@ def get_vumark_target_id(
     )
     target_key_tab.click()
 
+    def _target_link_or_non_link_found(d: WebDriver) -> bool:
+        """Return whether the target row is visible as a link or plain
+        text.
+        """
+        try:
+            _find_vumark_target_link(
+                driver=d,
+                target_name=target_name,
+            )
+        except _VuMarkTargetNameNotLinkError:
+            return True
+        except _VuMarkTargetLinkNotFoundError:
+            return False
+        return True
+
     long_wait.until(
-        method=lambda d: (
-            (
-                target_link_and_state := _find_vumark_target_link(
-                    driver=d,
-                    target_name=target_name,
-                )
-            )[0]
-            is not None
-            or target_link_and_state[1]
-        ),
+        method=_target_link_or_non_link_found,
     )
 
-    target_link, matching_non_link_row_found = _find_vumark_target_link(
-        driver=driver,
-        target_name=target_name,
-    )
+    try:
+        target_link = _find_vumark_target_link(
+            driver=driver,
+            target_name=target_name,
+        )
+    except _VuMarkTargetNameNotLinkError as exception:
+        msg = (
+            "VuMark target ID is only available when the target name is "
+            "rendered as a link. The target may still be processing."
+        )
+        raise TypeError(msg) from exception
+    except _VuMarkTargetLinkNotFoundError as exception:
+        msg = "VuMark target link was not found."
+        raise TypeError(msg) from exception
+
     if not target_link:
-        if matching_non_link_row_found:
-            msg = (
-                "VuMark target ID is only available when the target name is "
-                "rendered as a link. The target may still be processing."
-            )
-            raise TypeError(msg)
         msg = "VuMark target link was not found."
         raise TypeError(msg)
 
