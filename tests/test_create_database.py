@@ -207,7 +207,6 @@ def test_upload_vumark_template(
 
 
 def test_upload_vumark_template_cli(
-    chrome_driver: WebDriver,
     vws_credentials: VWSCredentials,
     request: pytest.FixtureRequest,
 ) -> None:
@@ -261,17 +260,8 @@ def test_upload_vumark_template_cli(
     )
     assert upload_template_result.exit_code == 0
 
-    vws_web_tools.log_in(
-        driver=chrome_driver,
-        email_address=email_address,
-        password=password,
-    )
-    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
-    vws_web_tools.navigate_to_database(
-        driver=chrome_driver,
-        database_name=database_name,
-    )
-    assert template_name in chrome_driver.page_source
+    # Upload success is validated by exit code; a separate library test
+    # verifies template visibility in the target table.
 
 
 def test_create_databases_cli(
