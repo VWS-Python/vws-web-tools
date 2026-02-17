@@ -24,7 +24,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger(name=__name__)
 
 
 @beartype
@@ -423,7 +423,8 @@ def _get_logged_in_user_id(
     if not isinstance(logged_in_user, dict):
         msg = "Could not load logged-in user details."
         raise TypeError(msg)
-    account_id = str(logged_in_user.get("userId", ""))
+    user_id = logged_in_user.get("userId", "")
+    account_id = str(object=user_id)
     if not account_id:
         msg = "Could not determine Vuforia account ID."
         raise TypeError(msg)
@@ -457,8 +458,8 @@ def _find_vumark_target_id_from_link(
         target_link = link.get_attribute(  # pyright: ignore[reportUnknownMemberType]
             name="href",
         )
-        if target_link:
-            url_path = urlparse(target_link).path
+        if isinstance(target_link, str) and target_link:
+            url_path = urlparse(url=target_link).path
             target_id = url_path.rstrip("/").split(sep="/")[-1]
             if target_id:
                 LOGGER.debug(
@@ -600,7 +601,8 @@ def get_vumark_target_id(
     )
     target_key_tab.click()
 
-    target_list_url_path = urlparse(driver.current_url).path.rstrip("/")
+    current_url = str(object=driver.current_url)
+    target_list_url_path = urlparse(url=current_url).path.rstrip("/")
     target_list_url_parts = target_list_url_path.split(sep="/")
     project_id = target_list_url_parts[-2]
     account_id = _get_logged_in_user_id(driver=driver)
