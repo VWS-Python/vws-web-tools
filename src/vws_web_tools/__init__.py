@@ -71,13 +71,13 @@ class VuMarkDatabaseDict(TypedDict):
 
 
 @beartype
-def log_in(
+def _log_in_once(
     *,
     driver: WebDriver,
     email_address: str,
     password: str,
 ) -> None:
-    """Log in to Vuforia web services."""
+    """Submit the login form once."""
     log_in_url = "https://developer.vuforia.com/auth/login"
     driver.get(url=log_in_url)
     thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
@@ -158,14 +158,14 @@ def wait_for_logged_in(*, driver: WebDriver) -> None:
 
 @_TIMEOUT_RETRY_DECORATOR
 @beartype
-def _log_in_with_retry(
+def log_in(
     *,
     driver: WebDriver,
     email_address: str,
     password: str,
 ) -> None:
-    """Log in to Vuforia, retrying on timeout."""
-    log_in(driver=driver, email_address=email_address, password=password)
+    """Log in to Vuforia web services, retrying on timeout."""
+    _log_in_once(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
 
 
@@ -791,7 +791,7 @@ def create_vws_license(
     """Create a license."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -817,7 +817,7 @@ def create_vws_cloud_database(
     """Create a cloud database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -845,7 +845,7 @@ def create_vws_vumark_database(
     """Create a VuMark database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -882,7 +882,7 @@ def upload_vumark_template_to_database(  # noqa: PLR0913
     """Upload a VuMark SVG template to a VuMark database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -914,7 +914,7 @@ def get_vumark_instance_id(
     """Get the VuMark instance ID for a target."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -947,7 +947,7 @@ def wait_for_vumark_instance_id(
     """Wait for and get the VuMark instance ID for a target."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -984,7 +984,7 @@ def show_database_details(
     """Show the details of a database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -1026,7 +1026,7 @@ def show_vumark_database_details(
     """Show the details of a VuMark database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
