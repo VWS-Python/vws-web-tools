@@ -453,7 +453,7 @@ def get_vumark_target_id(
             if row.text.strip() != target_name:
                 continue
 
-            row_id = row.get_attribute(name="id")
+            row_id = row.get_attribute("id")
             if row_id is None:
                 continue
 
