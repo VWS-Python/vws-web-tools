@@ -24,6 +24,7 @@ Reference
 .. toctree::
    :maxdepth: 3
 
+   python-api
    contributing
    release-process
    changelog

@@ -26,6 +26,12 @@ Usage
    $ vws-web-tools create-vws-cloud-database --license-name "my-licence-$TIME" --database-name "my-database-$TIME"
    $ vws-web-tools show-database-details --database-name "my-database-$TIME"
 
+Python API
+----------
+
+This project also exposes a Python API.
+See the `Python API reference <https://vws-python.github.io/vws-web-tools/python-api.html>`__.
+
 Full documentation
 ------------------
 
