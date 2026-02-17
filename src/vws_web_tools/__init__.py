@@ -3,7 +3,7 @@
 import contextlib
 import logging
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, cast
 from urllib.parse import urlparse
 
 import click
@@ -411,7 +411,7 @@ def _get_logged_in_user_id(
     driver: WebDriver,
 ) -> str:
     """Get the logged-in user's Vuforia account ID."""
-    logged_in_user = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
+    logged_in_user_raw: object = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
         """
         const done = arguments[0];
         fetch('/targetmanager/vuforiaUtil/getLoggedInUser')
@@ -420,10 +420,14 @@ def _get_logged_in_user_id(
           .catch(error => done({error: String(error)}));
         """
     )
-    if not isinstance(logged_in_user, dict):
+    if not isinstance(logged_in_user_raw, dict):
         msg = "Could not load logged-in user details."
         raise TypeError(msg)
-    user_id = logged_in_user.get("userId", "")
+    logged_in_user = cast("dict[str, object]", logged_in_user_raw)
+    user_id = logged_in_user.get("userId")
+    if not isinstance(user_id, str | int):
+        msg = "Could not determine Vuforia account ID."
+        raise TypeError(msg)
     account_id = str(object=user_id)
     if not account_id:
         msg = "Could not determine Vuforia account ID."
@@ -479,7 +483,7 @@ def _find_vumark_target_id_from_api(
     account_id: str,
 ) -> str | None:
     """Find and return the target ID from the VuMark target list API."""
-    target_list_data = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
+    target_list_data_raw: object = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
         """
         const projectId = arguments[0];
         const accountId = arguments[1];
@@ -519,16 +523,18 @@ def _find_vumark_target_id_from_api(
         project_id,
         account_id,
     )
-    if not isinstance(target_list_data, dict):
+    if not isinstance(target_list_data_raw, dict):
         return None
 
+    target_list_data = cast("dict[str, object]", target_list_data_raw)
     rows = target_list_data.get("aaData")
     if not isinstance(rows, list):
         return None
 
-    for row in rows:
-        if not isinstance(row, dict):
+    for row_object in rows:
+        if not isinstance(row_object, dict):
             continue
+        row = cast("dict[str, object]", row_object)
         if row.get("target_name") != target_name:
             continue
         target_id = row.get("target_id")
