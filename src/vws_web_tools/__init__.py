@@ -276,8 +276,13 @@ def _submit_add_database_dialog(
     )
     generate_button.click()
     wait.until(
-        method=expected_conditions.invisibility_of_element_located(
-            locator=(By.ID, generate_button_id),
+        method=lambda d: (
+            not any(
+                element.is_displayed()
+                for element in d.find_elements(
+                    by=By.ID, value=generate_button_id
+                )
+            )
         ),
     )
 
