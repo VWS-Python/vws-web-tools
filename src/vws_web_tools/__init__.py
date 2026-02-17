@@ -471,7 +471,6 @@ def wait_for_vumark_target_link(
     driver: WebDriver,
     database_name: str,
     target_name: str,
-    timeout: int = 180,
 ) -> None:
     """Wait for a VuMark target row to be rendered on the target-key
     tab.
@@ -482,7 +481,7 @@ def wait_for_vumark_target_link(
     navigate_to_database(driver=driver, database_name=database_name)
     long_wait = WebDriverWait(
         driver=driver,
-        timeout=timeout,
+        timeout=180,
         ignored_exceptions=(
             NoSuchElementException,
             StaleElementReferenceException,
