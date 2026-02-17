@@ -71,13 +71,13 @@ class VuMarkDatabaseDict(TypedDict):
 
 
 @beartype
-def log_in(
+def _log_in_once(
     *,
     driver: WebDriver,
     email_address: str,
     password: str,
 ) -> None:
-    """Log in to Vuforia web services."""
+    """Submit the login form once."""
     log_in_url = "https://developer.vuforia.com/auth/login"
     driver.get(url=log_in_url)
     thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
@@ -158,14 +158,14 @@ def wait_for_logged_in(*, driver: WebDriver) -> None:
 
 @_TIMEOUT_RETRY_DECORATOR
 @beartype
-def _log_in_with_retry(
+def log_in(
     *,
     driver: WebDriver,
     email_address: str,
     password: str,
 ) -> None:
-    """Log in to Vuforia, retrying on timeout."""
-    log_in(driver=driver, email_address=email_address, password=password)
+    """Log in to Vuforia web services, retrying on timeout."""
+    _log_in_once(driver=driver, email_address=email_address, password=password)
     wait_for_logged_in(driver=driver)
 
 
@@ -405,15 +405,29 @@ def upload_vumark_template(
     )
     add_button.click()
 
-    thirty_second_wait.until(
-        method=expected_conditions.staleness_of(element=add_button),
-    )
-
     # Wait for the uploaded template to appear in the targets table.
-    thirty_second_wait.until(
-        method=expected_conditions.text_to_be_present_in_element(
-            locator=(By.ID, "table_row_0_target_name"),
-            text_=template_name,
+    # The add button can remain attached to the DOM after submission,
+    # so waiting for staleness here is flaky.
+    target_name_xpath_literal = _xpath_literal(value=template_name)
+    target_name_cell_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+    long_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.XPATH, f"//*[{target_name_cell_predicate}]"),
         ),
     )
 
@@ -471,6 +485,7 @@ def wait_for_vumark_target_link(
     driver: WebDriver,
     database_name: str,
     target_name: str,
+    timeout: int = 180,
 ) -> None:
     """Wait for a VuMark target row to be rendered on the target-key
     tab.
@@ -481,19 +496,22 @@ def wait_for_vumark_target_link(
     navigate_to_database(driver=driver, database_name=database_name)
     long_wait = WebDriverWait(
         driver=driver,
-        timeout=180,
+        timeout=timeout,
         ignored_exceptions=(
             NoSuchElementException,
             StaleElementReferenceException,
         ),
     )
 
-    target_key_tab = long_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, "target-key-tab"),
-        ),
+    def _click_target_key_tab(d: WebDriver) -> bool:
+        """Click the target-key tab once it is clickable."""
+        target_key_tab = d.find_element(by=By.ID, value="target-key-tab")
+        target_key_tab.click()
+        return True
+
+    long_wait.until(
+        method=_click_target_key_tab,
     )
-    target_key_tab.click()
 
     target_name_xpath_literal = _xpath_literal(value=target_name)
     target_row_predicate = (
@@ -551,12 +569,16 @@ def get_vumark_target_id(
             StaleElementReferenceException,
         ),
     )
-    target_key_tab = short_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, "target-key-tab"),
-        ),
+
+    def _click_target_key_tab(d: WebDriver) -> bool:
+        """Click the target-key tab once it is clickable."""
+        target_key_tab = d.find_element(by=By.ID, value="target-key-tab")
+        target_key_tab.click()
+        return True
+
+    short_wait.until(
+        method=_click_target_key_tab,
     )
-    target_key_tab.click()
     short_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
@@ -790,7 +812,7 @@ def create_vws_license(
     """Create a license."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -816,7 +838,7 @@ def create_vws_cloud_database(
     """Create a cloud database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -844,7 +866,7 @@ def create_vws_vumark_database(
     """Create a VuMark database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -881,7 +903,7 @@ def upload_vumark_template_to_database(  # noqa: PLR0913
     """Upload a VuMark SVG template to a VuMark database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -913,7 +935,7 @@ def get_vumark_instance_id(
     """Get the VuMark instance ID for a target."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -946,7 +968,7 @@ def wait_for_vumark_instance_id(
     """Wait for and get the VuMark instance ID for a target."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -983,7 +1005,7 @@ def show_database_details(
     """Show the details of a database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,
@@ -1025,7 +1047,7 @@ def show_vumark_database_details(
     """Show the details of a VuMark database."""
     driver = create_chrome_driver()
     try:
-        _log_in_with_retry(
+        log_in(
             driver=driver,
             email_address=email_address,
             password=password,

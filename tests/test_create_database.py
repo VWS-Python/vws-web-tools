@@ -41,8 +41,6 @@ def test_create_databases_library(
         password=password,
     )
 
-    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
-
     vws_web_tools.create_license(
         driver=chrome_driver,
         license_name=license_name,
@@ -82,7 +80,6 @@ def test_create_vumark_database_library(
         email_address=email_address,
         password=password,
     )
-    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
 
     vws_web_tools.create_vumark_database(
         driver=chrome_driver,
@@ -188,7 +185,6 @@ def test_upload_vumark_template(
         email_address=email_address,
         password=password,
     )
-    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
 
     vws_web_tools.create_vumark_database(
         driver=chrome_driver,
@@ -323,7 +319,6 @@ def test_get_vumark_target_id(
         email_address=email_address,
         password=password,
     )
-    vws_web_tools.wait_for_logged_in(driver=chrome_driver)
 
     vws_web_tools.create_vumark_database(
         driver=chrome_driver,
