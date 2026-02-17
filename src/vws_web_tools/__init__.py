@@ -269,13 +269,16 @@ def _submit_add_database_dialog(
     wait: WebDriverWait[WebDriver],
 ) -> None:
     """Click the generate button and wait for the dialog to close."""
+    generate_button_id = "generate-btn"
     generate_button = driver.find_element(
         by=By.ID,
-        value="generate-btn",
+        value=generate_button_id,
     )
     generate_button.click()
     wait.until(
-        method=expected_conditions.staleness_of(element=generate_button),
+        method=expected_conditions.invisibility_of_element_located(
+            locator=(By.ID, generate_button_id),
+        ),
     )
 
 
