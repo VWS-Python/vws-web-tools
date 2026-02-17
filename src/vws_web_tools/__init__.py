@@ -402,6 +402,81 @@ def upload_vumark_template(
     )
 
 
+@retry(
+    retry=retry_if_exception_type(
+        exception_types=TimeoutException,
+    ),
+    stop=stop_after_attempt(max_attempt_number=3),
+)
+@beartype
+def get_vumark_target_id(
+    driver: WebDriver,
+    database_name: str,
+    target_name: str,
+) -> str:
+    """Get the ID for a VuMark target in a database."""
+    navigate_to_database(driver=driver, database_name=database_name)
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    long_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "table_search"),
+        ),
+    )
+    search_input_element = driver.find_element(
+        by=By.ID,
+        value="table_search",
+    )
+    search_input_element.clear()
+    search_input_element.send_keys(target_name)
+    search_input_element.send_keys(Keys.ENTER)
+
+    def _get_target_id(
+        d: WebDriver,
+    ) -> str | bool:
+        """Find and return the target ID for target_name."""
+        rows = d.find_elements(
+            by=By.XPATH,
+            value=(
+                "//span[starts-with(@id, 'table_row_')"
+                " and contains(@id, '_target_name')]"
+            ),
+        )
+        for row in rows:
+            if row.text.strip() != target_name:
+                continue
+
+            row_id = row.get_attribute(name="id")
+            if row_id is None:
+                continue
+
+            target_id_element_id = (
+                f"{row_id.removesuffix(suffix='_target_name')}_target_id"
+            )
+            target_id = d.find_element(
+                by=By.ID,
+                value=target_id_element_id,
+            ).text.strip()
+            if target_id:
+                return target_id
+        return False
+
+    target_id = long_wait.until(
+        method=_get_target_id,
+    )
+    if not isinstance(target_id, str):
+        msg = "VuMark target ID should be a string."
+        raise TypeError(msg)
+    return target_id
+
+
 @beartype
 def navigate_to_database(
     driver: WebDriver,
