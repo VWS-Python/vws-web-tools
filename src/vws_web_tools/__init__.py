@@ -3,7 +3,7 @@
 import contextlib
 import logging
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, cast
 from urllib.parse import urlparse
 
 import click
@@ -423,35 +423,13 @@ def upload_vumark_template(
     )
 
 
-class _VuMarkTargetLinkNotFoundError(Exception):
-    """Raised when no matching VuMark target row is found."""
-
-
-class _VuMarkTargetNameNotLinkError(Exception):
-    """Raised when a matching VuMark target row is not rendered as a
-    link.
-    """
-
-
-class _VuMarkTargetIdLookupError(RuntimeError):
-    """Raised when a VuMark target ID cannot be retrieved from the web
-    interface.
-    """
-
-
 @beartype
 def _xpath_literal(
     *,
     value: str,
 ) -> str:
-    """Return a path-expression string literal for a Python string."""
-    if "'" not in value:
-        return f"'{value}'"
-    if '"' not in value:
-        return f'"{value}"'
-    parts = value.split(sep="'")
-    quoted_parts = [f"'{part}'" for part in parts]
-    return "concat(" + ', "\'", '.join(quoted_parts) + ")"
+    """Return an XPath string literal."""
+    return f"'{value}'"
 
 
 @beartype
@@ -460,16 +438,8 @@ def _find_vumark_target_link(
     driver: WebDriver,
     target_name: str,
 ) -> str:
-    """Find and return a target-name link.
-
-    Raises:
-        _VuMarkTargetNameNotLinkError:
-            Matching target row was found but was not a link.
-        _VuMarkTargetLinkNotFoundError:
-            Matching target row was not found.
-    """
+    """Find and return a target-name link."""
     target_name_xpath_literal = _xpath_literal(value=target_name)
-    target_name_column_suffix = "_target_name"
     target_row_predicate = (
         "starts-with(@id, 'table_row_')"
         " and substring("
@@ -487,33 +457,16 @@ def _find_vumark_target_link(
         len(target_link_elements),
         target_name,
     )
-    if target_link_elements:
-        target_link = target_link_elements[0].get_attribute(  # pyright: ignore[reportUnknownMemberType]
-            name="href",
-        )
-        if isinstance(target_link, str) and target_link:
-            LOGGER.debug(
-                "Found VuMark target link '%s' for '%s'.",
-                target_link,
-                target_name,
-            )
-            return target_link
-        msg = f"Matching target '{target_name}' link has no href."
-        raise _VuMarkTargetNameNotLinkError(msg)
-
-    target_name_non_link_elements = driver.find_elements(
-        by=By.XPATH,
-        value=f"//*[{target_row_predicate} and not(self::a)]",
+    target_link_element = target_link_elements[0]
+    target_link = target_link_element.get_attribute(  # pyright: ignore[reportUnknownMemberType]
+        name="href",
     )
-    if target_name_non_link_elements:
-        msg = (
-            f"Matching target '{target_name}' is present in "
-            f"{target_name_column_suffix} but not a clickable link."
-        )
-        raise _VuMarkTargetNameNotLinkError(msg)
-
-    msg = f"Could not find target row for '{target_name}'."
-    raise _VuMarkTargetLinkNotFoundError(msg)
+    LOGGER.debug(
+        "Found VuMark target link '%s' for '%s'.",
+        target_link,
+        target_name,
+    )
+    return cast("str", target_link)
 
 
 @retry(
@@ -553,18 +506,24 @@ def wait_for_vumark_target_link(
     )
     target_key_tab.click()
 
+    target_name_xpath_literal = _xpath_literal(value=target_name)
+    target_row_predicate = (
+        "starts-with(@id, 'table_row_')"
+        " and substring("
+        "@id,"
+        " string-length(@id) - string-length('_target_name') + 1"
+        " ) = '_target_name'"
+        f" and normalize-space(.) = {target_name_xpath_literal}"
+    )
+
     def _target_link_found(d: WebDriver) -> bool:
         """Return whether the target row is visible as a link."""
-        try:
-            _find_vumark_target_link(
-                driver=d,
-                target_name=target_name,
-            )
-        except _VuMarkTargetNameNotLinkError:
-            return False
-        except _VuMarkTargetLinkNotFoundError:
-            return False
-        return True
+        return bool(
+            d.find_elements(
+                by=By.XPATH,
+                value=f"//a[{target_row_predicate}]",
+            ),
+        )
 
     long_wait.until(
         method=_target_link_found,
@@ -623,42 +582,19 @@ def get_vumark_target_id(
         " ) = '_target_name'"
         f" and normalize-space(.) = {target_name_xpath_literal}"
     )
-    try:
-        short_wait.until(
-            method=expected_conditions.presence_of_element_located(
-                locator=(By.XPATH, f"//*[{target_row_predicate}]"),
-            ),
-        )
-    except TimeoutException as exception:
-        msg = "VuMark target row was not found."
-        raise _VuMarkTargetIdLookupError(msg) from exception
+    short_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.XPATH, f"//*[{target_row_predicate}]"),
+        ),
+    )
 
-    try:
-        target_link = _find_vumark_target_link(
-            driver=driver,
-            target_name=target_name,
-        )
-    except _VuMarkTargetNameNotLinkError as exception:
-        msg = (
-            "VuMark target ID is only available when the target name is "
-            "rendered as a link. The target may still be processing."
-        )
-        raise _VuMarkTargetIdLookupError(msg) from exception
-    except _VuMarkTargetLinkNotFoundError as exception:
-        msg = "VuMark target link was not found."
-        raise _VuMarkTargetIdLookupError(msg) from exception
-
-    if not target_link:
-        msg = "VuMark target link was not found."
-        raise _VuMarkTargetIdLookupError(msg)
+    target_link = _find_vumark_target_link(
+        driver=driver,
+        target_name=target_name,
+    )
 
     url_path = urlparse(url=target_link).path
-    target_id = url_path.rstrip("/").split(sep="/")[-1]
-    if not target_id:
-        msg = "VuMark target ID was not found in the target link."
-        raise _VuMarkTargetIdLookupError(msg)
-
-    return target_id
+    return url_path.rstrip("/").split(sep="/")[-1]
 
 
 @beartype
