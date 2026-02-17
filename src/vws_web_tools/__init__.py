@@ -519,27 +519,24 @@ def _find_vumark_target_link(
     stop=stop_after_attempt(max_attempt_number=3),
 )
 @beartype
-def get_vumark_target_id(
+def wait_for_vumark_target_link(
+    *,
     driver: WebDriver,
     database_name: str,
     target_name: str,
-) -> str:
-    """Get the ID for a VuMark target in a database.
+    timeout: int = 180,
+) -> None:
+    """Wait for a VuMark target row to be rendered on the target-key
+    tab.
 
-    Limitation:
-        This only works once VWS renders the target name as a clickable link.
-        While a target is still processing, VWS often renders plain text in
-        that column and no target ID link is available.
+    This waits until the matching target row is present either as a
+    clickable link or as plain text (which usually means it is still
+    processing).
     """
-    LOGGER.debug(
-        "Getting VuMark target ID for database '%s' and target '%s'.",
-        database_name,
-        target_name,
-    )
     navigate_to_database(driver=driver, database_name=database_name)
     long_wait = WebDriverWait(
         driver=driver,
-        timeout=180,
+        timeout=timeout,
         ignored_exceptions=(
             NoSuchElementException,
             StaleElementReferenceException,
@@ -570,6 +567,31 @@ def get_vumark_target_id(
 
     long_wait.until(
         method=_target_link_or_non_link_found,
+    )
+
+
+@beartype
+def get_vumark_target_id(
+    driver: WebDriver,
+    database_name: str,
+    target_name: str,
+) -> str:
+    """Get the ID for a VuMark target in a database.
+
+    Limitation:
+        This only works once VWS renders the target name as a clickable link.
+        While a target is still processing, VWS often renders plain text in
+        that column and no target ID link is available.
+    """
+    LOGGER.debug(
+        "Getting VuMark target ID for database '%s' and target '%s'.",
+        database_name,
+        target_name,
+    )
+    wait_for_vumark_target_link(
+        driver=driver,
+        database_name=database_name,
+        target_name=target_name,
     )
 
     try:
