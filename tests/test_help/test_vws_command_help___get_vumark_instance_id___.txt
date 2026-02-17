@@ -1,0 +1,10 @@
+Usage: vws-web get-vumark-instance-id [OPTIONS]
+
+  Get the VuMark instance ID for a target.
+
+Options:
+  --database-name TEXT  [required]
+  --target-name TEXT    [required]
+  --email-address TEXT  [required]
+  --password TEXT       [required]
+  --help                Show this message and exit.

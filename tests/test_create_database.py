@@ -264,6 +264,46 @@ def test_upload_vumark_template_cli(
     )
     assert upload_template_result.exit_code == 0
 
+    wait_for_instance_id_result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "wait-for-vumark-instance-id",
+            "--database-name",
+            database_name,
+            "--target-name",
+            template_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert wait_for_instance_id_result.exit_code == 0
+    wait_instance_id = wait_for_instance_id_result.output.strip()
+    expected_target_id_length = 32
+    assert len(wait_instance_id) == expected_target_id_length
+    assert wait_instance_id.isalnum()
+
+    get_instance_id_result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "get-vumark-instance-id",
+            "--database-name",
+            database_name,
+            "--target-name",
+            template_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert get_instance_id_result.exit_code == 0
+    get_instance_id = get_instance_id_result.output.strip()
+    assert get_instance_id == wait_instance_id
+
 
 def test_get_vumark_target_id(
     *,

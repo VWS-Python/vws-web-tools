@@ -9,6 +9,8 @@ Commands:
   create-vws-cloud-database     Create a cloud database.
   create-vws-license            Create a license.
   create-vws-vumark-database    Create a VuMark database.
+  get-vumark-instance-id        Get the VuMark instance ID for a target.
   show-database-details         Show the details of a database.
   show-vumark-database-details  Show the details of a VuMark database.
   upload-vumark-template        Upload a VuMark SVG template to a VuMark...
+  wait-for-vumark-instance-id   Wait for and get the VuMark instance ID for...
