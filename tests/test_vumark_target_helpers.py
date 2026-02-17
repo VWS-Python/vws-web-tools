@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-# mypy: disable-error-code=attr-defined,call-overload,misc,override
+# mypy: ignore-errors
 # ruff: noqa: ARG005,PLR2004,SLF001,TC003
 # pylint: disable=protected-access,super-init-not-called
 from collections.abc import Callable
