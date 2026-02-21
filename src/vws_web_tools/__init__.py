@@ -9,13 +9,14 @@ from urllib.parse import urlparse
 import click
 import yaml
 from beartype import beartype
-from selenium import webdriver
 from selenium.common.exceptions import (
     NoSuchElementException,
     StaleElementReferenceException,
     TimeoutException,
     WebDriverException,
 )
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.webdriver import WebDriver as ChromeDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -37,14 +38,14 @@ _TIMEOUT_RETRY_DECORATOR = retry(
 @beartype
 def create_chrome_driver() -> WebDriver:
     """Create a headless Chrome WebDriver."""
-    options = webdriver.ChromeOptions()
+    options = ChromeOptions()
     options.add_argument(argument="--headless=new")
     options.add_argument(argument="--no-sandbox")
     options.add_argument(argument="--disable-dev-shm-usage")
     # Use a large window so that pagination controls are visible
     # and clickable without scrolling.
     options.add_argument(argument="--window-size=1920,1080")
-    return webdriver.Chrome(options=options)
+    return ChromeDriver(options=options)
 
 
 @beartype
