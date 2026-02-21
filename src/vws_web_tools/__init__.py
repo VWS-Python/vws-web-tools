@@ -539,6 +539,7 @@ def wait_for_vumark_target_link(
 
 @beartype
 def get_vumark_target_id(
+    *,
     driver: WebDriver,
     database_name: str,
     target_name: str,
