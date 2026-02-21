@@ -648,6 +648,7 @@ def navigate_to_database(
     search_input_element.send_keys(database_name)
     search_input_element.send_keys(Keys.ENTER)
 
+    @beartype
     def _click_database_row(
         *,
         driver: WebDriver,
