@@ -104,7 +104,7 @@ def test_delete_license_cli(
 
     runner = CliRunner()
 
-    result = runner.invoke(
+    create_result = runner.invoke(
         cli=vws_web_tools_group,
         args=[
             "create-vws-license",
@@ -117,9 +117,10 @@ def test_delete_license_cli(
         ],
         catch_exceptions=False,
     )
-    assert result.exit_code == 0
+    assert create_result.exit_code == 0
+    assert create_result.output == ""
 
-    result = runner.invoke(
+    delete_result = runner.invoke(
         cli=vws_web_tools_group,
         args=[
             "delete-vws-license",
@@ -132,7 +133,8 @@ def test_delete_license_cli(
         ],
         catch_exceptions=False,
     )
-    assert result.exit_code == 0
+    assert delete_result.exit_code == 0
+    assert delete_result.output == ""
 
 
 def test_create_vumark_database_library(
