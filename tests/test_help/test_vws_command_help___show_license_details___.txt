@@ -1,0 +1,10 @@
+Usage: vws-web show-license-details [OPTIONS]
+
+  Show the details of a license.
+
+Options:
+  --license-name TEXT   [required]
+  --email-address TEXT  [required]
+  --password TEXT       [required]
+  --env-var-format
+  --help                Show this message and exit.
