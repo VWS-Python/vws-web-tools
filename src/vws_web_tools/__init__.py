@@ -248,25 +248,24 @@ def delete_license(
     search_input_element.send_keys(license_name)
     search_input_element.send_keys(Keys.ENTER)
 
+    license_name_xpath = _xpath_literal(value=license_name)
+
     @beartype
     def _click_license_row(
         *,
         driver: WebDriver,
     ) -> bool:
         """Find and click the row matching license_name."""
-        rows = driver.find_elements(
+        element = driver.find_element(
             by=By.XPATH,
             value=(
                 "//span[starts-with(@id, 'table_row_')"
-                " and contains(@id, '_app_name')]"
+                " and contains(@id, '_app_name')"
+                f" and normalize-space(.)={license_name_xpath}]"
             ),
         )
-        for row in rows:
-            if row.text.strip() == license_name:
-                row.click()
-                return True
-        msg = f"No license row matching '{license_name}'"
-        raise NoSuchElementException(msg=msg)
+        element.click()
+        return True
 
     thirty_second_wait.until(
         method=lambda d: _click_license_row(driver=d),
