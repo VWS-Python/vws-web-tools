@@ -45,6 +45,14 @@ def test_create_databases_library(
         driver=chrome_driver,
         license_name=license_name,
     )
+
+    license_details = vws_web_tools.get_license_details(
+        driver=chrome_driver,
+        license_name=license_name,
+    )
+    assert license_details["license_name"] == license_name
+    assert license_details["license_key"]
+
     vws_web_tools.create_cloud_database(
         driver=chrome_driver,
         database_name=database_name,
@@ -85,6 +93,14 @@ def test_delete_license_library(
         driver=chrome_driver,
         license_name=license_name,
     )
+
+    license_details = vws_web_tools.get_license_details(
+        driver=chrome_driver,
+        license_name=license_name,
+    )
+    assert license_details["license_name"] == license_name
+    assert license_details["license_key"]
+
     vws_web_tools.delete_license(
         driver=chrome_driver,
         license_name=license_name,
@@ -119,6 +135,24 @@ def test_delete_license_cli(
     )
     assert create_result.exit_code == 0
     assert create_result.output == ""
+
+    show_license_result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "show-license-details",
+            "--license-name",
+            license_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert show_license_result.exit_code == 0
+    license_details = yaml.safe_load(stream=show_license_result.output)
+    assert license_details["license_name"] == license_name
+    assert license_details["license_key"]
 
     delete_result = runner.invoke(
         cli=vws_web_tools_group,
@@ -556,6 +590,24 @@ def test_create_databases_cli(
         catch_exceptions=False,
     )
     assert result.exit_code == 0
+
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "show-license-details",
+            "--license-name",
+            license_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    license_details = yaml.safe_load(stream=result.output)
+    assert license_details["license_name"] == license_name
+    assert license_details["license_key"]
 
     result = runner.invoke(
         cli=vws_web_tools_group,
