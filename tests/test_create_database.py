@@ -63,6 +63,80 @@ def test_create_databases_library(
     assert details["client_secret_key"]
 
 
+def test_delete_license_library(
+    *,
+    chrome_driver: WebDriver,
+    vws_credentials: VWSCredentials,
+) -> None:
+    """Test deleting a license via the library."""
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    license_name = f"license-del-ci-{today_date}-{random_str}"
+
+    vws_web_tools.log_in(
+        driver=chrome_driver,
+        email_address=email_address,
+        password=password,
+    )
+
+    vws_web_tools.create_license(
+        driver=chrome_driver,
+        license_name=license_name,
+    )
+    vws_web_tools.delete_license(
+        driver=chrome_driver,
+        license_name=license_name,
+    )
+
+
+def test_delete_license_cli(
+    *,
+    vws_credentials: VWSCredentials,
+) -> None:
+    """Test deleting a license via the CLI."""
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    license_name = f"license-del-ci-{today_date}-{random_str}"
+
+    runner = CliRunner()
+
+    create_result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "create-vws-license",
+            "--license-name",
+            license_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert create_result.exit_code == 0
+    assert create_result.output == ""
+
+    delete_result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "delete-vws-license",
+            "--license-name",
+            license_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert delete_result.exit_code == 0
+    assert delete_result.output == ""
+
+
 def test_create_vumark_database_library(
     *,
     chrome_driver: WebDriver,

@@ -210,6 +210,94 @@ def create_license(
 
 @_TIMEOUT_RETRY_DECORATOR
 @beartype
+def delete_license(
+    *,
+    driver: WebDriver,
+    license_name: str,
+) -> None:
+    """Delete a license."""
+    licenses_url = "https://developer.vuforia.com/develop/licenses"
+    driver.get(url=licenses_url)
+    _dismiss_cookie_banner(driver=driver)
+
+    thirty_second_wait = WebDriverWait(
+        driver=driver,
+        timeout=30,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    thirty_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "table_search"),
+        ),
+    )
+    thirty_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "table_row_0_app_name"),
+        ),
+    )
+
+    search_input_element = driver.find_element(
+        by=By.ID,
+        value="table_search",
+    )
+    search_input_element.clear()
+    search_input_element.send_keys(license_name)
+    search_input_element.send_keys(Keys.ENTER)
+
+    license_name_xpath = _xpath_literal(value=license_name)
+
+    @beartype
+    def _click_license_row(
+        *,
+        driver: WebDriver,
+    ) -> bool:
+        """Find and click the row matching license_name."""
+        element = driver.find_element(
+            by=By.XPATH,
+            value=(
+                "//span[starts-with(@id, 'table_row_')"
+                " and contains(@id, '_app_name')"
+                f" and normalize-space(.)={license_name_xpath}]"
+            ),
+        )
+        element.click()
+        return True
+
+    thirty_second_wait.until(
+        method=lambda d: _click_license_row(driver=d),
+    )
+
+    thirty_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "license-header-name"),
+        ),
+    )
+    _dismiss_cookie_banner(driver=driver)
+
+    delete_link = thirty_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.LINK_TEXT, "Delete License Key"),
+        ),
+    )
+    delete_link.click()
+
+    confirm_button = thirty_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "delete"),
+        ),
+    )
+    confirm_button.click()
+    thirty_second_wait.until(
+        method=expected_conditions.staleness_of(element=confirm_button),
+    )
+
+
+@_TIMEOUT_RETRY_DECORATOR
+@beartype
 def _open_add_database_dialog(
     *,
     driver: WebDriver,
@@ -827,6 +915,30 @@ def create_vws_license(
 
 @click.command()
 @click.option("--license-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
+@beartype
+def delete_vws_license(
+    *,
+    license_name: str,
+    email_address: str,
+    password: str,
+) -> None:
+    """Delete a license."""
+    driver = create_chrome_driver()
+    try:
+        log_in(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        delete_license(driver=driver, license_name=license_name)
+    finally:
+        driver.quit()
+
+
+@click.command()
+@click.option("--license-name", required=True)
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
@@ -1077,6 +1189,7 @@ def show_vumark_database_details(
 vws_web_tools_group.add_command(cmd=create_vws_cloud_database)
 vws_web_tools_group.add_command(cmd=create_vws_license)
 vws_web_tools_group.add_command(cmd=create_vws_vumark_database)
+vws_web_tools_group.add_command(cmd=delete_vws_license)
 vws_web_tools_group.add_command(cmd=get_vumark_instance_id)
 vws_web_tools_group.add_command(cmd=show_database_details)
 vws_web_tools_group.add_command(cmd=show_vumark_database_details)
