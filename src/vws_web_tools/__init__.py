@@ -705,11 +705,6 @@ def navigate_to_license(
             locator=(By.ID, "table_search"),
         ),
     )
-    long_wait.until(
-        method=expected_conditions.element_to_be_clickable(
-            mark=(By.ID, "table_row_0_app_name"),
-        ),
-    )
     search_input_element = driver.find_element(
         by=By.ID,
         value="table_search",
