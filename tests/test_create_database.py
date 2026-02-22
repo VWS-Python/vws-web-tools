@@ -427,6 +427,107 @@ def test_get_vumark_target_id(
     assert target_id.isalnum()
 
 
+def test_get_license_details_library(
+    *,
+    chrome_driver: WebDriver,
+    vws_credentials: VWSCredentials,
+) -> None:
+    """Test getting license details via the library."""
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    license_name = f"license-ci-{today_date}-{random_str}"
+
+    vws_web_tools.log_in(
+        driver=chrome_driver,
+        email_address=email_address,
+        password=password,
+    )
+
+    vws_web_tools.create_license(
+        driver=chrome_driver,
+        license_name=license_name,
+    )
+
+    details = vws_web_tools.get_license_details(
+        driver=chrome_driver,
+        license_name=license_name,
+    )
+
+    assert details["license_name"] == license_name
+    assert details["license_key"]
+
+
+def test_show_license_details_cli(
+    *,
+    vws_credentials: VWSCredentials,
+) -> None:
+    """Test showing license details via the CLI."""
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    license_name = f"license-ci-{today_date}-{random_str}"
+
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "create-vws-license",
+            "--license-name",
+            license_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "show-license-details",
+            "--license-name",
+            license_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    details = yaml.safe_load(stream=result.output)
+    assert details["license_name"] == license_name
+    assert details["license_key"]
+
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "show-license-details",
+            "--license-name",
+            license_name,
+            "--email-address",
+            email_address,
+            "--password",
+            password,
+            "--env-var-format",
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    env_vars: dict[str, str] = dict(
+        line.split(sep="=", maxsplit=1)
+        for line in result.output.strip().split(sep="\n")
+    )
+    assert env_vars["VUFORIA_LICENSE_NAME"] == license_name
+    assert env_vars["VUFORIA_LICENSE_KEY"]
+
+
 def test_create_databases_cli(
     *,
     vws_credentials: VWSCredentials,

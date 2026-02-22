@@ -72,6 +72,14 @@ class VuMarkDatabaseDict(TypedDict):
 
 
 @beartype
+class LicenseDict(TypedDict):
+    """A dictionary type which represents a license."""
+
+    license_name: str
+    license_key: str
+
+
+@beartype
 def _log_in_once(
     *,
     driver: WebDriver,
@@ -760,6 +768,97 @@ def navigate_to_database(
     long_wait.until(method=lambda d: _click_database_row(driver=d))
 
 
+@beartype
+def navigate_to_license(
+    *,
+    driver: WebDriver,
+    license_name: str,
+) -> None:
+    """Navigate to a license's page in the developer portal."""
+    licenses_url = "https://developer.vuforia.com/develop/licenses"
+    driver.get(url=licenses_url)
+    _dismiss_cookie_banner(driver=driver)
+
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    long_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=(By.ID, "table_search"),
+        ),
+    )
+    search_input_element = driver.find_element(
+        by=By.ID,
+        value="table_search",
+    )
+    search_input_element.clear()
+    search_input_element.send_keys(license_name)
+    search_input_element.send_keys(Keys.ENTER)
+
+    license_name_xpath = _xpath_literal(value=license_name)
+
+    @beartype
+    def _click_license_row(
+        *,
+        driver: WebDriver,
+    ) -> bool:
+        """Find and click the row matching license_name."""
+        element = driver.find_element(
+            by=By.XPATH,
+            value=(
+                "//span[starts-with(@id, 'table_row_')"
+                " and contains(@id, '_app_name')"
+                f" and normalize-space(.)={license_name_xpath}]"
+            ),
+        )
+        element.click()
+        return True
+
+    long_wait.until(method=lambda d: _click_license_row(driver=d))
+
+
+@_TIMEOUT_RETRY_DECORATOR
+@beartype
+def get_license_details(
+    *,
+    driver: WebDriver,
+    license_name: str,
+) -> LicenseDict:
+    """Get details of a license."""
+    navigate_to_license(driver=driver, license_name=license_name)
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    long_wait.until(
+        method=lambda d: d.find_element(
+            by=By.CLASS_NAME,
+            value="license-key-box",
+        ).text.strip(),
+    )
+
+    license_key = driver.find_element(
+        by=By.CLASS_NAME,
+        value="license-key-box",
+    ).text.strip()
+
+    return {
+        "license_name": license_name,
+        "license_key": license_key,
+    }
+
+
 @_TIMEOUT_RETRY_DECORATOR
 @beartype
 def get_database_details(
@@ -1186,12 +1285,51 @@ def show_vumark_database_details(
         click.echo(message=yaml.dump(data=details), nl=False)
 
 
+@click.command()
+@click.option("--license-name", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
+@click.option("--env-var-format", is_flag=True)
+@beartype
+def show_license_details(
+    *,
+    license_name: str,
+    email_address: str,
+    password: str,
+    env_var_format: bool,
+) -> None:
+    """Show the details of a license."""
+    driver = create_chrome_driver()
+    try:
+        log_in(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        details = get_license_details(
+            driver=driver,
+            license_name=license_name,
+        )
+    finally:
+        driver.quit()
+    if env_var_format:
+        env_var_format_details = {
+            "VUFORIA_LICENSE_NAME": details["license_name"],
+            "VUFORIA_LICENSE_KEY": details["license_key"],
+        }
+        for key, value in env_var_format_details.items():
+            click.echo(message=f"{key}={value}")
+    else:
+        click.echo(message=yaml.dump(data=details), nl=False)
+
+
 vws_web_tools_group.add_command(cmd=create_vws_cloud_database)
 vws_web_tools_group.add_command(cmd=create_vws_license)
 vws_web_tools_group.add_command(cmd=create_vws_vumark_database)
 vws_web_tools_group.add_command(cmd=delete_vws_license)
 vws_web_tools_group.add_command(cmd=get_vumark_instance_id)
 vws_web_tools_group.add_command(cmd=show_database_details)
+vws_web_tools_group.add_command(cmd=show_license_details)
 vws_web_tools_group.add_command(cmd=show_vumark_database_details)
 vws_web_tools_group.add_command(cmd=upload_vumark_template_to_database)
 vws_web_tools_group.add_command(cmd=wait_for_vumark_instance_id)
