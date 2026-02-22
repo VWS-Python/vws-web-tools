@@ -265,7 +265,8 @@ def delete_license(
             if row.text.strip() == license_name:
                 row.click()
                 return True
-        return False
+        msg = f"No license row matching '{license_name}'"
+        raise NoSuchElementException(msg=msg)
 
     thirty_second_wait.until(
         method=lambda d: _click_license_row(driver=d),
