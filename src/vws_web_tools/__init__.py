@@ -178,6 +178,7 @@ def log_in(
     wait_for_logged_in(driver=driver)
 
 
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def create_license(
     *,
@@ -381,6 +382,7 @@ def _submit_add_database_dialog(
     )
 
 
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def create_cloud_database(
     *,
@@ -423,6 +425,7 @@ def create_cloud_database(
     _submit_add_database_dialog(driver=driver, wait=wait)
 
 
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def create_vumark_database(
     *,
@@ -444,6 +447,7 @@ def create_vumark_database(
     _submit_add_database_dialog(driver=driver, wait=wait)
 
 
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def upload_vumark_template(
     *,
@@ -634,6 +638,7 @@ def wait_for_vumark_target_link(
     )
 
 
+@_TIMEOUT_RETRY_DECORATOR
 @beartype
 def get_vumark_target_id(
     *,
