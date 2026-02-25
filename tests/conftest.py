@@ -8,7 +8,7 @@ from beartype import beartype
 from tests.credentials import VWSCredentials
 
 
-@pytest.fixture(name="vws_credentials")
+@pytest.fixture(name="vws_credentials", scope="session")
 def fixture_vws_credentials() -> VWSCredentials:
     """Get VWS credentials from environment variables."""
     return VWSCredentials(

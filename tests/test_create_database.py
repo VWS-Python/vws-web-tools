@@ -22,45 +22,87 @@ def fixture_chrome_driver() -> Iterator[WebDriver]:
     driver.quit()
 
 
-def test_create_databases_library(
-    *,
-    chrome_driver: WebDriver,
+@pytest.fixture(name="logged_in_chrome_driver", scope="module")
+def fixture_logged_in_chrome_driver(
     vws_credentials: VWSCredentials,
-) -> None:
-    """Test creating licenses and databases via the library."""
-    email_address = vws_credentials.email_address
-    password = vws_credentials.password
+) -> Iterator[WebDriver]:
+    """Yield a headless Chrome WebDriver that is logged in."""
+    driver = vws_web_tools.create_chrome_driver()
+    vws_web_tools.log_in(
+        driver=driver,
+        email_address=vws_credentials.email_address,
+        password=vws_credentials.password,
+    )
+    yield driver
+    driver.quit()
+
+
+@pytest.fixture(name="license_name", scope="module")
+def fixture_license_name(
+    logged_in_chrome_driver: WebDriver,
+) -> str:
+    """Create a license and return its name."""
     random_str = uuid.uuid4().hex[:5]
     today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
     license_name = f"license-ci-{today_date}-{random_str}"
-    database_name = f"database-ci-{today_date}-{random_str}"
-
-    vws_web_tools.log_in(
-        driver=chrome_driver,
-        email_address=email_address,
-        password=password,
-    )
-
     vws_web_tools.create_license(
-        driver=chrome_driver,
+        driver=logged_in_chrome_driver,
         license_name=license_name,
     )
+    return license_name
+
+
+@pytest.fixture(name="cli_license_name", scope="module")
+def fixture_cli_license_name(
+    vws_credentials: VWSCredentials,
+) -> str:
+    """Create a license via the CLI and return its name."""
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    license_name = f"license-ci-{today_date}-{random_str}"
+    runner = CliRunner()
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "create-vws-license",
+            "--license-name",
+            license_name,
+            "--email-address",
+            vws_credentials.email_address,
+            "--password",
+            vws_credentials.password,
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    return license_name
+
+
+def test_create_databases_library(
+    *,
+    logged_in_chrome_driver: WebDriver,
+    license_name: str,
+) -> None:
+    """Test creating databases via the library."""
+    random_str = uuid.uuid4().hex[:5]
+    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    database_name = f"database-ci-{today_date}-{random_str}"
 
     license_details = vws_web_tools.get_license_details(
-        driver=chrome_driver,
+        driver=logged_in_chrome_driver,
         license_name=license_name,
     )
     assert license_details["license_name"] == license_name
     assert license_details["license_key"]
 
     vws_web_tools.create_cloud_database(
-        driver=chrome_driver,
+        driver=logged_in_chrome_driver,
         database_name=database_name,
         license_name=license_name,
     )
 
     details = vws_web_tools.get_database_details(
-        driver=chrome_driver,
+        driver=logged_in_chrome_driver,
         database_name=database_name,
     )
 
@@ -463,29 +505,12 @@ def test_get_vumark_target_id(
 
 def test_get_license_details_library(
     *,
-    chrome_driver: WebDriver,
-    vws_credentials: VWSCredentials,
+    logged_in_chrome_driver: WebDriver,
+    license_name: str,
 ) -> None:
     """Test getting license details via the library."""
-    email_address = vws_credentials.email_address
-    password = vws_credentials.password
-    random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
-    license_name = f"license-ci-{today_date}-{random_str}"
-
-    vws_web_tools.log_in(
-        driver=chrome_driver,
-        email_address=email_address,
-        password=password,
-    )
-
-    vws_web_tools.create_license(
-        driver=chrome_driver,
-        license_name=license_name,
-    )
-
     details = vws_web_tools.get_license_details(
-        driver=chrome_driver,
+        driver=logged_in_chrome_driver,
         license_name=license_name,
     )
 
@@ -496,37 +521,20 @@ def test_get_license_details_library(
 def test_show_license_details_cli(
     *,
     vws_credentials: VWSCredentials,
+    cli_license_name: str,
 ) -> None:
     """Test showing license details via the CLI."""
     email_address = vws_credentials.email_address
     password = vws_credentials.password
-    random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
-    license_name = f"license-ci-{today_date}-{random_str}"
 
     runner = CliRunner()
 
     result = runner.invoke(
         cli=vws_web_tools_group,
         args=[
-            "create-vws-license",
-            "--license-name",
-            license_name,
-            "--email-address",
-            email_address,
-            "--password",
-            password,
-        ],
-        catch_exceptions=False,
-    )
-    assert result.exit_code == 0
-
-    result = runner.invoke(
-        cli=vws_web_tools_group,
-        args=[
             "show-license-details",
             "--license-name",
-            license_name,
+            cli_license_name,
             "--email-address",
             email_address,
             "--password",
@@ -536,7 +544,7 @@ def test_show_license_details_cli(
     )
     assert result.exit_code == 0
     details = yaml.safe_load(stream=result.output)
-    assert details["license_name"] == license_name
+    assert details["license_name"] == cli_license_name
     assert details["license_key"]
 
     result = runner.invoke(
@@ -544,7 +552,7 @@ def test_show_license_details_cli(
         args=[
             "show-license-details",
             "--license-name",
-            license_name,
+            cli_license_name,
             "--email-address",
             email_address,
             "--password",
@@ -558,20 +566,20 @@ def test_show_license_details_cli(
         line.split(sep="=", maxsplit=1)
         for line in result.output.strip().split(sep="\n")
     )
-    assert env_vars["VUFORIA_LICENSE_NAME"] == license_name
+    assert env_vars["VUFORIA_LICENSE_NAME"] == cli_license_name
     assert env_vars["VUFORIA_LICENSE_KEY"]
 
 
 def test_create_databases_cli(
     *,
     vws_credentials: VWSCredentials,
+    cli_license_name: str,
 ) -> None:
-    """Test creating licenses and databases via the CLI."""
+    """Test creating databases via the CLI."""
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
     today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
-    license_name = f"license-ci-{today_date}-{random_str}"
     database_name = f"database-ci-{today_date}-{random_str}"
 
     runner = CliRunner()
@@ -579,24 +587,9 @@ def test_create_databases_cli(
     result = runner.invoke(
         cli=vws_web_tools_group,
         args=[
-            "create-vws-license",
-            "--license-name",
-            license_name,
-            "--email-address",
-            email_address,
-            "--password",
-            password,
-        ],
-        catch_exceptions=False,
-    )
-    assert result.exit_code == 0
-
-    result = runner.invoke(
-        cli=vws_web_tools_group,
-        args=[
             "show-license-details",
             "--license-name",
-            license_name,
+            cli_license_name,
             "--email-address",
             email_address,
             "--password",
@@ -606,7 +599,7 @@ def test_create_databases_cli(
     )
     assert result.exit_code == 0
     license_details = yaml.safe_load(stream=result.output)
-    assert license_details["license_name"] == license_name
+    assert license_details["license_name"] == cli_license_name
     assert license_details["license_key"]
 
     result = runner.invoke(
@@ -614,7 +607,7 @@ def test_create_databases_cli(
         args=[
             "create-vws-cloud-database",
             "--license-name",
-            license_name,
+            cli_license_name,
             "--database-name",
             database_name,
             "--email-address",
