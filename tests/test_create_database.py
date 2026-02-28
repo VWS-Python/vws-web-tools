@@ -37,10 +37,7 @@ def fixture_logged_in_chrome_driver(
     driver.quit()
 
 
-@pytest.fixture(name="license_name", scope="module")
-def fixture_license_name(
-    vws_credentials: VWSCredentials,
-) -> str:
+def _create_cli_license(vws_credentials: VWSCredentials) -> str:
     """Create a license via the CLI and return its name."""
     random_str = uuid.uuid4().hex[:5]
     today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
@@ -61,6 +58,22 @@ def fixture_license_name(
     )
     assert result.exit_code == 0
     return license_name
+
+
+@pytest.fixture(name="license_name", scope="module")
+def fixture_license_name(
+    vws_credentials: VWSCredentials,
+) -> str:
+    """Create a license via the CLI and return its name."""
+    return _create_cli_license(vws_credentials=vws_credentials)
+
+
+@pytest.fixture(name="cli_license_name", scope="module")
+def fixture_cli_license_name(
+    vws_credentials: VWSCredentials,
+) -> str:
+    """Create a license via the CLI and return its name."""
+    return _create_cli_license(vws_credentials=vws_credentials)
 
 
 def test_create_databases_library(
@@ -558,7 +571,7 @@ def test_show_license_details_cli(
 def test_create_databases_cli(
     *,
     vws_credentials: VWSCredentials,
-    license_name: str,
+    cli_license_name: str,
 ) -> None:
     """Test creating databases via the CLI."""
     email_address = vws_credentials.email_address
@@ -574,7 +587,7 @@ def test_create_databases_cli(
         args=[
             "show-license-details",
             "--license-name",
-            license_name,
+            cli_license_name,
             "--email-address",
             email_address,
             "--password",
@@ -584,7 +597,7 @@ def test_create_databases_cli(
     )
     assert result.exit_code == 0
     license_details = yaml.safe_load(stream=result.output)
-    assert license_details["license_name"] == license_name
+    assert license_details["license_name"] == cli_license_name
     assert license_details["license_key"]
 
     result = runner.invoke(
@@ -592,7 +605,7 @@ def test_create_databases_cli(
         args=[
             "create-vws-cloud-database",
             "--license-name",
-            license_name,
+            cli_license_name,
             "--database-name",
             database_name,
             "--email-address",
