@@ -39,21 +39,6 @@ def fixture_logged_in_chrome_driver(
 
 @pytest.fixture(name="license_name", scope="module")
 def fixture_license_name(
-    logged_in_chrome_driver: WebDriver,
-) -> str:
-    """Create a license and return its name."""
-    random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
-    license_name = f"license-ci-{today_date}-{random_str}"
-    vws_web_tools.create_license(
-        driver=logged_in_chrome_driver,
-        license_name=license_name,
-    )
-    return license_name
-
-
-@pytest.fixture(name="cli_license_name", scope="module")
-def fixture_cli_license_name(
     vws_credentials: VWSCredentials,
 ) -> str:
     """Create a license via the CLI and return its name."""
@@ -521,7 +506,7 @@ def test_get_license_details_library(
 def test_show_license_details_cli(
     *,
     vws_credentials: VWSCredentials,
-    cli_license_name: str,
+    license_name: str,
 ) -> None:
     """Test showing license details via the CLI."""
     email_address = vws_credentials.email_address
@@ -534,7 +519,7 @@ def test_show_license_details_cli(
         args=[
             "show-license-details",
             "--license-name",
-            cli_license_name,
+            license_name,
             "--email-address",
             email_address,
             "--password",
@@ -544,7 +529,7 @@ def test_show_license_details_cli(
     )
     assert result.exit_code == 0
     details = yaml.safe_load(stream=result.output)
-    assert details["license_name"] == cli_license_name
+    assert details["license_name"] == license_name
     assert details["license_key"]
 
     result = runner.invoke(
@@ -552,7 +537,7 @@ def test_show_license_details_cli(
         args=[
             "show-license-details",
             "--license-name",
-            cli_license_name,
+            license_name,
             "--email-address",
             email_address,
             "--password",
@@ -566,14 +551,14 @@ def test_show_license_details_cli(
         line.split(sep="=", maxsplit=1)
         for line in result.output.strip().split(sep="\n")
     )
-    assert env_vars["VUFORIA_LICENSE_NAME"] == cli_license_name
+    assert env_vars["VUFORIA_LICENSE_NAME"] == license_name
     assert env_vars["VUFORIA_LICENSE_KEY"]
 
 
 def test_create_databases_cli(
     *,
     vws_credentials: VWSCredentials,
-    cli_license_name: str,
+    license_name: str,
 ) -> None:
     """Test creating databases via the CLI."""
     email_address = vws_credentials.email_address
@@ -589,7 +574,7 @@ def test_create_databases_cli(
         args=[
             "show-license-details",
             "--license-name",
-            cli_license_name,
+            license_name,
             "--email-address",
             email_address,
             "--password",
@@ -599,7 +584,7 @@ def test_create_databases_cli(
     )
     assert result.exit_code == 0
     license_details = yaml.safe_load(stream=result.output)
-    assert license_details["license_name"] == cli_license_name
+    assert license_details["license_name"] == license_name
     assert license_details["license_key"]
 
     result = runner.invoke(
@@ -607,7 +592,7 @@ def test_create_databases_cli(
         args=[
             "create-vws-cloud-database",
             "--license-name",
-            cli_license_name,
+            license_name,
             "--database-name",
             database_name,
             "--email-address",
