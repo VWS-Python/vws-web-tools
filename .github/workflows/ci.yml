@@ -15,6 +15,7 @@ permissions: {}
 
 jobs:
   build:
+    environment: vws
     strategy:
       fail-fast: false
       matrix:
