@@ -368,13 +368,13 @@ def _open_add_database_dialog(
 @beartype
 def _submit_add_database_dialog(
     *,
-    driver: WebDriver,
     wait: WebDriverWait[WebDriver],
 ) -> None:
     """Click the generate button and wait for the dialog to close."""
-    generate_button = driver.find_element(
-        by=By.ID,
-        value="generate-btn",
+    generate_button = wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "generate-btn"),
+        ),
     )
     generate_button.click()
     wait.until(
@@ -422,7 +422,7 @@ def create_cloud_database(
         text=license_name,
     )
 
-    _submit_add_database_dialog(driver=driver, wait=wait)
+    _submit_add_database_dialog(wait=wait)
 
 
 @_TIMEOUT_RETRY_DECORATOR
@@ -444,7 +444,7 @@ def create_vumark_database(
     )
     database_type_radio_element.click()
 
-    _submit_add_database_dialog(driver=driver, wait=wait)
+    _submit_add_database_dialog(wait=wait)
 
 
 @_TIMEOUT_RETRY_DECORATOR
