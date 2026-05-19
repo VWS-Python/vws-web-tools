@@ -212,7 +212,7 @@ def create_license(
                 mark=(By.ID, "license-name"),
             ),
         )
-    except TimeoutException:
+    except TimeoutException:  # pragma: no cover
         licenses_url = "https://developer.vuforia.com/develop/licenses"
         driver.get(url=licenses_url)
         wait_for_logged_in(driver=driver)
