@@ -23,7 +23,12 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 LOGGER = logging.getLogger(name=__name__)
 
@@ -31,7 +36,8 @@ _TIMEOUT_RETRY_DECORATOR = retry(
     retry=retry_if_exception_type(
         exception_types=TimeoutException,
     ),
-    stop=stop_after_attempt(max_attempt_number=3),
+    stop=stop_after_attempt(max_attempt_number=5),
+    wait=wait_fixed(wait=5),
 )
 
 
@@ -188,31 +194,59 @@ def create_license(
     """Create a license."""
     new_license_url = "https://developer.vuforia.com/develop/licenses/free/new"
     driver.get(url=new_license_url)
+    wait_for_logged_in(driver=driver)
     _dismiss_cookie_banner(driver=driver)
 
-    thirty_second_wait = WebDriverWait(driver=driver, timeout=30)
-
-    license_name_input_element = thirty_second_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, "license-name"),
+    sixty_second_wait = WebDriverWait(
+        driver=driver,
+        timeout=60,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
         ),
     )
 
+    try:
+        license_name_input_element = sixty_second_wait.until(
+            method=expected_conditions.element_to_be_clickable(
+                mark=(By.ID, "license-name"),
+            ),
+        )
+    except TimeoutException:  # pragma: no cover
+        licenses_url = "https://developer.vuforia.com/develop/licenses"
+        driver.get(url=licenses_url)
+        wait_for_logged_in(driver=driver)
+        _dismiss_cookie_banner(driver=driver)
+
+        generate_basic_license_link = sixty_second_wait.until(
+            method=expected_conditions.element_to_be_clickable(
+                mark=(By.ID, "generate-basic-license-link"),
+            ),
+        )
+        generate_basic_license_link.click()
+        license_name_input_element = sixty_second_wait.until(
+            method=expected_conditions.element_to_be_clickable(
+                mark=(By.ID, "license-name"),
+            ),
+        )
+
+    license_name_input_element.clear()
     license_name_input_element.send_keys(license_name)
 
-    agree_terms_checkbox_element = driver.find_element(
-        by=By.ID,
-        value="agree-terms-checkbox",
+    agree_terms_checkbox_element = sixty_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(By.ID, "agree-terms-checkbox"),
+        ),
     )
     agree_terms_checkbox_element.click()
 
-    confirm_button = thirty_second_wait.until(
+    confirm_button = sixty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "confirm"),
         ),
     )
     confirm_button.click()
-    thirty_second_wait.until(
+    sixty_second_wait.until(
         method=expected_conditions.url_changes(url=new_license_url),
     )
 
