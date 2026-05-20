@@ -27,4 +27,5 @@ Reference
    python-api
    contributing
    release-process
+   unreleased
    changelog
