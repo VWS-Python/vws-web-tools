@@ -2,14 +2,14 @@
 
 import contextlib
 import datetime
-import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict, TypeGuard
+from typing import Any, TypedDict, TypeGuard
 from urllib.parse import urlparse
 
 import click
+import requests
 import yaml
 from beartype import beartype
 from selenium.common.exceptions import (
@@ -42,6 +42,7 @@ _MODEL_TARGET_WEB_API_CAD_DATA_URL = (
 )
 _MODEL_TARGET_WEB_API_SCOPES = ("modeltargets.standardmodeltarget.all",)
 _OAUTH2_CLIENT_CREDENTIALS_SCOPE = "oauth2.clientcredentials.all"
+_REQUEST_TIMEOUT_SECONDS = 30
 
 _TIMEOUT_RETRY_DECORATOR = retry(
     retry=retry_if_exception_type(
@@ -1057,8 +1058,11 @@ def _create_model_target_web_api_client_credentials(
     credential_name: str,
 ) -> _ModelTargetWebAPIClientCredentials:
     """Create OAuth2 client credentials for the Model Target Web API."""
-    logged_in_user = _json_request_in_browser(
-        driver=driver,
+    session = _requests_session_from_driver(driver=driver)
+
+    logged_in_user = _json_request(
+        session=session,
+        method="GET",
         url=(
             "https://developer.vuforia.com"
             "/targetmanager/vuforiaUtil/getLoggedInUser"
@@ -1069,8 +1073,9 @@ def _create_model_target_web_api_client_credentials(
         keys=("eguid", "eGuid", "userId", "user_id"),
     )
 
-    access_token_response = _json_request_in_browser(
-        driver=driver,
+    access_token_response = _json_request(
+        session=session,
+        method="POST",
         url=(
             "https://developer.vuforia.com"
             "/targetmanager/oauth2/credentials/accessToken"
@@ -1085,8 +1090,9 @@ def _create_model_target_web_api_client_credentials(
         keys=("access_token", "accessToken"),
     )
 
-    credentials_response = _json_request_in_browser(
-        driver=driver,
+    credentials_response = _json_request(
+        session=session,
+        method="POST",
         url="https://vws.vuforia.com/oauth2/clientcredentials",
         data={
             "name": credential_name,
@@ -1106,6 +1112,44 @@ def _create_model_target_web_api_client_credentials(
         client_id=client_id,
         client_secret=client_secret,
     )
+
+
+@beartype
+def _requests_session_from_driver(
+    *,
+    driver: WebDriver,
+) -> requests.Session:
+    """Create a requests session using the browser's authenticated cookies."""
+    session = requests.Session()
+    user_agent = driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
+        "return navigator.userAgent",
+    )
+    if isinstance(user_agent, str):
+        session.headers.update({"User-Agent": user_agent})
+
+    raw_cookies: Any = driver.get_cookies()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    cookies: object = raw_cookies
+    if not _is_json_array(cookies):
+        return session
+
+    for cookie in cookies:
+        if not _is_json_object(cookie):
+            continue
+        name = cookie.get("name")
+        value = cookie.get("value")
+        if not isinstance(name, str) or not isinstance(value, str):
+            continue
+
+        domain = cookie.get("domain")
+        path = cookie.get("path")
+        session.cookies.set(
+            name=name,
+            value=value,
+            domain=domain if isinstance(domain, str) else None,
+            path=path if isinstance(path, str) else "/",
+        )
+
+    return session
 
 
 @beartype
@@ -1146,77 +1190,43 @@ def _string_from_json(
 
 
 @beartype
-def _json_request_in_browser(
+def _json_request(
     *,
-    driver: WebDriver,
+    session: requests.Session,
+    method: str,
     url: str,
-    data: dict[str, object] | None = None,
+    data: dict[str, str | list[str]] | None = None,
     access_token: str | None = None,
 ) -> object:
-    """Make a JSON request in the browser and return the response body."""
-    script_response = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
-        """
-        const url = arguments[0];
-        const data = arguments[1];
-        const accessToken = arguments[2];
-        const done = arguments[arguments.length - 1];
-
-        (async () => {
-            try {
-                const headers = {
-                    "Content-Type": "application/json",
-                    "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "Pragma": "no-cache",
-                    "Expires": "0",
-                };
-                if (accessToken) {
-                    headers.Authorization = `Bearer ${accessToken}`;
-                }
-                const response = await fetch(url, {
-                    method: data === null ? "GET" : "POST",
-                    credentials: accessToken ? "omit" : "include",
-                    headers,
-                    body: data === null ? undefined : JSON.stringify(data),
-                });
-                const text = await response.text();
-                if (!response.ok) {
-                    throw new Error(
-                        `${url} returned HTTP ${response.status}: ${text}`,
-                    );
-                }
-                const body = text ? JSON.parse(text) : null;
-                done(`OK\\n${JSON.stringify(body)}`);
-            } catch (error) {
-                const message =
-                    error && error.stack ? error.stack : String(error);
-                done(`ERROR\\n${message}`);
-            }
-        })();
-        """,
-        url,
-        data,
-        access_token,
-    )
-
-    if not isinstance(script_response, str):
-        message = (
-            "The Vuforia credentials script returned an unexpected response."
-        )
-        raise TypeError(message)
-
-    status, separator, payload = script_response.partition("\n")
-    if status == "ERROR":
-        message = f"Could not call the Vuforia credentials API: {payload}"
-        raise RuntimeError(message)
-    if status != "OK" or not separator:
-        message = (
-            "The Vuforia credentials script returned an unexpected response."
-        )
-        raise RuntimeError(message)
+    """Make a JSON request and return the response body."""
+    headers = {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    }
+    if access_token is not None:
+        headers["Authorization"] = f"Bearer {access_token}"
 
     try:
-        response_body: object = json.loads(s=payload)
-    except json.JSONDecodeError as exc:
+        response = session.request(
+            method=method,
+            url=url,
+            headers=headers,
+            json=data,
+            timeout=_REQUEST_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        body_excerpt = ""
+        if exc.response is not None:
+            body_excerpt = f": {exc.response.text[:500]}"
+        message = f"Could not call the Vuforia credentials API{body_excerpt}"
+        raise RuntimeError(message) from exc
+
+    try:
+        response_body: object = response.json()
+    except requests.JSONDecodeError as exc:
         message = "The Vuforia credentials response had an unexpected shape."
         raise RuntimeError(message) from exc
     return response_body
