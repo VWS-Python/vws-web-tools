@@ -1,12 +1,15 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
+import datetime
 import logging
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict, TypeGuard
 from urllib.parse import urlparse
 
 import click
+import requests
 import yaml
 from beartype import beartype
 from selenium.common.exceptions import (
@@ -31,6 +34,15 @@ from tenacity import (
 )
 
 LOGGER = logging.getLogger(name=__name__)
+
+_MODEL_TARGET_WEB_API_CAD_DATA_URL = (
+    "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/"
+    "d7a3cc8e51d7c573771ae77a57f16b0662a905c6/"
+    "2.0/Duck/glTF-Binary/Duck.glb"
+)
+_MODEL_TARGET_WEB_API_SCOPES = ("modeltargets.standardmodeltarget.all",)
+_OAUTH2_CLIENT_CREDENTIALS_SCOPE = "oauth2.clientcredentials.all"
+_REQUEST_TIMEOUT_SECONDS = 30
 
 _TIMEOUT_RETRY_DECORATOR = retry(
     retry=retry_if_exception_type(
@@ -83,6 +95,24 @@ class LicenseDict(TypedDict):
 
     license_name: str
     license_key: str
+
+
+@beartype
+class ModelTargetWebAPIDict(TypedDict):
+    """A dictionary type which represents Model Target Web API details."""
+
+    client_id: str
+    client_secret: str
+    cad_data_url: str
+
+
+@beartype
+@dataclass(frozen=True, kw_only=True)
+class _ModelTargetWebAPIClientCredentials:
+    """Model Target Web API client credentials."""
+
+    client_id: str
+    client_secret: str
 
 
 @beartype
@@ -1018,6 +1048,219 @@ def get_vumark_database_details(
         "database_name": database_name,
         "server_access_key": server_access_key,
         "server_secret_key": server_secret_key,
+    }
+
+
+@beartype
+def _create_model_target_web_api_client_credentials(
+    *,
+    driver: WebDriver,
+    credential_name: str,
+) -> _ModelTargetWebAPIClientCredentials:
+    """Create OAuth2 client credentials for the Model Target Web API."""
+    session = _requests_session_from_driver(driver=driver)
+
+    logged_in_user = _json_request(
+        session=session,
+        method="GET",
+        url=(
+            "https://developer.vuforia.com"
+            "/targetmanager/vuforiaUtil/getLoggedInUser"
+        ),
+    )
+    user_id = _string_from_json(
+        value=logged_in_user,
+        keys=("eguid", "eGuid", "userId", "user_id"),
+    )
+
+    access_token_response = _json_request(
+        session=session,
+        method="POST",
+        url=(
+            "https://developer.vuforia.com"
+            "/targetmanager/oauth2/credentials/accessToken"
+        ),
+        data={
+            "userId": user_id,
+            "scopes": [_OAUTH2_CLIENT_CREDENTIALS_SCOPE],
+        },
+    )
+    access_token = _string_from_json(
+        value=access_token_response,
+        keys=("access_token", "accessToken"),
+    )
+
+    credentials_response = _json_request(
+        session=session,
+        method="POST",
+        url="https://vws.vuforia.com/oauth2/clientcredentials",
+        data={
+            "name": credential_name,
+            "scopes": list(_MODEL_TARGET_WEB_API_SCOPES),
+        },
+        access_token=access_token,
+    )
+    client_id = _string_from_json(
+        value=credentials_response,
+        keys=("client_id", "clientId"),
+    )
+    client_secret = _string_from_json(
+        value=credentials_response,
+        keys=("client_secret", "clientSecret"),
+    )
+    return _ModelTargetWebAPIClientCredentials(
+        client_id=client_id,
+        client_secret=client_secret,
+    )
+
+
+@beartype
+def _requests_session_from_driver(
+    *,
+    driver: WebDriver,
+) -> requests.Session:
+    """Create a requests session using the browser's authenticated cookies."""
+    session = requests.Session()
+    # https://github.com/SeleniumHQ/selenium/pull/17536
+    user_agent = driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
+        "return navigator.userAgent",
+    )
+    if isinstance(user_agent, str):
+        session.headers.update({"User-Agent": user_agent})
+
+    # https://github.com/SeleniumHQ/selenium/pull/17537
+    raw_cookies: Any = driver.get_cookies()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    cookies: object = raw_cookies
+    if not _is_json_array(cookies):
+        return session
+
+    for cookie in cookies:
+        if not _is_json_object(cookie):
+            continue
+        name = cookie.get("name")
+        value = cookie.get("value")
+        if not isinstance(name, str) or not isinstance(value, str):
+            continue
+
+        domain = cookie.get("domain")
+        path = cookie.get("path")
+        cookie_kwargs = {
+            "path": path if isinstance(path, str) else "/",
+        }
+        if isinstance(domain, str):
+            cookie_kwargs["domain"] = domain
+        session.cookies.set(
+            name=name,
+            value=value,
+            **cookie_kwargs,
+        )
+
+    return session
+
+
+@beartype
+def _is_json_object(value: object, /) -> TypeGuard[dict[object, object]]:
+    """Return whether value is a JSON object."""
+    return isinstance(value, dict)
+
+
+@beartype
+def _is_json_array(value: object, /) -> TypeGuard[list[object]]:
+    """Return whether value is a JSON array."""
+    return isinstance(value, list)
+
+
+@beartype
+def _string_from_json(
+    *,
+    value: object,
+    keys: tuple[str, ...],
+) -> str:
+    """Find a non-empty string in a JSON-like value."""
+    if _is_json_object(value):
+        for key in keys:
+            child = value.get(key)
+            if isinstance(child, str) and child:
+                return child
+        for child in value.values():
+            with contextlib.suppress(ValueError):
+                return _string_from_json(value=child, keys=keys)
+
+    if _is_json_array(value):
+        for child in value:
+            with contextlib.suppress(ValueError):
+                return _string_from_json(value=child, keys=keys)
+
+    message = f"Response did not include any of: {keys}"
+    raise ValueError(message)
+
+
+@beartype
+def _json_request(
+    *,
+    session: requests.Session,
+    method: str,
+    url: str,
+    data: dict[str, str | list[str]] | None = None,
+    access_token: str | None = None,
+) -> object:
+    """Make a JSON request and return the response body."""
+    headers = {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    }
+    if access_token is not None:
+        headers["Authorization"] = f"Bearer {access_token}"
+
+    try:
+        response = session.request(
+            method=method,
+            url=url,
+            headers=headers,
+            json=data,
+            timeout=_REQUEST_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        body_excerpt = ""
+        if exc.response is not None:
+            body_excerpt = f": {exc.response.text[:500]}"
+        message = f"Could not call the Vuforia credentials API{body_excerpt}"
+        raise RuntimeError(message) from exc
+
+    try:
+        response_body: object = response.json()
+    except requests.JSONDecodeError as exc:
+        message = "The Vuforia credentials response had an unexpected shape."
+        raise RuntimeError(message) from exc
+    return response_body
+
+
+@_TIMEOUT_RETRY_DECORATOR
+@beartype
+def get_model_target_web_api_details(
+    *,
+    driver: WebDriver,
+) -> ModelTargetWebAPIDict:
+    """Get Model Target Web API credentials and a CAD data URL."""
+    driver.get(url="https://developer.vuforia.com/develop/credentials")
+    wait_for_logged_in(driver=driver)
+
+    credential_name = (
+        "vws-web-tools-model-target-web-api-"
+        f"{datetime.datetime.now(tz=datetime.UTC):%Y-%m-%d-%H-%M-%S}"
+    )
+    credentials = _create_model_target_web_api_client_credentials(
+        driver=driver,
+        credential_name=credential_name,
+    )
+
+    return {
+        "client_id": credentials.client_id,
+        "client_secret": credentials.client_secret,
+        "cad_data_url": _MODEL_TARGET_WEB_API_CAD_DATA_URL,
     }
 
 
