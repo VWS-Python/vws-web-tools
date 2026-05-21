@@ -1121,12 +1121,16 @@ def _requests_session_from_driver(
 ) -> requests.Session:
     """Create a requests session using the browser's authenticated cookies."""
     session = requests.Session()
+    # This ignore can be removed after Selenium releases script result typing:
+    # https://github.com/SeleniumHQ/selenium/pull/17536
     user_agent = driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
         "return navigator.userAgent",
     )
     if isinstance(user_agent, str):
         session.headers.update({"User-Agent": user_agent})
 
+    # This ignore can be removed after Selenium cookie typing is released:
+    # https://github.com/SeleniumHQ/selenium/pull/17537
     raw_cookies: Any = driver.get_cookies()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
     cookies: object = raw_cookies
     if not _is_json_array(cookies):
