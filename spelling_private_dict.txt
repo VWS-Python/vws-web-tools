@@ -1,3 +1,5 @@
+DOM
+OAuth
 SVG
 XPath
 beartype
@@ -5,6 +7,7 @@ changelog
 cli
 macOS
 mypy
+noqa
 pragma
 pyright
 reportUnknownMemberType

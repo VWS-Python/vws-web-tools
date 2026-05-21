@@ -1144,11 +1144,15 @@ def _requests_session_from_driver(
 
         domain = cookie.get("domain")
         path = cookie.get("path")
+        cookie_kwargs = {
+            "path": path if isinstance(path, str) else "/",
+        }
+        if isinstance(domain, str):
+            cookie_kwargs["domain"] = domain
         session.cookies.set(
             name=name,
             value=value,
-            domain=domain if isinstance(domain, str) else None,
-            path=path if isinstance(path, str) else "/",
+            **cookie_kwargs,
         )
 
     return session
