@@ -3,6 +3,7 @@
 import contextlib
 import datetime
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TypedDict
 from urllib.parse import urlparse
@@ -39,6 +40,7 @@ _MODEL_TARGET_WEB_API_CAD_DATA_URL = (
     "2.0/Duck/glTF-Binary/Duck.glb"
 )
 _MODEL_TARGET_WEB_API_SCOPES = ("modeltargets.standardmodeltarget.all",)
+_OAUTH2_CLIENT_CREDENTIALS_SCOPE = "oauth2.clientcredentials.all"
 
 _TIMEOUT_RETRY_DECORATOR = retry(
     retry=retry_if_exception_type(
@@ -100,6 +102,15 @@ class ModelTargetWebAPIDict(TypedDict):
     client_id: str
     client_secret: str
     cad_data_url: str
+
+
+@beartype
+@dataclass(frozen=True, kw_only=True)
+class _ModelTargetWebAPIClientCredentials:
+    """Model Target Web API client credentials."""
+
+    client_id: str
+    client_secret: str
 
 
 @beartype
@@ -1043,52 +1054,78 @@ def _create_model_target_web_api_client_credentials(
     *,
     driver: WebDriver,
     credential_name: str,
-) -> tuple[str, str]:
+) -> _ModelTargetWebAPIClientCredentials:
     """Create OAuth2 client credentials for the Model Target Web API."""
+    user_id = _strings_from_json_request_in_browser(
+        driver=driver,
+        url=(
+            "https://developer.vuforia.com"
+            "/targetmanager/vuforiaUtil/getLoggedInUser"
+        ),
+        key_groups=(("eguid", "eGuid", "userId", "user_id"),),
+    )[0]
+
+    access_token = _strings_from_json_request_in_browser(
+        driver=driver,
+        url=(
+            "https://developer.vuforia.com"
+            "/targetmanager/oauth2/credentials/accessToken"
+        ),
+        data={
+            "userId": user_id,
+            "scopes": [_OAUTH2_CLIENT_CREDENTIALS_SCOPE],
+        },
+        key_groups=(("access_token", "accessToken"),),
+    )[0]
+
+    credentials = _strings_from_json_request_in_browser(
+        driver=driver,
+        url="https://vws.vuforia.com/oauth2/clientcredentials",
+        data={
+            "name": credential_name,
+            "scopes": list(_MODEL_TARGET_WEB_API_SCOPES),
+        },
+        access_token=access_token,
+        key_groups=(
+            ("client_id", "clientId"),
+            ("client_secret", "clientSecret"),
+        ),
+    )
+    return _ModelTargetWebAPIClientCredentials(
+        client_id=credentials[0],
+        client_secret=credentials[1],
+    )
+
+
+@beartype
+def _strings_from_json_request_in_browser(
+    *,
+    driver: WebDriver,
+    url: str,
+    key_groups: tuple[tuple[str, ...], ...],
+    data: dict[str, object] | None = None,
+    access_token: str | None = None,
+) -> tuple[str, ...]:
+    """Make a JSON request and extract string values in the browser."""
     script_response = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
         """
-        const credentialName = arguments[0];
-        const scopes = arguments[1];
+        const url = arguments[0];
+        const data = arguments[1];
+        const accessToken = arguments[2];
+        const keyGroups = arguments[3];
         const done = arguments[arguments.length - 1];
 
-        const jsonRequest = async (url, options = {}) => {
-            const response = await fetch(url, {
-                credentials: "include",
-                ...options,
-                headers: {
-                    "Content-Type": "application/json",
-                    "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "Pragma": "no-cache",
-                    "Expires": "0",
-                    ...(options.headers || {}),
-                },
-            });
-            const text = await response.text();
-            let body = null;
-            if (text) {
-                try {
-                    body = JSON.parse(text);
-                } catch {
-                    body = text;
-                }
-            }
-            if (!response.ok) {
-                throw new Error(
-                    `${url} returned HTTP ${response.status}: ${text}`,
-                );
-            }
-            return body;
-        };
-
-        const findString = (value, key) => {
+        const findString = (value, keys) => {
             if (!value || typeof value !== "object") {
                 return null;
             }
-            if (typeof value[key] === "string" && value[key]) {
-                return value[key];
+            for (const key of keys) {
+                if (typeof value[key] === "string" && value[key]) {
+                    return value[key];
+                }
             }
             for (const child of Object.values(value)) {
-                const found = findString(child, key);
+                const found = findString(child, keys);
                 if (found) {
                     return found;
                 }
@@ -1098,67 +1135,39 @@ def _create_model_target_web_api_client_credentials(
 
         (async () => {
             try {
-                const user = await jsonRequest(
-                    "/targetmanager/vuforiaUtil/getLoggedInUser",
-                );
-                const userId =
-                    findString(user, "eguid") ||
-                    findString(user, "eGuid") ||
-                    findString(user, "userId") ||
-                    findString(user, "user_id");
-                if (!userId) {
+                const headers = {
+                    "Content-Type": "application/json",
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                };
+                if (accessToken) {
+                    headers.Authorization = `Bearer ${accessToken}`;
+                }
+                const response = await fetch(url, {
+                    method: data === null ? "GET" : "POST",
+                    credentials: accessToken ? "omit" : "include",
+                    headers,
+                    body: data === null ? undefined : JSON.stringify(data),
+                });
+                const text = await response.text();
+                if (!response.ok) {
                     throw new Error(
-                        "Could not find the logged-in Vuforia user ID.",
+                        `${url} returned HTTP ${response.status}: ${text}`,
                     );
                 }
-
-                const tokenResponse = await jsonRequest(
-                    "/targetmanager/oauth2/credentials/accessToken",
-                    {
-                        method: "POST",
-                        body: JSON.stringify({
-                            userId,
-                            scopes: ["oauth2.clientcredentials.all"],
-                        }),
-                    },
-                );
-                const accessToken =
-                    findString(tokenResponse, "access_token") ||
-                    findString(tokenResponse, "accessToken");
-                if (!accessToken) {
-                    throw new Error(
-                        "Could not get a Vuforia OAuth management token.",
-                    );
+                const body = text ? JSON.parse(text) : null;
+                const values = [];
+                for (const keys of keyGroups) {
+                    const value = findString(body, keys);
+                    if (!value) {
+                        throw new Error(
+                            `Response did not include any of: ${keys}`,
+                        );
+                    }
+                    values.push(value);
                 }
-
-                const credentials = await jsonRequest(
-                    "https://vws.vuforia.com/oauth2/clientcredentials",
-                    {
-                        method: "POST",
-                        credentials: "omit",
-                        headers: {
-                            "Authorization": `Bearer ${accessToken}`,
-                        },
-                        body: JSON.stringify({
-                            name: credentialName,
-                            scopes,
-                        }),
-                    },
-                );
-                const clientId =
-                    findString(credentials, "client_id") ||
-                    findString(credentials, "clientId");
-                const clientSecret =
-                    findString(credentials, "client_secret") ||
-                    findString(credentials, "clientSecret");
-                if (!clientId || !clientSecret) {
-                    throw new Error(
-                        "The Vuforia credentials response did not include " +
-                        "a client ID and client secret.",
-                    );
-                }
-
-                done(`OK\\n${clientId}\\n${clientSecret}`);
+                done(`OK\\n${values.join("\\n")}`);
             } catch (error) {
                 const message =
                     error && error.stack ? error.stack : String(error);
@@ -1166,8 +1175,10 @@ def _create_model_target_web_api_client_credentials(
             }
         })();
         """,
-        credential_name,
-        list(_MODEL_TARGET_WEB_API_SCOPES),
+        url,
+        data,
+        access_token,
+        [list(keys) for keys in key_groups],
     )
 
     if not isinstance(script_response, str):
@@ -1178,22 +1189,22 @@ def _create_model_target_web_api_client_credentials(
 
     status, separator, payload = script_response.partition("\n")
     if status == "ERROR":
-        message = (
-            f"Could not create Model Target Web API credentials: {payload}"
-        )
+        message = f"Could not call the Vuforia credentials API: {payload}"
         raise RuntimeError(message)
     if status != "OK" or not separator:
         message = (
             "The Vuforia credentials script returned an unexpected response."
         )
         raise RuntimeError(message)
-
-    client_id, separator, client_secret = payload.partition("\n")
-    if not client_id or not separator or not client_secret:
+    if not payload:
         message = "The Vuforia credentials response had an unexpected shape."
         raise RuntimeError(message)
 
-    return client_id, client_secret
+    values = tuple(payload.split(sep="\n"))
+    if len(values) != len(key_groups) or not all(values):
+        message = "The Vuforia credentials response had an unexpected shape."
+        raise RuntimeError(message)
+    return values
 
 
 @_TIMEOUT_RETRY_DECORATOR
@@ -1210,14 +1221,14 @@ def get_model_target_web_api_details(
         "vws-web-tools-model-target-web-api-"
         f"{datetime.datetime.now(tz=datetime.UTC):%Y-%m-%d-%H-%M-%S}"
     )
-    client_id, client_secret = _create_model_target_web_api_client_credentials(
+    credentials = _create_model_target_web_api_client_credentials(
         driver=driver,
         credential_name=credential_name,
     )
 
     return {
-        "client_id": client_id,
-        "client_secret": client_secret,
+        "client_id": credentials.client_id,
+        "client_secret": credentials.client_secret,
         "cad_data_url": _MODEL_TARGET_WEB_API_CAD_DATA_URL,
     }
 
