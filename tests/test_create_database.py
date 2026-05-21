@@ -518,6 +518,24 @@ def test_get_license_details_library(
     assert details["license_key"]
 
 
+def test_get_model_target_web_api_details_library(
+    *,
+    logged_in_chrome_driver: WebDriver,
+) -> None:
+    """Test getting Model Target Web API details via the library."""
+    details = vws_web_tools.get_model_target_web_api_details(
+        driver=logged_in_chrome_driver,
+    )
+
+    assert details["client_id"]
+    assert details["client_secret"]
+    assert details["cad_data_url"] == (
+        "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/"
+        "d7a3cc8e51d7c573771ae77a57f16b0662a905c6/"
+        "2.0/Duck/glTF-Binary/Duck.glb"
+    )
+
+
 def test_show_license_details_cli(
     *,
     vws_credentials: VWSCredentials,
