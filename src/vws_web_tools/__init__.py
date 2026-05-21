@@ -1,6 +1,7 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
+import datetime
 import logging
 from pathlib import Path
 from typing import TypedDict
@@ -31,6 +32,13 @@ from tenacity import (
 )
 
 LOGGER = logging.getLogger(name=__name__)
+
+_MODEL_TARGET_WEB_API_CAD_DATA_URL = (
+    "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/"
+    "d7a3cc8e51d7c573771ae77a57f16b0662a905c6/"
+    "2.0/Duck/glTF-Binary/Duck.glb"
+)
+_MODEL_TARGET_WEB_API_SCOPES = ("modeltargets.standardmodeltarget.all",)
 
 _TIMEOUT_RETRY_DECORATOR = retry(
     retry=retry_if_exception_type(
@@ -83,6 +91,15 @@ class LicenseDict(TypedDict):
 
     license_name: str
     license_key: str
+
+
+@beartype
+class ModelTargetWebAPIDict(TypedDict):
+    """A dictionary type which represents Model Target Web API details."""
+
+    client_id: str
+    client_secret: str
+    cad_data_url: str
 
 
 @beartype
@@ -1018,6 +1035,190 @@ def get_vumark_database_details(
         "database_name": database_name,
         "server_access_key": server_access_key,
         "server_secret_key": server_secret_key,
+    }
+
+
+@beartype
+def _create_model_target_web_api_client_credentials(
+    *,
+    driver: WebDriver,
+    credential_name: str,
+) -> tuple[str, str]:
+    """Create OAuth2 client credentials for the Model Target Web API."""
+    script_response = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
+        """
+        const credentialName = arguments[0];
+        const scopes = arguments[1];
+        const done = arguments[arguments.length - 1];
+
+        const jsonRequest = async (url, options = {}) => {
+            const response = await fetch(url, {
+                credentials: "include",
+                ...options,
+                headers: {
+                    "Content-Type": "application/json",
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                    ...(options.headers || {}),
+                },
+            });
+            const text = await response.text();
+            let body = null;
+            if (text) {
+                try {
+                    body = JSON.parse(text);
+                } catch {
+                    body = text;
+                }
+            }
+            if (!response.ok) {
+                throw new Error(
+                    `${url} returned HTTP ${response.status}: ${text}`,
+                );
+            }
+            return body;
+        };
+
+        const findString = (value, key) => {
+            if (!value || typeof value !== "object") {
+                return null;
+            }
+            if (typeof value[key] === "string" && value[key]) {
+                return value[key];
+            }
+            for (const child of Object.values(value)) {
+                const found = findString(child, key);
+                if (found) {
+                    return found;
+                }
+            }
+            return null;
+        };
+
+        (async () => {
+            try {
+                const user = await jsonRequest(
+                    "/targetmanager/vuforiaUtil/getLoggedInUser",
+                );
+                const userId =
+                    findString(user, "eguid") ||
+                    findString(user, "eGuid") ||
+                    findString(user, "userId") ||
+                    findString(user, "user_id");
+                if (!userId) {
+                    throw new Error(
+                        "Could not find the logged-in Vuforia user ID.",
+                    );
+                }
+
+                const tokenResponse = await jsonRequest(
+                    "/targetmanager/oauth2/credentials/accessToken",
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            userId,
+                            scopes: ["oauth2.clientcredentials.all"],
+                        }),
+                    },
+                );
+                const accessToken =
+                    findString(tokenResponse, "access_token") ||
+                    findString(tokenResponse, "accessToken");
+                if (!accessToken) {
+                    throw new Error(
+                        "Could not get a Vuforia OAuth management token.",
+                    );
+                }
+
+                const credentials = await jsonRequest(
+                    "https://vws.vuforia.com/oauth2/clientcredentials",
+                    {
+                        method: "POST",
+                        credentials: "omit",
+                        headers: {
+                            "Authorization": `Bearer ${accessToken}`,
+                        },
+                        body: JSON.stringify({
+                            name: credentialName,
+                            scopes,
+                        }),
+                    },
+                );
+                const clientId =
+                    findString(credentials, "client_id") ||
+                    findString(credentials, "clientId");
+                const clientSecret =
+                    findString(credentials, "client_secret") ||
+                    findString(credentials, "clientSecret");
+                if (!clientId || !clientSecret) {
+                    throw new Error(
+                        "The Vuforia credentials response did not include " +
+                        "a client ID and client secret.",
+                    );
+                }
+
+                done(`OK\\n${clientId}\\n${clientSecret}`);
+            } catch (error) {
+                const message =
+                    error && error.stack ? error.stack : String(error);
+                done(`ERROR\\n${message}`);
+            }
+        })();
+        """,
+        credential_name,
+        list(_MODEL_TARGET_WEB_API_SCOPES),
+    )
+
+    if not isinstance(script_response, str):
+        message = (
+            "The Vuforia credentials script returned an unexpected response."
+        )
+        raise TypeError(message)
+
+    status, separator, payload = script_response.partition("\n")
+    if status == "ERROR":
+        message = (
+            f"Could not create Model Target Web API credentials: {payload}"
+        )
+        raise RuntimeError(message)
+    if status != "OK" or not separator:
+        message = (
+            "The Vuforia credentials script returned an unexpected response."
+        )
+        raise RuntimeError(message)
+
+    client_id, separator, client_secret = payload.partition("\n")
+    if not client_id or not separator or not client_secret:
+        message = "The Vuforia credentials response had an unexpected shape."
+        raise RuntimeError(message)
+
+    return client_id, client_secret
+
+
+@_TIMEOUT_RETRY_DECORATOR
+@beartype
+def get_model_target_web_api_details(
+    *,
+    driver: WebDriver,
+) -> ModelTargetWebAPIDict:
+    """Get Model Target Web API credentials and a CAD data URL."""
+    driver.get(url="https://developer.vuforia.com/develop/credentials")
+    wait_for_logged_in(driver=driver)
+
+    credential_name = (
+        "vws-web-tools-model-target-web-api-"
+        f"{datetime.datetime.now(tz=datetime.UTC):%Y-%m-%d-%H-%M-%S}"
+    )
+    client_id, client_secret = _create_model_target_web_api_client_credentials(
+        driver=driver,
+        credential_name=credential_name,
+    )
+
+    return {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "cad_data_url": _MODEL_TARGET_WEB_API_CAD_DATA_URL,
     }
 
 

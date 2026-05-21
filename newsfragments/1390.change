@@ -1,0 +1,2 @@
+Add ``get_model_target_web_api_details`` to generate OAuth2 credentials
+for Model Target Web API tests.

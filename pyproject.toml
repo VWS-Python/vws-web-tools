@@ -378,6 +378,9 @@ ignore_names = [
     # pytest configuration
     "pytest_collect_file",
     "pytest_plugins",
+    # public API used by downstream secret generation
+    "cad_data_url",
+    "get_model_target_web_api_details",
     # pytest fixtures - we name fixtures like this for this purpose
     "fixture_*",
     # Sphinx
