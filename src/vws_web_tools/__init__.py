@@ -2,10 +2,11 @@
 
 import contextlib
 import datetime
+import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, TypeGuard
 from urllib.parse import urlparse
 
 import click
@@ -1056,16 +1057,19 @@ def _create_model_target_web_api_client_credentials(
     credential_name: str,
 ) -> _ModelTargetWebAPIClientCredentials:
     """Create OAuth2 client credentials for the Model Target Web API."""
-    user_id = _strings_from_json_request_in_browser(
+    logged_in_user = _json_request_in_browser(
         driver=driver,
         url=(
             "https://developer.vuforia.com"
             "/targetmanager/vuforiaUtil/getLoggedInUser"
         ),
-        key_groups=(("eguid", "eGuid", "userId", "user_id"),),
-    )[0]
+    )
+    user_id = _string_from_json(
+        value=logged_in_user,
+        keys=("eguid", "eGuid", "userId", "user_id"),
+    )
 
-    access_token = _strings_from_json_request_in_browser(
+    access_token_response = _json_request_in_browser(
         driver=driver,
         url=(
             "https://developer.vuforia.com"
@@ -1075,10 +1079,13 @@ def _create_model_target_web_api_client_credentials(
             "userId": user_id,
             "scopes": [_OAUTH2_CLIENT_CREDENTIALS_SCOPE],
         },
-        key_groups=(("access_token", "accessToken"),),
-    )[0]
+    )
+    access_token = _string_from_json(
+        value=access_token_response,
+        keys=("access_token", "accessToken"),
+    )
 
-    credentials = _strings_from_json_request_in_browser(
+    credentials_response = _json_request_in_browser(
         driver=driver,
         url="https://vws.vuforia.com/oauth2/clientcredentials",
         data={
@@ -1086,52 +1093,73 @@ def _create_model_target_web_api_client_credentials(
             "scopes": list(_MODEL_TARGET_WEB_API_SCOPES),
         },
         access_token=access_token,
-        key_groups=(
-            ("client_id", "clientId"),
-            ("client_secret", "clientSecret"),
-        ),
+    )
+    client_id = _string_from_json(
+        value=credentials_response,
+        keys=("client_id", "clientId"),
+    )
+    client_secret = _string_from_json(
+        value=credentials_response,
+        keys=("client_secret", "clientSecret"),
     )
     return _ModelTargetWebAPIClientCredentials(
-        client_id=credentials[0],
-        client_secret=credentials[1],
+        client_id=client_id,
+        client_secret=client_secret,
     )
 
 
 @beartype
-def _strings_from_json_request_in_browser(
+def _is_json_object(value: object, /) -> TypeGuard[dict[object, object]]:
+    """Return whether value is a JSON object."""
+    return isinstance(value, dict)
+
+
+@beartype
+def _is_json_array(value: object, /) -> TypeGuard[list[object]]:
+    """Return whether value is a JSON array."""
+    return isinstance(value, list)
+
+
+@beartype
+def _string_from_json(
+    *,
+    value: object,
+    keys: tuple[str, ...],
+) -> str:
+    """Find a non-empty string in a JSON-like value."""
+    if _is_json_object(value):
+        for key in keys:
+            child = value.get(key)
+            if isinstance(child, str) and child:
+                return child
+        for child in value.values():
+            with contextlib.suppress(ValueError):
+                return _string_from_json(value=child, keys=keys)
+
+    if _is_json_array(value):
+        for child in value:
+            with contextlib.suppress(ValueError):
+                return _string_from_json(value=child, keys=keys)
+
+    message = f"Response did not include any of: {keys}"
+    raise ValueError(message)
+
+
+@beartype
+def _json_request_in_browser(
     *,
     driver: WebDriver,
     url: str,
-    key_groups: tuple[tuple[str, ...], ...],
     data: dict[str, object] | None = None,
     access_token: str | None = None,
-) -> tuple[str, ...]:
-    """Make a JSON request and extract string values in the browser."""
+) -> object:
+    """Make a JSON request in the browser and return the response body."""
     script_response = driver.execute_async_script(  # pyright: ignore[reportUnknownMemberType]
         """
         const url = arguments[0];
         const data = arguments[1];
         const accessToken = arguments[2];
-        const keyGroups = arguments[3];
         const done = arguments[arguments.length - 1];
-
-        const findString = (value, keys) => {
-            if (!value || typeof value !== "object") {
-                return null;
-            }
-            for (const key of keys) {
-                if (typeof value[key] === "string" && value[key]) {
-                    return value[key];
-                }
-            }
-            for (const child of Object.values(value)) {
-                const found = findString(child, keys);
-                if (found) {
-                    return found;
-                }
-            }
-            return null;
-        };
 
         (async () => {
             try {
@@ -1157,17 +1185,7 @@ def _strings_from_json_request_in_browser(
                     );
                 }
                 const body = text ? JSON.parse(text) : null;
-                const values = [];
-                for (const keys of keyGroups) {
-                    const value = findString(body, keys);
-                    if (!value) {
-                        throw new Error(
-                            `Response did not include any of: ${keys}`,
-                        );
-                    }
-                    values.push(value);
-                }
-                done(`OK\\n${values.join("\\n")}`);
+                done(`OK\\n${JSON.stringify(body)}`);
             } catch (error) {
                 const message =
                     error && error.stack ? error.stack : String(error);
@@ -1178,7 +1196,6 @@ def _strings_from_json_request_in_browser(
         url,
         data,
         access_token,
-        [list(keys) for keys in key_groups],
     )
 
     if not isinstance(script_response, str):
@@ -1196,15 +1213,13 @@ def _strings_from_json_request_in_browser(
             "The Vuforia credentials script returned an unexpected response."
         )
         raise RuntimeError(message)
-    if not payload:
-        message = "The Vuforia credentials response had an unexpected shape."
-        raise RuntimeError(message)
 
-    values = tuple(payload.split(sep="\n"))
-    if len(values) != len(key_groups) or not all(values):
+    try:
+        response_body: object = json.loads(s=payload)
+    except json.JSONDecodeError as exc:
         message = "The Vuforia credentials response had an unexpected shape."
-        raise RuntimeError(message)
-    return values
+        raise RuntimeError(message) from exc
+    return response_body
 
 
 @_TIMEOUT_RETRY_DECORATOR
