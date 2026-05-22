@@ -1259,13 +1259,12 @@ def get_model_target_web_api_details(
 
     The ``scopes`` argument selects which OAuth2 scopes are requested for
     the created credential. It defaults to
-    :data:`MODEL_TARGET_WEB_API_STANDARD_SCOPES`, which is the only set
-    of scopes available on non-Enterprise developer accounts. Pass
-    :data:`MODEL_TARGET_WEB_API_ADVANCED_SCOPES` to additionally request
-    the advanced Model Target scope; this requires a Vuforia Enterprise
-    developer account, and credential creation raises a
-    :exc:`RuntimeError` if the account is not entitled to a requested
-    scope.
+    ``MODEL_TARGET_WEB_API_STANDARD_SCOPES``, which is the only set of
+    scopes available on non-Enterprise developer accounts. Pass
+    ``MODEL_TARGET_WEB_API_ADVANCED_SCOPES`` to additionally request the
+    advanced Model Target scope; this requires a Vuforia Enterprise
+    developer account, and credential creation raises a ``RuntimeError``
+    if the account is not entitled to a requested scope.
     """
     driver.get(url="https://developer.vuforia.com/develop/credentials")
     wait_for_logged_in(driver=driver)
