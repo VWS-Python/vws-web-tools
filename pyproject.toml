@@ -386,6 +386,9 @@ ignore_names = [
     # public API used by downstream secret generation
     "cad_data_url",
     "get_model_target_web_api_details",
+    "MODEL_TARGET_WEB_API_ADVANCED_SCOPE",
+    "MODEL_TARGET_WEB_API_ADVANCED_SCOPES",
+    "MODEL_TARGET_WEB_API_STANDARD_SCOPES",
     # pytest fixtures - we name fixtures like this for this purpose
     "fixture_*",
     # Sphinx

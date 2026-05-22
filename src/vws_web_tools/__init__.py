@@ -3,6 +3,7 @@
 import contextlib
 import datetime
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict, TypeGuard
@@ -40,7 +41,15 @@ _MODEL_TARGET_WEB_API_CAD_DATA_URL = (
     "d7a3cc8e51d7c573771ae77a57f16b0662a905c6/"
     "2.0/Duck/glTF-Binary/Duck.glb"
 )
-_MODEL_TARGET_WEB_API_SCOPES = ("modeltargets.standardmodeltarget.all",)
+MODEL_TARGET_WEB_API_STANDARD_SCOPE = "modeltargets.standardmodeltarget.all"
+MODEL_TARGET_WEB_API_ADVANCED_SCOPE = "modeltargets.advancedmodeltarget.all"
+MODEL_TARGET_WEB_API_STANDARD_SCOPES: tuple[str, ...] = (
+    MODEL_TARGET_WEB_API_STANDARD_SCOPE,
+)
+MODEL_TARGET_WEB_API_ADVANCED_SCOPES: tuple[str, ...] = (
+    MODEL_TARGET_WEB_API_STANDARD_SCOPE,
+    MODEL_TARGET_WEB_API_ADVANCED_SCOPE,
+)
 _OAUTH2_CLIENT_CREDENTIALS_SCOPE = "oauth2.clientcredentials.all"
 _REQUEST_TIMEOUT_SECONDS = 30
 
@@ -1056,6 +1065,7 @@ def _create_model_target_web_api_client_credentials(
     *,
     driver: WebDriver,
     credential_name: str,
+    scopes: Sequence[str],
 ) -> _ModelTargetWebAPIClientCredentials:
     """Create OAuth2 client credentials for the Model Target Web API."""
     session = _requests_session_from_driver(driver=driver)
@@ -1096,7 +1106,7 @@ def _create_model_target_web_api_client_credentials(
         url="https://vws.vuforia.com/oauth2/clientcredentials",
         data={
             "name": credential_name,
-            "scopes": list(_MODEL_TARGET_WEB_API_SCOPES),
+            "scopes": list(scopes),
         },
         access_token=access_token,
     )
@@ -1243,8 +1253,19 @@ def _json_request(
 def get_model_target_web_api_details(
     *,
     driver: WebDriver,
+    scopes: Sequence[str] = MODEL_TARGET_WEB_API_STANDARD_SCOPES,
 ) -> ModelTargetWebAPIDict:
-    """Get Model Target Web API credentials and a CAD data URL."""
+    """Get Model Target Web API credentials and a CAD data URL.
+
+    The ``scopes`` argument selects which OAuth2 scopes are requested for
+    the created credential. It defaults to
+    ``MODEL_TARGET_WEB_API_STANDARD_SCOPES``, which is the only set of
+    scopes available on non-Enterprise developer accounts. Pass
+    ``MODEL_TARGET_WEB_API_ADVANCED_SCOPES`` to additionally request the
+    advanced Model Target scope; this requires a Vuforia Enterprise
+    developer account, and credential creation raises a ``RuntimeError``
+    if the account is not entitled to a requested scope.
+    """
     driver.get(url="https://developer.vuforia.com/develop/credentials")
     wait_for_logged_in(driver=driver)
 
@@ -1255,6 +1276,7 @@ def get_model_target_web_api_details(
     credentials = _create_model_target_web_api_client_credentials(
         driver=driver,
         credential_name=credential_name,
+        scopes=scopes,
     )
 
     return {
