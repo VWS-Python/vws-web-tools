@@ -1126,6 +1126,7 @@ def delete_model_target_web_api_client_credentials(
             "https://vws.vuforia.com/oauth2/clientcredentials/"
             f"{encoded_client_id}"
         ),
+        data=None,
         access_token=api_session.access_token,
     )
 
@@ -1286,8 +1287,8 @@ def _request(
     session: requests.Session,
     method: str,
     url: str,
-    data: dict[str, str | list[str]] | None = None,
-    access_token: str | None = None,
+    data: dict[str, str | list[str]] | None,
+    access_token: str | None,
 ) -> requests.Response:
     """Make a request to the Vuforia credentials API."""
     headers = {
