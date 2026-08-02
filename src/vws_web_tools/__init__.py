@@ -126,6 +126,15 @@ class _ModelTargetWebAPIClientCredentials:
 
 
 @beartype
+@dataclass(frozen=True, kw_only=True)
+class _ModelTargetWebAPICredentialsAPISession:
+    """Authenticated session for the credentials management API."""
+
+    session: requests.Session
+    access_token: str
+
+
+@beartype
 def _log_in_once(
     *,
     driver: WebDriver,
@@ -1069,19 +1078,19 @@ def _create_model_target_web_api_client_credentials(
     scopes: Sequence[str],
 ) -> _ModelTargetWebAPIClientCredentials:
     """Create OAuth2 client credentials for the Model Target Web API."""
-    session, access_token = _model_target_web_api_credentials_api_session(
+    api_session = _model_target_web_api_credentials_api_session(
         driver=driver,
     )
 
     credentials_response = _json_request(
-        session=session,
+        session=api_session.session,
         method="POST",
         url="https://vws.vuforia.com/oauth2/clientcredentials",
         data={
             "name": credential_name,
             "scopes": list(scopes),
         },
-        access_token=access_token,
+        access_token=api_session.access_token,
     )
     client_id = _string_from_json(
         value=credentials_response,
@@ -1106,18 +1115,18 @@ def delete_model_target_web_api_client_credentials(
     """Delete one OAuth2 client credential by its exact client ID."""
     driver.get(url="https://developer.vuforia.com/develop/credentials")
     wait_for_logged_in(driver=driver)
-    session, access_token = _model_target_web_api_credentials_api_session(
+    api_session = _model_target_web_api_credentials_api_session(
         driver=driver,
     )
     encoded_client_id = quote(string=client_id, safe="")
     _request(
-        session=session,
+        session=api_session.session,
         method="DELETE",
         url=(
             "https://vws.vuforia.com/oauth2/clientcredentials/"
             f"{encoded_client_id}"
         ),
-        access_token=access_token,
+        access_token=api_session.access_token,
     )
 
 
@@ -1125,7 +1134,7 @@ def delete_model_target_web_api_client_credentials(
 def _model_target_web_api_credentials_api_session(
     *,
     driver: WebDriver,
-) -> tuple[requests.Session, str]:
+) -> _ModelTargetWebAPICredentialsAPISession:
     """Return a session and token for the credentials management API."""
     session = _requests_session_from_driver(driver=driver)
 
@@ -1158,7 +1167,10 @@ def _model_target_web_api_credentials_api_session(
         value=access_token_response,
         keys=("access_token", "accessToken"),
     )
-    return session, access_token
+    return _ModelTargetWebAPICredentialsAPISession(
+        session=session,
+        access_token=access_token,
+    )
 
 
 @beartype
