@@ -219,12 +219,15 @@ def test_json_request_raises_runtime_error_for_connection_failure() -> None:
     with pytest.raises(
         expected_exception=RuntimeError,
         match=r"Could not call the Vuforia credentials API$",
-    ):
+    ) as exc_info:
         vws_web_tools._json_request(
             session=_FailingSession(),
             method="GET",
             url="https://example.com",
         )
+
+    assert exc_info.value.__cause__ is None
+    assert exc_info.value.__suppress_context__
 
 
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:
