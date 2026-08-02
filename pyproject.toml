@@ -385,6 +385,7 @@ ignore_names = [
     "pytest_plugins",
     # public API used by downstream secret generation
     "cad_data_url",
+    "delete_model_target_web_api_client_credentials",
     "get_model_target_web_api_details",
     "MODEL_TARGET_WEB_API_ADVANCED_SCOPE",
     "MODEL_TARGET_WEB_API_ADVANCED_SCOPES",
