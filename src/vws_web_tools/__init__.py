@@ -3,11 +3,12 @@
 import contextlib
 import datetime
 import logging
+import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict, TypeGuard
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import click
 import requests
@@ -1068,6 +1069,64 @@ def _create_model_target_web_api_client_credentials(
     scopes: Sequence[str],
 ) -> _ModelTargetWebAPIClientCredentials:
     """Create OAuth2 client credentials for the Model Target Web API."""
+    session, access_token = _model_target_web_api_credentials_api_session(
+        driver=driver,
+    )
+
+    credentials_response = _json_request(
+        session=session,
+        method="POST",
+        url="https://vws.vuforia.com/oauth2/clientcredentials",
+        data={
+            "name": credential_name,
+            "scopes": list(scopes),
+        },
+        access_token=access_token,
+    )
+    client_id = _string_from_json(
+        value=credentials_response,
+        keys=("client_id", "clientId"),
+    )
+    client_secret = _string_from_json(
+        value=credentials_response,
+        keys=("client_secret", "clientSecret"),
+    )
+    return _ModelTargetWebAPIClientCredentials(
+        client_id=client_id,
+        client_secret=client_secret,
+    )
+
+
+@beartype
+def delete_model_target_web_api_client_credentials(
+    *,
+    driver: WebDriver,
+    client_id: str,
+) -> None:
+    """Delete one OAuth2 client credential by its exact client ID."""
+    driver.get(url="https://developer.vuforia.com/develop/credentials")
+    wait_for_logged_in(driver=driver)
+    session, access_token = _model_target_web_api_credentials_api_session(
+        driver=driver,
+    )
+    encoded_client_id = quote(string=client_id, safe="")
+    _request(
+        session=session,
+        method="DELETE",
+        url=(
+            "https://vws.vuforia.com/oauth2/clientcredentials/"
+            f"{encoded_client_id}"
+        ),
+        access_token=access_token,
+    )
+
+
+@beartype
+def _model_target_web_api_credentials_api_session(
+    *,
+    driver: WebDriver,
+) -> tuple[requests.Session, str]:
+    """Return a session and token for the credentials management API."""
     session = _requests_session_from_driver(driver=driver)
 
     logged_in_user = _json_request(
@@ -1099,29 +1158,7 @@ def _create_model_target_web_api_client_credentials(
         value=access_token_response,
         keys=("access_token", "accessToken"),
     )
-
-    credentials_response = _json_request(
-        session=session,
-        method="POST",
-        url="https://vws.vuforia.com/oauth2/clientcredentials",
-        data={
-            "name": credential_name,
-            "scopes": list(scopes),
-        },
-        access_token=access_token,
-    )
-    client_id = _string_from_json(
-        value=credentials_response,
-        keys=("client_id", "clientId"),
-    )
-    client_secret = _string_from_json(
-        value=credentials_response,
-        keys=("client_secret", "clientSecret"),
-    )
-    return _ModelTargetWebAPIClientCredentials(
-        client_id=client_id,
-        client_secret=client_secret,
-    )
+    return session, access_token
 
 
 @beartype
@@ -1215,6 +1252,32 @@ def _json_request(
     access_token: str | None = None,
 ) -> object:
     """Make a JSON request and return the response body."""
+    response = _request(
+        session=session,
+        method=method,
+        url=url,
+        data=data,
+        access_token=access_token,
+    )
+
+    try:
+        response_body: object = response.json()
+    except requests.JSONDecodeError as exc:
+        message = "The Vuforia credentials response had an unexpected shape."
+        raise RuntimeError(message) from exc
+    return response_body
+
+
+@beartype
+def _request(
+    *,
+    session: requests.Session,
+    method: str,
+    url: str,
+    data: dict[str, str | list[str]] | None = None,
+    access_token: str | None = None,
+) -> requests.Response:
+    """Make a request to the Vuforia credentials API."""
     headers = {
         "Content-Type": "application/json",
         "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -1239,13 +1302,7 @@ def _json_request(
             body_excerpt = f": {exc.response.text[:500]}"
         message = f"Could not call the Vuforia credentials API{body_excerpt}"
         raise RuntimeError(message) from exc
-
-    try:
-        response_body: object = response.json()
-    except requests.JSONDecodeError as exc:
-        message = "The Vuforia credentials response had an unexpected shape."
-        raise RuntimeError(message) from exc
-    return response_body
+    return response
 
 
 @_TIMEOUT_RETRY_DECORATOR
@@ -1271,7 +1328,8 @@ def get_model_target_web_api_details(
 
     credential_name = (
         "vws-web-tools-model-target-web-api-"
-        f"{datetime.datetime.now(tz=datetime.UTC):%Y-%m-%d-%H-%M-%S}"
+        f"{datetime.datetime.now(tz=datetime.UTC):%Y-%m-%d-%H-%M-%S}-"
+        f"{uuid.uuid4().hex}"
     )
     credentials = _create_model_target_web_api_client_credentials(
         driver=driver,

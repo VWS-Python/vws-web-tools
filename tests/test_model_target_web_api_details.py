@@ -3,6 +3,7 @@
 # ruff: noqa: ANN401, SLF001
 """Tests for Model Target Web API detail helpers."""
 
+from collections.abc import Sequence
 from typing import Any
 
 import pytest
@@ -34,6 +35,18 @@ class _BrowserStateDriver(WebDriver):
     def get_cookies(self) -> Any:
         """Return the controlled cookies."""
         return self._cookies
+
+
+class _NavigationDriver(WebDriver):
+    """A WebDriver shell which records navigation."""
+
+    def __init__(self) -> None:
+        """Create an empty navigation record."""
+        self.requested_urls: list[str] = []
+
+    def get(self, url: str) -> None:
+        """Record a requested URL."""
+        self.requested_urls.append(url)
 
 
 def test_requests_session_from_driver_copies_browser_state() -> None:
@@ -152,6 +165,170 @@ class _Session(requests.Session):
         self.prepared_request = request
         self.send_kwargs = kwargs
         return self._response
+
+
+def test_create_model_target_web_api_client_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Client credentials are created with the requested name and
+    scopes.
+    """
+    driver = _NavigationDriver()
+    session = _Session(
+        response=_response(
+            content=(
+                b'{"clientId": "client-id", "clientSecret": "client-secret"}'
+            ),
+        ),
+    )
+
+    def credentials_api_session(
+        *,
+        driver: WebDriver,
+    ) -> tuple[requests.Session, str]:
+        """Return the controlled authenticated session."""
+        assert driver is not None
+        return session, "access-token"
+
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="_model_target_web_api_credentials_api_session",
+        value=credentials_api_session,
+    )
+
+    credentials = (
+        vws_web_tools._create_model_target_web_api_client_credentials(
+            driver=driver,
+            credential_name="credential-name",
+            scopes=("scope-one", "scope-two"),
+        )
+    )
+
+    assert credentials.client_id == "client-id"
+    assert credentials.client_secret == "client-secret"  # noqa: S105
+    assert session.prepared_request is not None
+    assert session.prepared_request.method == "POST"
+    assert session.prepared_request.url == (
+        "https://vws.vuforia.com/oauth2/clientcredentials"
+    )
+    assert session.prepared_request.body == (
+        b'{"name": "credential-name", "scopes": ["scope-one", "scope-two"]}'
+    )
+    assert session.prepared_request.headers["Authorization"] == (
+        "Bearer access-token"
+    )
+
+
+def test_delete_model_target_web_api_client_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only the credential with the exact client ID is deleted."""
+    driver = _NavigationDriver()
+    session = _Session(response=_response(status_code=204, content=b""))
+
+    def credentials_api_session(
+        *,
+        driver: WebDriver,
+    ) -> tuple[requests.Session, str]:
+        """Return the controlled authenticated session."""
+        assert driver is not None
+        return session, "access-token"
+
+    def wait_for_logged_in(*, driver: WebDriver) -> None:
+        """Record that login waiting was requested."""
+        assert driver is not None
+
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="_model_target_web_api_credentials_api_session",
+        value=credentials_api_session,
+    )
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="wait_for_logged_in",
+        value=wait_for_logged_in,
+    )
+
+    vws_web_tools.delete_model_target_web_api_client_credentials(
+        driver=driver,
+        client_id="client/id",
+    )
+
+    assert session.prepared_request is not None
+    assert driver.requested_urls == [
+        "https://developer.vuforia.com/develop/credentials",
+    ]
+    assert session.prepared_request.method == "DELETE"
+    assert session.prepared_request.url == (
+        "https://vws.vuforia.com/oauth2/clientcredentials/client%2Fid"
+    )
+    assert session.prepared_request.body is None
+    assert session.prepared_request.headers["Authorization"] == (
+        "Bearer access-token"
+    )
+
+
+def test_get_model_target_web_api_details(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Details use unique credential names and the requested scopes."""
+    driver = _NavigationDriver()
+    created_credential_names: list[str] = []
+    created_scopes: list[Sequence[str]] = []
+
+    def wait_for_logged_in(*, driver: WebDriver) -> None:
+        """Record that login waiting was requested."""
+        assert driver is not None
+
+    def create_client_credentials(
+        *,
+        driver: WebDriver,
+        credential_name: str,
+        scopes: Sequence[str],
+    ) -> vws_web_tools._ModelTargetWebAPIClientCredentials:
+        """Record creation inputs and return controlled credentials."""
+        assert driver is not None
+        created_credential_names.append(credential_name)
+        created_scopes.append(scopes)
+        return vws_web_tools._ModelTargetWebAPIClientCredentials(
+            client_id="client-id",
+            client_secret="client-secret",  # noqa: S106
+        )
+
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="wait_for_logged_in",
+        value=wait_for_logged_in,
+    )
+    monkeypatch.setattr(
+        target=vws_web_tools,
+        name="_create_model_target_web_api_client_credentials",
+        value=create_client_credentials,
+    )
+
+    details = vws_web_tools.get_model_target_web_api_details(
+        driver=driver,
+        scopes=("scope",),
+    )
+
+    assert driver.requested_urls == [
+        "https://developer.vuforia.com/develop/credentials",
+    ]
+    assert created_scopes == [("scope",)]
+    assert len(created_credential_names) == 1
+    credential_name = created_credential_names[0]
+    assert credential_name.startswith("vws-web-tools-model-target-web-api-")
+    credential_uuid = credential_name.rsplit(sep="-", maxsplit=1)[1]
+    uuid_hex_length = 32
+    assert len(credential_uuid) == uuid_hex_length
+    assert all(
+        character in "0123456789abcdef" for character in credential_uuid
+    )
+    assert details == {
+        "client_id": "client-id",
+        "client_secret": "client-secret",
+        "cad_data_url": vws_web_tools._MODEL_TARGET_WEB_API_CAD_DATA_URL,
+    }
 
 
 class _FailingSession(requests.Session):
