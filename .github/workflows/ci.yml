@@ -13,6 +13,12 @@ on:
 
 permissions: {}
 
+# The test suite uses one shared VWS account, which does not reliably support
+# concurrent browser sessions from separate workflow runs.
+concurrency:
+  group: vws-ci
+  queue: max
+
 jobs:
   build:
     environment: vws
