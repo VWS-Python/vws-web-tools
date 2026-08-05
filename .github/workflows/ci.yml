@@ -49,9 +49,6 @@ jobs:
           VWS_EMAIL_ADDRESS: ${{ secrets.VWS_EMAIL_ADDRESS }}
           VWS_PASSWORD: ${{ secrets.VWS_PASSWORD }}
 
-      - uses: pre-commit-ci/lite-action@v1.1.0
-        if: always()
-
   completion-ci:
     needs: build
     runs-on: ubuntu-latest
