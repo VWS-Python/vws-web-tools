@@ -1261,8 +1261,8 @@ def _json_request(
     session: requests.Session,
     method: str,
     url: str,
-    data: dict[str, str | list[str]] | None = None,
-    access_token: str | None = None,
+    data: dict[str, str | list[str]] | None = None,  # noqa: NOD001
+    access_token: str | None = None,  # noqa: NOD001
 ) -> object:
     """Make a JSON request and return the response body."""
     response = _request(

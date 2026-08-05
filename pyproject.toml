@@ -146,6 +146,7 @@ lint.unfixable = [
     "ERA001",
 ]
 lint.external = [
+    "NOD",
     # Vulture.
     "V",
 ]
@@ -428,3 +429,7 @@ ignore_path = [
 [tool.yamlfix]
 section_whitelines = 1
 whitelines = 1
+
+[tool.no_defaults]
+private_only = true
+per_file_enforcement."tests/**" = "all"

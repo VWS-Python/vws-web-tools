@@ -116,8 +116,8 @@ def test_string_from_json_raises_for_missing_values() -> None:
 
 def _response(
     *,
-    status_code: int = 200,
-    content: bytes = b'{"ok": true}',
+    status_code: int = 200,  # noqa: NOD001
+    content: bytes = b'{"ok": true}',  # noqa: NOD001
 ) -> requests.Response:
     """Return a minimal requests response."""
     response = requests.Response()
