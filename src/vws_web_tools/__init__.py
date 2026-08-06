@@ -1146,6 +1146,8 @@ def _model_target_web_api_credentials_api_session(
             "https://developer.vuforia.com"
             "/targetmanager/vuforiaUtil/getLoggedInUser"
         ),
+        data=None,
+        access_token=None,
     )
     user_id = _string_from_json(
         value=logged_in_user,
@@ -1163,6 +1165,7 @@ def _model_target_web_api_credentials_api_session(
             "userId": user_id,
             "scopes": [_OAUTH2_CLIENT_CREDENTIALS_SCOPE],
         },
+        access_token=None,
     )
     access_token = _string_from_json(
         value=access_token_response,
@@ -1256,13 +1259,13 @@ def _string_from_json(
 
 
 @beartype
-def _json_request(  # noqa: NOD001
+def _json_request(
     *,
     session: requests.Session,
     method: str,
     url: str,
-    data: dict[str, str | list[str]] | None = None,
-    access_token: str | None = None,
+    data: dict[str, str | list[str]] | None,
+    access_token: str | None,
 ) -> object:
     """Make a JSON request and return the response body."""
     response = _request(

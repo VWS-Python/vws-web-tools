@@ -213,6 +213,8 @@ def test_json_request_raises_runtime_error_for_request_failure() -> None:
             session=session,
             method="GET",
             url="https://example.com",
+            data=None,
+            access_token=None,
         )
 
 
@@ -226,6 +228,8 @@ def test_json_request_raises_runtime_error_for_connection_failure() -> None:
             session=_FailingSession(),
             method="GET",
             url="https://example.com",
+            data=None,
+            access_token=None,
         )
 
     assert exc_info.value.__cause__ is None
@@ -245,4 +249,6 @@ def test_json_request_raises_runtime_error_for_invalid_json() -> None:
             session=session,
             method="GET",
             url="https://example.com",
+            data=None,
+            access_token=None,
         )
