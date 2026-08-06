@@ -1256,13 +1256,13 @@ def _string_from_json(
 
 
 @beartype
-def _json_request(
+def _json_request(  # noqa: NOD001
     *,
     session: requests.Session,
     method: str,
     url: str,
-    data: dict[str, str | list[str]] | None = None,  # noqa: NOD001
-    access_token: str | None = None,  # noqa: NOD001
+    data: dict[str, str | list[str]] | None = None,
+    access_token: str | None = None,
 ) -> object:
     """Make a JSON request and return the response body."""
     response = _request(
