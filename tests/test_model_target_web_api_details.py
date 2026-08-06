@@ -116,8 +116,8 @@ def test_string_from_json_raises_for_missing_values() -> None:
 
 def _response(
     *,
-    status_code: int = 200,  # noqa: NOD001
-    content: bytes = b'{"ok": true}',  # noqa: NOD001
+    status_code: int,
+    content: bytes,
 ) -> requests.Response:
     """Return a minimal requests response."""
     response = requests.Response()
@@ -170,7 +170,9 @@ class _FailingSession(requests.Session):
 
 def test_json_request_sends_json_headers_and_returns_response_body() -> None:
     """JSON requests include headers, payloads, and access tokens."""
-    session = _Session(response=_response())
+    session = _Session(
+        response=_response(status_code=200, content=b'{"ok": true}')
+    )
 
     response = vws_web_tools._json_request(
         session=session,
@@ -232,7 +234,9 @@ def test_json_request_raises_runtime_error_for_connection_failure() -> None:
 
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:
     """Invalid JSON responses raise a stable runtime error."""
-    session = _Session(response=_response(content=b"not json"))
+    session = _Session(
+        response=_response(content=b"not json", status_code=200)
+    )
 
     with pytest.raises(
         expected_exception=RuntimeError, match="unexpected shape"
