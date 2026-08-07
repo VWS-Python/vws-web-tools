@@ -112,6 +112,10 @@ def test_create_databases_library(
     assert details["client_access_key"]
     assert details["client_secret_key"]
 
+    expected_database_id_length = 32
+    assert len(details["database_id"]) == expected_database_id_length
+    assert details["database_id"].isalnum()
+
 
 def test_delete_license_library(
     *,
@@ -664,6 +668,11 @@ def test_create_databases_cli(
     assert details["client_access_key"]
     assert details["client_secret_key"]
 
+    expected_database_id_length = 32
+    database_id = details["database_id"]
+    assert len(database_id) == expected_database_id_length
+    assert database_id.isalnum()
+
     result = runner.invoke(
         cli=vws_web_tools_group,
         args=[
@@ -684,6 +693,7 @@ def test_create_databases_cli(
         for line in result.output.strip().split(sep="\n")
     )
     assert env_vars["VUFORIA_TARGET_MANAGER_DATABASE_NAME"] == database_name
+    assert env_vars["VUFORIA_DATABASE_ID"] == database_id
     assert env_vars["VUFORIA_SERVER_ACCESS_KEY"]
     assert env_vars["VUFORIA_SERVER_SECRET_KEY"]
     assert env_vars["VUFORIA_CLIENT_ACCESS_KEY"]
