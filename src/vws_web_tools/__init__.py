@@ -3,6 +3,7 @@
 import contextlib
 import datetime
 import logging
+import re
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -53,6 +54,9 @@ MODEL_TARGET_WEB_API_ADVANCED_SCOPES: tuple[str, ...] = (
 )
 _OAUTH2_CLIENT_CREDENTIALS_SCOPE = "oauth2.clientcredentials.all"
 _REQUEST_TIMEOUT_SECONDS = 30
+_DATABASE_PAGE_URL_PATH_PATTERN = re.compile(
+    pattern=r"^/develop/databases/(?P<database_id>[^/]+)/",
+)
 
 _TIMEOUT_RETRY_DECORATOR = retry(
     retry=retry_if_exception_type(
@@ -81,6 +85,7 @@ class DatabaseDict(TypedDict):
     """A dictionary type which represents a database."""
 
     database_name: str
+    database_id: str
     server_access_key: str
     server_secret_key: str
     client_access_key: str
@@ -857,6 +862,41 @@ def navigate_to_database(
 
 
 @beartype
+def _database_id_from_current_url(
+    *,
+    driver: WebDriver,
+) -> str:
+    """Get a database's ID from the URL of its page in the target manager.
+
+    ``navigate_to_database`` lands on a URL with a path of the form
+    ``/develop/databases/{database_id}/targets``, and the ID is not shown
+    anywhere else on the page.
+    """
+    long_wait = WebDriverWait(
+        driver=driver,
+        timeout=180,
+        ignored_exceptions=(
+            NoSuchElementException,
+            StaleElementReferenceException,
+        ),
+    )
+
+    @beartype
+    def _database_id_in_url(driver: WebDriver) -> str:
+        """Get the database ID in the current URL.
+
+        This returns the empty string while the browser has not yet
+        landed on a database's page, so that the wait keeps polling.
+        """
+        match = _DATABASE_PAGE_URL_PATH_PATTERN.match(
+            string=urlparse(url=driver.current_url).path,
+        )
+        return "" if match is None else match.group("database_id")
+
+    return long_wait.until(method=_database_id_in_url)
+
+
+@beartype
 def navigate_to_license(
     *,
     driver: WebDriver,
@@ -956,6 +996,7 @@ def get_database_details(
 ) -> DatabaseDict:
     """Get details of a database."""
     navigate_to_database(driver=driver, database_name=database_name)
+    database_id = _database_id_from_current_url(driver=driver)
     long_wait = WebDriverWait(
         driver=driver,
         timeout=180,
@@ -1005,6 +1046,7 @@ def get_database_details(
 
     return {
         "database_name": database_name,
+        "database_id": database_id,
         "server_access_key": server_access_key,
         "server_secret_key": server_secret_key,
         "client_access_key": client_access_key,
@@ -1611,6 +1653,7 @@ def show_database_details(
     if env_var_format:
         env_var_format_details = {
             "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details["database_name"],
+            "VUFORIA_DATABASE_ID": details["database_id"],
             "VUFORIA_SERVER_ACCESS_KEY": details["server_access_key"],
             "VUFORIA_SERVER_SECRET_KEY": details["server_secret_key"],
             "VUFORIA_CLIENT_ACCESS_KEY": details["client_access_key"],
