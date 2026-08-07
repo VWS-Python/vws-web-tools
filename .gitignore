@@ -133,3 +133,6 @@ dmypy.json
 **/.DS_Store
 
 uv.lock
+
+# Vale styles downloaded by ``vale sync``
+styles/
