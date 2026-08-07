@@ -1,6 +1,0 @@
-Add ``database_id`` to the dictionary returned by ``get_database_details``,
-and a ``VUFORIA_DATABASE_ID`` line to the ``--env-var-format`` output of
-``show-database-details``.
-This is the ID which Cloud Targets Web API endpoints such as
-``POST /imagetargets/databases/{database_id}/reports/recoCounts`` name in
-the request path.

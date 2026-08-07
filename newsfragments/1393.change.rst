@@ -1,4 +1,0 @@
-Add a ``scopes`` argument to ``get_model_target_web_api_details`` so callers
-on Vuforia Enterprise accounts can request the advanced Model Target Web API
-scope alongside the standard scope, via the new
-``MODEL_TARGET_WEB_API_ADVANCED_SCOPES`` constant.
