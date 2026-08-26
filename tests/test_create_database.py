@@ -37,6 +37,33 @@ def fixture_logged_in_chrome_driver(
     driver.quit()
 
 
+@pytest.fixture(name="_logged_in_session", autouse=True)
+def fixture_logged_in_session(
+    logged_in_chrome_driver: WebDriver,
+    vws_credentials: VWSCredentials,
+) -> None:
+    """Log in again if the shared session has expired.
+
+    ``logged_in_chrome_driver`` is module-scoped, so it logs in once and
+    every test in the module shares that one session. A module which
+    runs for longer than the session lasts leaves the later tests
+    driving a logged-out browser, which surfaces as a timeout waiting
+    for an element that is never going to appear. Load a page which
+    needs a session before each test, and log in again if the portal
+    sends the browser to the login page instead.
+    """
+    logged_in_chrome_driver.get(
+        url="https://developer.vuforia.com/develop/databases",
+    )
+    current_url = logged_in_chrome_driver.current_url
+    if "/auth/login" in current_url:  # pragma: no cover
+        vws_web_tools.log_in(
+            driver=logged_in_chrome_driver,
+            email_address=vws_credentials.email_address,
+            password=vws_credentials.password,
+        )
+
+
 @pytest.fixture(name="license_name", scope="module")
 def fixture_license_name(
     logged_in_chrome_driver: WebDriver,
