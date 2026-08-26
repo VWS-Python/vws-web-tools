@@ -232,8 +232,7 @@ def test_json_request_raises_runtime_error_for_connection_failure() -> None:
             access_token=None,
         )
 
-    assert exc_info.value.__cause__ is None
-    assert exc_info.value.__suppress_context__
+    assert isinstance(exc_info.value.__cause__, requests.ConnectionError)
 
 
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:
