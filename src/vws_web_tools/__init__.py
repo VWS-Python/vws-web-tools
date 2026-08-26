@@ -655,6 +655,13 @@ def _find_vumark_target_link(
         len(target_link_elements),
         target_name,
     )
+    if not target_link_elements:
+        message = (
+            f"No link was found for the target named '{target_name}'. "
+            "The target manager renders a target's name as plain text "
+            "rather than as a link while the target is still processing."
+        )
+        raise ValueError(message)
     target_link_element = target_link_elements[0]
     target_link = target_link_element.get_attribute(  # pyright: ignore[reportUnknownMemberType]
         name="href",
