@@ -26,6 +26,11 @@ class _BrowserStateDriver(WebDriver):
         self._user_agent = user_agent
         self._cookies = cookies
 
+    @property
+    def current_url(self) -> str:
+        """Return a URL on the Vuforia developer portal."""
+        return "https://developer.vuforia.com/develop/credentials"
+
     def execute_script(self, script: str, *args: object) -> object:
         """Return the controlled user agent."""
         assert script == "return navigator.userAgent"
@@ -58,7 +63,10 @@ def test_requests_session_from_driver_copies_browser_state() -> None:
 
     assert session.headers["User-Agent"] == "test browser"
     assert session.cookies.get(name="session", domain="example.com") == "abc"
-    assert session.cookies.get(name="host") == "only"
+    assert (
+        session.cookies.get(name="host", domain="developer.vuforia.com")
+        == "only"
+    )
     assert session.cookies.get(name="bad-value") is None
 
 

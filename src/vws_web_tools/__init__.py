@@ -1348,6 +1348,11 @@ def _requests_session_from_driver(
     if not _is_json_array(cookies):
         return session
 
+    # A cookie set for the current host has no ``domain`` attribute of
+    # its own. Give those the browser's host, as a cookie with no domain
+    # is never sent.
+    current_host = urlparse(url=driver.current_url).hostname
+
     for cookie in cookies:
         if not _is_json_object(cookie):
             continue
@@ -1356,12 +1361,13 @@ def _requests_session_from_driver(
         if not isinstance(name, str) or not isinstance(value, str):
             continue
 
-        domain = cookie.get("domain")
+        raw_domain = cookie.get("domain")
+        domain = raw_domain if isinstance(raw_domain, str) else current_host
         path = cookie.get("path")
         cookie_kwargs = {
             "path": path if isinstance(path, str) else "/",
         }
-        if isinstance(domain, str):
+        if domain:
             cookie_kwargs["domain"] = domain
         session.cookies.set(
             name=name,

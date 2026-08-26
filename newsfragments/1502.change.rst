@@ -1,0 +1,3 @@
+Send cookies which the browser holds for the Vuforia developer portal
+itself, and so have no domain attribute of their own, with requests to
+the Vuforia credentials API.
