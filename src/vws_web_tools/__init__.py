@@ -5,7 +5,7 @@ import datetime
 import logging
 import re
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict, TypeGuard
@@ -1400,6 +1400,37 @@ def get_model_target_web_api_details(
         "client_secret": credentials.client_secret,
         "cad_data_url": _MODEL_TARGET_WEB_API_CAD_DATA_URL,
     }
+
+
+# ``Generator[...]`` with defaulted type arguments is not valid at
+# runtime on Python 3.12, which this package supports.
+@contextlib.contextmanager  # pyright: ignore[reportDeprecated]
+@beartype
+def model_target_web_api_details(
+    *,
+    driver: WebDriver,
+    scopes: Sequence[str] = MODEL_TARGET_WEB_API_STANDARD_SCOPES,
+) -> Iterator[ModelTargetWebAPIDict]:
+    """Yield Model Target Web API details, then delete the credential.
+
+    ``get_model_target_web_api_details`` creates an OAuth2 client
+    credential on the Vuforia account, and nothing deletes it. A caller
+    which raises before it gets to
+    ``delete_model_target_web_api_client_credentials`` leaves the
+    credential on the account. This deletes the credential however the
+    ``with`` block is left.
+
+    See ``get_model_target_web_api_details`` for the ``scopes``
+    argument.
+    """
+    details = get_model_target_web_api_details(driver=driver, scopes=scopes)
+    try:
+        yield details
+    finally:
+        delete_model_target_web_api_client_credentials(
+            driver=driver,
+            client_id=details["client_id"],
+        )
 
 
 @click.group(name="vws-web")

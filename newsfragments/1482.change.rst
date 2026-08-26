@@ -1,0 +1,3 @@
+Add a ``model_target_web_api_details`` context manager, which yields the
+same details as ``get_model_target_web_api_details`` and deletes the
+OAuth2 client credential it creates when the ``with`` block is left.

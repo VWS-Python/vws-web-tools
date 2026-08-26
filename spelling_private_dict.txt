@@ -10,6 +10,7 @@ mypy
 noqa
 pragma
 pyright
+reportDeprecated
 reportUnknownMemberType
 vuforia
 vumark
