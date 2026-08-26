@@ -537,6 +537,9 @@ def test_get_model_target_web_api_details_library(
             "d7a3cc8e51d7c573771ae77a57f16b0662a905c6/"
             "2.0/Duck/glTF-Binary/Duck.glb"
         )
+        assert details["cad_data_url"] == (
+            vws_web_tools.MODEL_TARGET_WEB_API_CAD_DATA_URL
+        )
 
 
 def test_delete_model_target_web_api_credentials_cli(
