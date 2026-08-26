@@ -17,24 +17,27 @@ from vws_web_tools import vws_web_tools_group
 @pytest.fixture(name="chrome_driver")
 def fixture_chrome_driver() -> Iterator[WebDriver]:
     """Yield a headless Chrome WebDriver, quitting on tear down."""
-    driver = vws_web_tools.create_chrome_driver()
-    yield driver
-    driver.quit()
+    with vws_web_tools.create_chrome_driver() as driver:
+        yield driver
 
 
 @pytest.fixture(name="logged_in_chrome_driver", scope="module")
 def fixture_logged_in_chrome_driver(
     vws_credentials: VWSCredentials,
 ) -> Iterator[WebDriver]:
-    """Yield a headless Chrome WebDriver that is logged in."""
-    driver = vws_web_tools.create_chrome_driver()
-    vws_web_tools.log_in(
-        driver=driver,
-        email_address=vws_credentials.email_address,
-        password=vws_credentials.password,
-    )
-    yield driver
-    driver.quit()
+    """Yield a headless Chrome WebDriver that is logged in.
+
+    Logging in happens inside the ``with`` block so that the browser and
+    the ChromeDriver service are stopped even if logging in fails, when
+    the tear down after the ``yield`` never runs.
+    """
+    with vws_web_tools.create_chrome_driver() as driver:
+        vws_web_tools.log_in(
+            driver=driver,
+            email_address=vws_credentials.email_address,
+            password=vws_credentials.password,
+        )
+        yield driver
 
 
 @pytest.fixture(name="license_name", scope="module")
