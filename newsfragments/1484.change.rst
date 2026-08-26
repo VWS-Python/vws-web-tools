@@ -1,0 +1,2 @@
+Add a ``delete-model-target-web-api-credentials`` command, which deletes
+one Model Target Web API OAuth2 client credential by its client ID.

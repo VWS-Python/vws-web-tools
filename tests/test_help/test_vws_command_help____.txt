@@ -6,13 +6,15 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  create-vws-cloud-database     Create a cloud database.
-  create-vws-license            Create a license.
-  create-vws-vumark-database    Create a VuMark database.
-  delete-vws-license            Delete a license.
-  get-vumark-instance-id        Get the VuMark instance ID for a target.
-  show-database-details         Show the details of a database.
-  show-license-details          Show the details of a license.
-  show-vumark-database-details  Show the details of a VuMark database.
-  upload-vumark-template        Upload a VuMark SVG template to a VuMark...
-  wait-for-vumark-instance-id   Wait for and get the VuMark instance ID for...
+  create-vws-cloud-database       Create a cloud database.
+  create-vws-license              Create a license.
+  create-vws-vumark-database      Create a VuMark database.
+  delete-model-target-web-api-credentials
+                                  Delete one Model Target Web API...
+  delete-vws-license              Delete a license.
+  get-vumark-instance-id          Get the VuMark instance ID for a...
+  show-database-details           Show the details of a database.
+  show-license-details            Show the details of a license.
+  show-vumark-database-details    Show the details of a VuMark...
+  upload-vumark-template          Upload a VuMark SVG template to...
+  wait-for-vumark-instance-id     Wait for and get the VuMark...
