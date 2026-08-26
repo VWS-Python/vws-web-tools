@@ -349,7 +349,7 @@ def test_upload_vumark_template(
     assert test_file_path is not None
     svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
     template_name = f"template-{random_str}"
-    vws_web_tools.upload_vumark_template(
+    target_id = vws_web_tools.upload_vumark_template(
         driver=chrome_driver,
         database_name=database_name,
         svg_file_path=svg_path,
@@ -358,6 +358,9 @@ def test_upload_vumark_template(
     )
 
     assert template_name in chrome_driver.page_source
+    expected_target_id_length = 32
+    assert len(target_id) == expected_target_id_length
+    assert target_id.isalnum()
 
 
 def test_upload_vumark_template_cli(

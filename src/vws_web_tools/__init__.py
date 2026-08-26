@@ -598,8 +598,14 @@ def upload_vumark_template(
     svg_file_path: Path,
     template_name: str,
     width: float,
-) -> None:
-    """Upload a VuMark SVG template to a VuMark database."""
+) -> str:
+    """Upload a VuMark SVG template to a VuMark database.
+
+    Returns:
+        The ID of the uploaded target. Waiting for the ID means waiting
+        for VWS to finish processing the target, which takes longer than
+        waiting for the target to appear in the targets table.
+    """
     navigate_to_database(driver=driver, database_name=database_name)
 
     thirty_second_wait = WebDriverWait(
@@ -673,6 +679,17 @@ def upload_vumark_template(
         method=expected_conditions.presence_of_element_located(
             locator=(By.XPATH, f"//*[{target_name_cell_predicate}]"),
         ),
+    )
+
+    wait_for_vumark_target_link(
+        driver=driver,
+        database_name=database_name,
+        target_name=template_name,
+    )
+    return get_vumark_target_id(
+        driver=driver,
+        database_name=database_name,
+        target_name=template_name,
     )
 
 
