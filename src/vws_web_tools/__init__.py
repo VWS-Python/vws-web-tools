@@ -905,7 +905,9 @@ def navigate_to_license(
     """Navigate to a license's page in the developer portal."""
     licenses_url = "https://developer.vuforia.com/develop/licenses"
     driver.get(url=licenses_url)
-    _dismiss_cookie_banner(driver=driver)
+    # This dismisses the cookie banner as well as waiting for the
+    # licenses page, rather than for a redirect to the login page.
+    wait_for_logged_in(driver=driver)
 
     long_wait = WebDriverWait(
         driver=driver,
