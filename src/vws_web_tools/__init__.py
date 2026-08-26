@@ -947,7 +947,13 @@ def navigate_to_database(
         *,
         driver: WebDriver,
     ) -> bool:
-        """Find and click the row matching database_name."""
+        """Find and click the row matching database_name.
+
+        The search filter is applied asynchronously, so the table can
+        still hold unfiltered rows when this first runs. Wait for every
+        row shown to match the search text before clicking, rather than
+        clicking a row which is about to be replaced.
+        """
         rows = driver.find_elements(
             by=By.XPATH,
             value=(
@@ -955,6 +961,11 @@ def navigate_to_database(
                 " and contains(@id, '_project_name')]"
             ),
         )
+        row_texts = [row.text.strip() for row in rows]
+        if not row_texts:
+            return False
+        if not all(database_name in row_text for row_text in row_texts):
+            return False
         for row in rows:
             if row.text.strip() == database_name:
                 row.click()
