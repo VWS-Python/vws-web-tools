@@ -882,18 +882,24 @@ def _database_id_from_current_url(
     )
 
     @beartype
-    def _database_id_in_url(driver: WebDriver) -> str:
+    def _database_id_in_url(driver: WebDriver) -> str | None:
         """Get the database ID in the current URL.
 
-        This returns the empty string while the browser has not yet
-        landed on a database's page, so that the wait keeps polling.
+        This returns ``None`` while the browser has not yet landed on a
+        database's page, so that the wait keeps polling.
         """
         match = _DATABASE_PAGE_URL_PATH_PATTERN.match(
             string=urlparse(url=driver.current_url).path,
         )
-        return "" if match is None else match.group("database_id")
+        return None if match is None else match.group("database_id")
 
-    return long_wait.until(method=_database_id_in_url)
+    database_id = long_wait.until(method=_database_id_in_url)
+    if database_id is None:  # pragma: no cover
+        # ``WebDriverWait.until`` never returns a false value, so this
+        # is unreachable. It is here to narrow the type.
+        message = "No database ID was found in the URL."
+        raise ValueError(message)
+    return database_id
 
 
 @beartype
