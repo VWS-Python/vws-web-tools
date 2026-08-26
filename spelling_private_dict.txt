@@ -2,6 +2,7 @@ DOM
 OAuth
 SVG
 XPath
+api
 beartype
 changelog
 cli
