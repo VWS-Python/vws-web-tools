@@ -58,6 +58,19 @@ _DATABASE_PAGE_URL_PATH_PATTERN = re.compile(
     pattern=r"^/develop/databases/(?P<database_id>[^/]+)/",
 )
 
+# Locators for the controls in the target manager's dialog for adding a
+# VuMark target. The dialog gives these inputs no id and no name, so
+# there is nothing steadier to match on than their type and their
+# placeholder text - which means a wording change in the target manager
+# breaks uploads. Keeping them here at least puts every locator that has
+# to be revisited when that happens in one place.
+_VUMARK_TEMPLATE_FILE_LOCATOR = (By.CSS_SELECTOR, "input[type='file']")
+_VUMARK_TEMPLATE_WIDTH_LOCATOR = (
+    By.CSS_SELECTOR,
+    "input[placeholder='Width']",
+)
+_VUMARK_TEMPLATE_NAME_LOCATOR = (By.CSS_SELECTOR, "input[placeholder='Name']")
+
 _TIMEOUT_RETRY_DECORATOR = retry(
     retry=retry_if_exception_type(
         exception_types=TimeoutException,
@@ -567,22 +580,23 @@ def upload_vumark_template(
     # Upload the SVG file via the file input element.
     file_input = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
-            locator=(By.CSS_SELECTOR, "input[type='file']"),
+            locator=_VUMARK_TEMPLATE_FILE_LOCATOR,
         ),
     )
     file_input.send_keys(f"{svg_file_path.resolve()}")
 
     width_input = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
-            locator=(By.CSS_SELECTOR, "input[placeholder='Width']"),
+            locator=_VUMARK_TEMPLATE_WIDTH_LOCATOR,
         ),
     )
     width_input.clear()
     width_input.send_keys(f"{width}")
 
-    name_input = driver.find_element(
-        by=By.CSS_SELECTOR,
-        value="input[placeholder='Name']",
+    name_input = thirty_second_wait.until(
+        method=expected_conditions.presence_of_element_located(
+            locator=_VUMARK_TEMPLATE_NAME_LOCATOR,
+        ),
     )
     name_input.clear()
     name_input.send_keys(template_name)
