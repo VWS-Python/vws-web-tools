@@ -1579,9 +1579,9 @@ def get_vumark_instance_id(
             database_name=database_name,
             target_name=target_name,
         )
+        click.echo(message=instance_id)
     finally:
         driver.quit()
-    click.echo(message=instance_id)
 
 
 @click.command(name="wait-for-vumark-instance-id")
