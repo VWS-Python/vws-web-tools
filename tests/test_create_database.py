@@ -570,6 +570,66 @@ def test_delete_model_target_web_api_credentials_cli(
     assert result.exit_code == 0
 
 
+def test_show_model_target_web_api_details_cli(
+    *,
+    vws_credentials: VWSCredentials,
+    logged_in_chrome_driver: WebDriver,
+) -> None:
+    """Test showing Model Target Web API details via the CLI."""
+    email_address = vws_credentials.email_address
+    password = vws_credentials.password
+    runner = CliRunner()
+    client_ids: list[str] = []
+
+    try:
+        result = runner.invoke(
+            cli=vws_web_tools_group,
+            args=[
+                "show-model-target-web-api-details",
+                "--email-address",
+                email_address,
+                "--password",
+                password,
+            ],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0
+        details = yaml.safe_load(stream=result.output)
+        client_ids.append(details["client_id"])
+        assert details["client_secret"]
+        assert details["cad_data_url"]
+
+        result = runner.invoke(
+            cli=vws_web_tools_group,
+            args=[
+                "show-model-target-web-api-details",
+                "--email-address",
+                email_address,
+                "--password",
+                password,
+                "--env-var-format",
+            ],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0
+        env_vars: dict[str, str] = dict(
+            line.split(sep="=", maxsplit=1)
+            for line in result.output.strip().split(sep="\n")
+        )
+        client_ids.append(env_vars["MODEL_TARGET_VUFORIA_CLIENT_ID"])
+        assert env_vars["MODEL_TARGET_VUFORIA_CLIENT_SECRET"]
+        assert (
+            env_vars["MODEL_TARGET_VUFORIA_CAD_DATA_URL"]
+            == (details["cad_data_url"])
+        )
+    finally:
+        for client_id in client_ids:
+            vws_web_tools.delete_model_target_web_api_client_credentials(
+                driver=logged_in_chrome_driver,
+                client_id=client_id,
+            )
+
+
 def test_show_license_details_cli(
     *,
     vws_credentials: VWSCredentials,

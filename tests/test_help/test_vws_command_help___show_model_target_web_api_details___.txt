@@ -1,0 +1,14 @@
+Usage: vws-web show-model-target-web-api-details [OPTIONS]
+
+  Create and show Model Target Web API credentials.
+
+  The created OAuth2 client credential is left on the Vuforia account so that it
+  can be used.
+
+Options:
+  --email-address TEXT  [required]
+  --password TEXT       [required]
+  --advanced-scopes     Also request the advanced Model Target scope. This
+                        requires a Vuforia Enterprise developer account.
+  --env-var-format
+  --help                Show this message and exit.
