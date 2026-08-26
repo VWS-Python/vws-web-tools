@@ -1,3 +1,3 @@
-Raise an error from ``create_cloud_database``, rather than silently
-using the first match, when more than one license in the dropdown has
-the requested name.
+Raise an error from ``create_cloud_database``, rather than silently using
+the first match, when more than one license in the drop-down has the
+requested name.
