@@ -808,7 +808,9 @@ def navigate_to_database(
     """Navigate to a database's page in the target manager."""
     target_manager_url = "https://developer.vuforia.com/develop/databases"
     driver.get(url=target_manager_url)
-    _dismiss_cookie_banner(driver=driver)
+    # This dismisses the cookie banner as well as waiting for the target
+    # manager, rather than for a redirect to the login page.
+    wait_for_logged_in(driver=driver)
 
     long_wait = WebDriverWait(
         driver=driver,
