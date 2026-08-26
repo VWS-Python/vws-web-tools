@@ -91,7 +91,7 @@ def test_string_from_json_finds_nested_values() -> None:
     """A non-empty matching string is found recursively."""
     result = vws_web_tools._string_from_json(
         value={
-            "client_id": "",
+            "unrelated": "",
             "nested": [
                 {"clientId": "client-id"},
             ],
@@ -100,6 +100,23 @@ def test_string_from_json_finds_nested_values() -> None:
     )
 
     assert result == "client-id"
+
+
+def test_string_from_json_rejects_an_empty_top_level_value() -> None:
+    """An object which has the key with an empty value is not skipped."""
+    with pytest.raises(
+        expected_exception=ValueError,
+        match="Response included an empty 'client_id'",
+    ):
+        vws_web_tools._string_from_json(
+            value={
+                "client_id": "",
+                "nested": [
+                    {"clientId": "client-id"},
+                ],
+            },
+            keys=("client_id", "clientId"),
+        )
 
 
 def test_string_from_json_raises_for_missing_values() -> None:
