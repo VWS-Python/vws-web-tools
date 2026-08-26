@@ -4,6 +4,7 @@ import contextlib
 import datetime
 import logging
 import re
+import shlex
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -1661,7 +1662,7 @@ def show_database_details(
         }
 
         for key, value in env_var_format_details.items():
-            click.echo(message=f"{key}={value}")
+            click.echo(message=f"{key}={shlex.quote(s=value)}")
     else:
         click.echo(message=yaml.dump(data=details), nl=False)
 
@@ -1701,7 +1702,7 @@ def show_vumark_database_details(
         }
 
         for key, value in env_var_format_details.items():
-            click.echo(message=f"{key}={value}")
+            click.echo(message=f"{key}={shlex.quote(s=value)}")
     else:
         click.echo(message=yaml.dump(data=details), nl=False)
 
@@ -1739,7 +1740,7 @@ def show_license_details(
             "VUFORIA_LICENSE_KEY": details["license_key"],
         }
         for key, value in env_var_format_details.items():
-            click.echo(message=f"{key}={value}")
+            click.echo(message=f"{key}={shlex.quote(s=value)}")
     else:
         click.echo(message=yaml.dump(data=details), nl=False)
 
