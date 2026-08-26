@@ -26,6 +26,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver as ChromeDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
@@ -490,17 +491,30 @@ def create_cloud_database(
     )
     database_type_radio_element.click()
 
-    wait.until(
-        method=lambda d: any(
-            opt.text == license_name
-            for opt in Select(
-                webelement=d.find_element(
-                    by=By.ID,
-                    value="cloud-license-dropdown",
-                ),
-            ).options
-        ),
-    )
+    @beartype
+    def _matching_license_options(driver: WebDriver) -> list[WebElement]:
+        """Return the drop-down options for the wanted license."""
+        license_select = Select(
+            webelement=driver.find_element(
+                by=By.ID,
+                value="cloud-license-dropdown",
+            ),
+        )
+        return [
+            option
+            for option in license_select.options
+            if option.text == license_name
+        ]
+
+    matching_options = wait.until(method=_matching_license_options)
+    if len(matching_options) > 1:  # pragma: no cover
+        message = (
+            f"{len(matching_options)} licenses in the drop-down are named "
+            f"'{license_name}'. Which one to attach the new database to "
+            "is ambiguous."
+        )
+        raise ValueError(message)
+
     Select(
         webelement=driver.find_element(
             by=By.ID,
