@@ -1321,7 +1321,12 @@ def _json_request(
     try:
         response_body: object = response.json()
     except requests.JSONDecodeError as exc:
-        message = "The Vuforia credentials response had an unexpected shape."
+        content_type = response.headers.get("Content-Type", "unset")
+        message = (
+            f"Expected JSON from {url}, but the response had status "
+            f"{response.status_code} and content type {content_type}: "
+            f"{response.text[:500]}"
+        )
         raise RuntimeError(message) from exc
     return response_body
 
