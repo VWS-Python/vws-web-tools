@@ -630,11 +630,23 @@ def _xpath_literal(
 
     XPath 1.0 string literals have no escape syntax, so a value which
     contains an apostrophe cannot be wrapped in apostrophes. Wrap such a
-    value in quotation marks instead.
+    value in quotation marks instead, and build a ``concat()``
+    expression for a value which contains both.
     """
-    if "'" in value:
+    if "'" not in value:
+        return f"'{value}'"
+    if '"' not in value:
         return f'"{value}"'
-    return f"'{value}'"
+
+    apostrophe_literal = "\"'\""
+    segments: list[str] = []
+    for index, part in enumerate(iterable=value.split(sep="'")):
+        if index:
+            segments.append(apostrophe_literal)
+        if part:
+            segments.append(f"'{part}'")
+    joined_segments = ", ".join(segments)
+    return f"concat({joined_segments})"
 
 
 @beartype

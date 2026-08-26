@@ -14,8 +14,16 @@ import vws_web_tools
         ("license", "'license'"),
         ('quotation "marks"', "'quotation \"marks\"'"),
         ("O'Brien", '"O\'Brien"'),
+        ("""O'B"n""", 'concat(\'O\', "\'", \'B"n\')'),
+        ("""a'b'c"d""", 'concat(\'a\', "\'", \'b\', "\'", \'c"d\')'),
     ],
-    ids=["no-quotes", "quotation-marks", "apostrophe"],
+    ids=[
+        "no-quotes",
+        "quotation-marks",
+        "apostrophe",
+        "both-quote-characters",
+        "repeated-apostrophes",
+    ],
 )
 def test_xpath_literal(*, value: str, expected: str) -> None:
     """Values are wrapped in quote characters which they do not
