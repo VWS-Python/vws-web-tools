@@ -1,0 +1,3 @@
+Set Chrome's page load strategy to ``eager``, so that navigation does not
+wait for images and third-party scripts which no operation in this
+package needs.
