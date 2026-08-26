@@ -626,7 +626,14 @@ def _xpath_literal(
     *,
     value: str,
 ) -> str:
-    """Return an XPath string literal."""
+    """Return an XPath string literal.
+
+    XPath 1.0 string literals have no escape syntax, so a value which
+    contains an apostrophe cannot be wrapped in apostrophes. Wrap such a
+    value in quotation marks instead.
+    """
+    if "'" in value:
+        return f'"{value}"'
     return f"'{value}'"
 
 
