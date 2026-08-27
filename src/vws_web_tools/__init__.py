@@ -73,6 +73,13 @@ _TIMEOUT_RETRY_DECORATOR = retry(
 def create_chrome_driver() -> WebDriver:
     """Create a headless Chrome WebDriver."""
     options = ChromeOptions()
+    # Return from ``driver.get`` once the DOM is ready, without waiting
+    # for sub-resources. Every element this package looks for is behind
+    # an explicit wait, and ``wait_for_logged_in`` asks for
+    # ``document.readyState`` where a full load is what matters, so
+    # waiting for images and analytics scripts to load only adds time
+    # and turns slow third-party requests into timeouts.
+    options.page_load_strategy = "eager"  # noqa: V101
     options.add_argument(argument="--headless=new")
     options.add_argument(argument="--no-sandbox")
     options.add_argument(argument="--disable-dev-shm-usage")
