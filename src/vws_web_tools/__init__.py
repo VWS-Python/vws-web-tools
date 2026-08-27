@@ -1782,22 +1782,24 @@ def show_database_details(
             driver=driver,
             database_name=database_name,
         )
+        if env_var_format:
+            env_var_format_details = {
+                "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details[
+                    "database_name"
+                ],
+                "VUFORIA_DATABASE_ID": details["database_id"],
+                "VUFORIA_SERVER_ACCESS_KEY": details["server_access_key"],
+                "VUFORIA_SERVER_SECRET_KEY": details["server_secret_key"],
+                "VUFORIA_CLIENT_ACCESS_KEY": details["client_access_key"],
+                "VUFORIA_CLIENT_SECRET_KEY": details["client_secret_key"],
+            }
+
+            for key, value in env_var_format_details.items():
+                click.echo(message=f"{key}={shlex.quote(s=value)}")
+        else:
+            click.echo(message=yaml.dump(data=details), nl=False)
     finally:
         driver.quit()
-    if env_var_format:
-        env_var_format_details = {
-            "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details["database_name"],
-            "VUFORIA_DATABASE_ID": details["database_id"],
-            "VUFORIA_SERVER_ACCESS_KEY": details["server_access_key"],
-            "VUFORIA_SERVER_SECRET_KEY": details["server_secret_key"],
-            "VUFORIA_CLIENT_ACCESS_KEY": details["client_access_key"],
-            "VUFORIA_CLIENT_SECRET_KEY": details["client_secret_key"],
-        }
-
-        for key, value in env_var_format_details.items():
-            click.echo(message=f"{key}={shlex.quote(s=value)}")
-    else:
-        click.echo(message=yaml.dump(data=details), nl=False)
 
 
 @click.command()
@@ -1825,19 +1827,21 @@ def show_vumark_database_details(
             driver=driver,
             database_name=database_name,
         )
+        if env_var_format:
+            env_var_format_details = {
+                "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details[
+                    "database_name"
+                ],
+                "VUFORIA_SERVER_ACCESS_KEY": details["server_access_key"],
+                "VUFORIA_SERVER_SECRET_KEY": details["server_secret_key"],
+            }
+
+            for key, value in env_var_format_details.items():
+                click.echo(message=f"{key}={shlex.quote(s=value)}")
+        else:
+            click.echo(message=yaml.dump(data=details), nl=False)
     finally:
         driver.quit()
-    if env_var_format:
-        env_var_format_details = {
-            "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details["database_name"],
-            "VUFORIA_SERVER_ACCESS_KEY": details["server_access_key"],
-            "VUFORIA_SERVER_SECRET_KEY": details["server_secret_key"],
-        }
-
-        for key, value in env_var_format_details.items():
-            click.echo(message=f"{key}={shlex.quote(s=value)}")
-    else:
-        click.echo(message=yaml.dump(data=details), nl=False)
 
 
 @click.command(name="delete-model-target-web-api-credentials")
@@ -1892,17 +1896,17 @@ def show_license_details(
             driver=driver,
             license_name=license_name,
         )
+        if env_var_format:
+            env_var_format_details = {
+                "VUFORIA_LICENSE_NAME": details["license_name"],
+                "VUFORIA_LICENSE_KEY": details["license_key"],
+            }
+            for key, value in env_var_format_details.items():
+                click.echo(message=f"{key}={shlex.quote(s=value)}")
+        else:
+            click.echo(message=yaml.dump(data=details), nl=False)
     finally:
         driver.quit()
-    if env_var_format:
-        env_var_format_details = {
-            "VUFORIA_LICENSE_NAME": details["license_name"],
-            "VUFORIA_LICENSE_KEY": details["license_key"],
-        }
-        for key, value in env_var_format_details.items():
-            click.echo(message=f"{key}={shlex.quote(s=value)}")
-    else:
-        click.echo(message=yaml.dump(data=details), nl=False)
 
 
 vws_web_tools_group.add_command(cmd=create_vws_cloud_database)
