@@ -1,0 +1,3 @@
+Make ``upload_vumark_template`` return the ID of the target it uploaded.
+It now waits for VWS to finish processing the target, which takes longer
+than waiting for the target to appear in the targets table.
