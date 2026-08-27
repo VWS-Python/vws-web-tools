@@ -398,15 +398,16 @@ def delete_license(
             ),
         )
         row_texts = [row.text.strip() for row in rows]
-        if not row_texts:
+        if not row_texts or not all(
+            license_name in row_text for row_text in row_texts
+        ):
             return False
-        if not all(license_name in row_text for row_text in row_texts):
+        if license_name not in row_texts:  # pragma: no cover
+            # Every row contains the search text by now, but a row whose
+            # text merely contains it is not the row we want.
             return False
-        for row in rows:
-            if row.text.strip() == license_name:
-                row.click()
-                return True
-        return False
+        rows[row_texts.index(license_name)].click()
+        return True
 
     thirty_second_wait.until(
         method=lambda d: _click_license_row(driver=d),
