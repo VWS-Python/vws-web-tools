@@ -527,22 +527,15 @@ def test_get_model_target_web_api_details_library(
     logged_in_chrome_driver: WebDriver,
 ) -> None:
     """Test getting Model Target Web API details via the library."""
-    details = vws_web_tools.get_model_target_web_api_details(
+    with vws_web_tools.model_target_web_api_details(
         driver=logged_in_chrome_driver,
-    )
-
-    try:
+    ) as details:
         assert details["client_id"]
         assert details["client_secret"]
         assert details["cad_data_url"] == (
             "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/"
             "d7a3cc8e51d7c573771ae77a57f16b0662a905c6/"
             "2.0/Duck/glTF-Binary/Duck.glb"
-        )
-    finally:
-        vws_web_tools.delete_model_target_web_api_client_credentials(
-            driver=logged_in_chrome_driver,
-            client_id=details["client_id"],
         )
 
 
