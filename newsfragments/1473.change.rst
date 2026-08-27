@@ -1,0 +1,3 @@
+Support database, license and target names which contain apostrophes.
+Such names previously produced invalid XPath expressions, so looking them
+up in the target manager failed.
