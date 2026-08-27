@@ -1120,6 +1120,55 @@ def get_license_details(
     }
 
 
+_EXPECTED_ACCESS_KEY_BOXES = 2
+
+
+@beartype
+def _wait_for_access_keys(
+    *,
+    wait: WebDriverWait[WebDriver],
+    key_ids: Sequence[str],
+) -> None:
+    """Wait for key sections to show an access key and a secret key."""
+    wait.until(
+        method=lambda d: all(
+            len(
+                boxes := d.find_element(
+                    by=By.ID,
+                    value=key_id,
+                ).find_elements(by=By.CLASS_NAME, value="grey-box"),
+            )
+            >= _EXPECTED_ACCESS_KEY_BOXES
+            and all(
+                box.text.strip() for box in boxes[:_EXPECTED_ACCESS_KEY_BOXES]
+            )
+            for key_id in key_ids
+        ),
+    )
+
+
+@beartype
+def _access_key_pair(
+    *,
+    driver: WebDriver,
+    key_id: str,
+) -> tuple[str, str]:
+    """Return the access key and secret key shown in a key section.
+
+    Call this only after ``_wait_for_access_keys`` has returned for the
+    section: that is what guarantees that both boxes are there and
+    filled in. Boxes after the first two are ignored, so that the target
+    manager growing another one does not change what this returns.
+    """
+    grey_boxes = driver.find_element(
+        by=By.ID,
+        value=key_id,
+    ).find_elements(by=By.CLASS_NAME, value="grey-box")
+    access_key = grey_boxes[0].text.strip()
+    secret_key = grey_boxes[1].text.strip()
+    return (access_key, secret_key)
+
+
 @_TIMEOUT_RETRY_DECORATOR
 @beartype
 def get_database_details(
@@ -1147,35 +1196,19 @@ def get_database_details(
 
     access_keys_tab_item.click()
 
-    expected_key_boxes = 2
-
-    long_wait.until(
-        method=lambda d: all(
-            len(
-                boxes := d.find_element(
-                    by=By.ID,
-                    value=key_id,
-                ).find_elements(by=By.CLASS_NAME, value="grey-box"),
-            )
-            >= expected_key_boxes
-            and all(box.text.strip() for box in boxes[:expected_key_boxes])
-            for key_id in ("client-access-key", "server-access-key")
-        ),
+    _wait_for_access_keys(
+        wait=long_wait,
+        key_ids=("client-access-key", "server-access-key"),
     )
 
-    client_grey_boxes = driver.find_element(
-        by=By.ID,
-        value="client-access-key",
-    ).find_elements(by=By.CLASS_NAME, value="grey-box")
-    client_access_key = client_grey_boxes[0].text.strip()
-    client_secret_key = client_grey_boxes[1].text.strip()
-
-    server_grey_boxes = driver.find_element(
-        by=By.ID,
-        value="server-access-key",
-    ).find_elements(by=By.CLASS_NAME, value="grey-box")
-    server_access_key = server_grey_boxes[0].text.strip()
-    server_secret_key = server_grey_boxes[1].text.strip()
+    client_access_key, client_secret_key = _access_key_pair(
+        driver=driver,
+        key_id="client-access-key",
+    )
+    server_access_key, server_secret_key = _access_key_pair(
+        driver=driver,
+        key_id="server-access-key",
+    )
 
     return {
         "database_name": database_name,
@@ -1216,27 +1249,15 @@ def get_vumark_database_details(
 
     access_keys_tab_item.click()
 
-    expected_key_boxes = 2
-
-    long_wait.until(
-        method=lambda d: (
-            len(
-                boxes := d.find_element(
-                    by=By.ID,
-                    value="server-access-key",
-                ).find_elements(by=By.CLASS_NAME, value="grey-box"),
-            )
-            >= expected_key_boxes
-            and all(box.text.strip() for box in boxes[:expected_key_boxes])
-        ),
+    _wait_for_access_keys(
+        wait=long_wait,
+        key_ids=("server-access-key",),
     )
 
-    server_grey_boxes = driver.find_element(
-        by=By.ID,
-        value="server-access-key",
-    ).find_elements(by=By.CLASS_NAME, value="grey-box")
-    server_access_key = server_grey_boxes[0].text.strip()
-    server_secret_key = server_grey_boxes[1].text.strip()
+    server_access_key, server_secret_key = _access_key_pair(
+        driver=driver,
+        key_id="server-access-key",
+    )
 
     return {
         "database_name": database_name,
