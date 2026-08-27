@@ -1,0 +1,3 @@
+Add a ``show-model-target-web-api-details`` command, which creates and
+shows Model Target Web API credentials, in YAML or in
+``--env-var-format``.

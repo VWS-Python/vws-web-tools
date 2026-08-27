@@ -1925,6 +1925,61 @@ def delete_model_target_web_api_credentials(
         driver.quit()
 
 
+@click.command(name="show-model-target-web-api-details")
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
+@click.option(
+    "--advanced-scopes",
+    is_flag=True,
+    help=(
+        "Also request the advanced Model Target scope. "
+        "This requires a Vuforia Enterprise developer account."
+    ),
+)
+@click.option("--env-var-format", is_flag=True)
+@beartype
+def show_model_target_web_api_details(
+    *,
+    email_address: str,
+    password: str,
+    advanced_scopes: bool,
+    env_var_format: bool,
+) -> None:
+    """Create and show Model Target Web API credentials.
+
+    The created OAuth2 client credential is left on the Vuforia
+    account so that it can be used.
+    """
+    scopes = (
+        MODEL_TARGET_WEB_API_ADVANCED_SCOPES
+        if advanced_scopes
+        else MODEL_TARGET_WEB_API_STANDARD_SCOPES
+    )
+    driver = create_chrome_driver()
+    try:
+        log_in(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        details = get_model_target_web_api_details(
+            driver=driver,
+            scopes=scopes,
+        )
+    finally:
+        driver.quit()
+    if env_var_format:
+        env_var_format_details = {
+            "MODEL_TARGET_VUFORIA_CLIENT_ID": details["client_id"],
+            "MODEL_TARGET_VUFORIA_CLIENT_SECRET": details["client_secret"],
+            "MODEL_TARGET_VUFORIA_CAD_DATA_URL": details["cad_data_url"],
+        }
+        for key, value in env_var_format_details.items():
+            click.echo(message=f"{key}={value}")
+    else:
+        click.echo(message=yaml.dump(data=details), nl=False)
+
+
 @click.command()
 @click.option("--license-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
@@ -1971,6 +2026,7 @@ vws_web_tools_group.add_command(cmd=delete_vws_license)
 vws_web_tools_group.add_command(cmd=get_vumark_instance_id)
 vws_web_tools_group.add_command(cmd=show_database_details)
 vws_web_tools_group.add_command(cmd=show_license_details)
+vws_web_tools_group.add_command(cmd=show_model_target_web_api_details)
 vws_web_tools_group.add_command(cmd=show_vumark_database_details)
 vws_web_tools_group.add_command(cmd=upload_vumark_template_to_database)
 vws_web_tools_group.add_command(cmd=wait_for_vumark_instance_id)
