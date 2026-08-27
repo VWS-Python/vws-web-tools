@@ -14,8 +14,8 @@ import vws_web_tools
         ("license", "'license'"),
         ('quotation "marks"', "'quotation \"marks\"'"),
         ("O'Brien", '"O\'Brien"'),
-        ("""O'B"n""", 'concat(\'O\', "\'", \'B"n\')'),
-        ("""a'b'c"d""", 'concat(\'a\', "\'", \'b\', "\'", \'c"d\')'),
+        ("""O'B"n""", "concat('O', \"'\", 'B\"n')"),
+        ("""a'b'c"d""", "concat('a', \"'\", 'b', \"'\", 'c\"d')"),
     ],
     ids=[
         "no-quotes",

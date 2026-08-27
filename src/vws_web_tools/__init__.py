@@ -638,7 +638,7 @@ def _xpath_literal(
     if '"' not in value:
         return f'"{value}"'
 
-    apostrophe_literal = "\"'\""
+    apostrophe_literal = '"\'"'
     segments: list[str] = []
     for index, part in enumerate(iterable=value.split(sep="'")):
         if index:
