@@ -12,6 +12,8 @@ from selenium.webdriver.remote.webdriver import WebDriver
 
 import vws_web_tools
 
+_PORTAL_URL = "https://developer.vuforia.com/develop/credentials"
+
 
 class _BrowserStateDriver(WebDriver):
     """A WebDriver shell with controlled browser state."""
@@ -21,15 +23,17 @@ class _BrowserStateDriver(WebDriver):
         *,
         user_agent: object,
         cookies: object,
+        current_url: str,
     ) -> None:
         """Store controlled browser state."""
         self._user_agent = user_agent
         self._cookies = cookies
+        self._current_url = current_url
 
     @property
     def current_url(self) -> str:
-        """Return a URL on the Vuforia developer portal."""
-        return "https://developer.vuforia.com/develop/credentials"
+        """Return the controlled browser URL."""
+        return self._current_url
 
     def execute_script(self, script: str, *args: object) -> object:
         """Return the controlled user agent."""
@@ -57,6 +61,7 @@ def test_requests_session_from_driver_copies_browser_state() -> None:
             {"name": "bad-value", "value": 123},
             "not a cookie",
         ],
+        current_url=_PORTAL_URL,
     )
 
     session = vws_web_tools._requests_session_from_driver(driver=driver)
@@ -68,6 +73,19 @@ def test_requests_session_from_driver_copies_browser_state() -> None:
         == "only"
     )
     assert session.cookies.get(name="bad-value") is None
+
+
+def test_requests_session_from_driver_without_a_browser_host() -> None:
+    """A host-only cookie is still set when the URL names no host."""
+    driver = _BrowserStateDriver(
+        user_agent="test browser",
+        cookies=[{"name": "host", "value": "only"}],
+        current_url="about:blank",
+    )
+
+    session = vws_web_tools._requests_session_from_driver(driver=driver)
+
+    assert session.cookies.get(name="host") == "only"
 
 
 @pytest.mark.parametrize(
@@ -86,6 +104,7 @@ def test_requests_session_from_driver_handles_unexpected_browser_state(
     driver = _BrowserStateDriver(
         user_agent=user_agent,
         cookies=cookies,
+        current_url=_PORTAL_URL,
     )
 
     session = vws_web_tools._requests_session_from_driver(driver=driver)
