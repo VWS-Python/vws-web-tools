@@ -59,6 +59,7 @@ _REQUEST_TIMEOUT_SECONDS = 30
 _DATABASE_PAGE_URL_PATH_PATTERN = re.compile(
     pattern=r"^/develop/databases/(?P<database_id>[^/]+)/",
 )
+_TARGET_ID_PATTERN = re.compile(pattern=r"[0-9a-zA-Z]{32}")
 
 # Locators for the controls in the target manager's dialog for adding a
 # VuMark target. The dialog gives these inputs no id and no name, so
@@ -869,7 +870,15 @@ def get_vumark_target_id(
     )
 
     url_path = urlparse(url=target_link).path
-    return url_path.rstrip("/").split(sep="/")[-1]
+    target_id = url_path.rstrip("/").split(sep="/")[-1]
+    if not _TARGET_ID_PATTERN.fullmatch(string=target_id):  # pragma: no cover
+        message = (
+            f"Expected the last path segment of the target link "
+            f"'{target_link}' to be a target ID, but it was "
+            f"'{target_id}'."
+        )
+        raise ValueError(message)
+    return target_id
 
 
 @beartype
