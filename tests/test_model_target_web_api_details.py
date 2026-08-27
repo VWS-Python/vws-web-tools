@@ -3,6 +3,7 @@
 # ruff: noqa: ANN401, SLF001
 """Tests for Model Target Web API detail helpers."""
 
+import re
 from typing import Any
 
 import pytest
@@ -253,13 +254,19 @@ def test_json_request_raises_runtime_error_for_connection_failure() -> None:
 
 
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:
-    """Invalid JSON responses raise a stable runtime error."""
+    """A response which is not JSON says what was received instead."""
     session = _Session(
-        response=_response(content=b"not json", status_code=200)
+        response=_response(content=b"<html>error</html>", status_code=200)
     )
 
     with pytest.raises(
-        expected_exception=RuntimeError, match="unexpected shape"
+        expected_exception=RuntimeError,
+        match=re.escape(
+            pattern=(
+                "Expected JSON from https://example.com, but the response "
+                "had status 200 and content type unset: <html>error</html>"
+            ),
+        ),
     ):
         vws_web_tools._json_request(
             session=session,
