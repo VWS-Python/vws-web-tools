@@ -1,3 +1,0 @@
-Raise an error from ``get_vumark_target_id`` when the last path
-segment of a target's link is not a target ID, rather than returning
-whatever the segment was.

@@ -1,3 +1,0 @@
-Stop swallowing every ``WebDriverException`` raised by the second,
-retried click on the add-database button, so that a real browser
-failure there is reported rather than turning into a later timeout.

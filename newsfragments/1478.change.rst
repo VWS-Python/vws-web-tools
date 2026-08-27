@@ -1,2 +1,0 @@
-Make ``navigate_to_license`` wait for the licenses page to load, rather
-than acting on whichever page a stale session redirects to.

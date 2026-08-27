@@ -1,3 +1,0 @@
-Raise an error, rather than searching nested objects, when a Vuforia
-credentials API response has the wanted key at the top level but with
-an empty value.

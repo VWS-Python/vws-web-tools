@@ -1,4 +1,0 @@
-Add a ``cad_data_url`` argument to
-``get_model_target_web_api_details``, and make the URL it defaults to
-public as ``MODEL_TARGET_WEB_API_CAD_DATA_URL``, so that callers can
-use a different model without waiting for a release of this package.

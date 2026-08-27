@@ -1,3 +1,0 @@
-Shell-quote the values which ``--env-var-format`` prints, so that output
-for a name containing a space or another character which is special to
-the shell can be used with ``eval`` or ``source``.

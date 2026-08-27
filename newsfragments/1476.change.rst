@@ -1,3 +1,0 @@
-Make ``get_vumark_target_id`` wait for the target manager to render a
-target's name as a link, rather than failing as soon as the name appears
-as plain text while the target is still processing.

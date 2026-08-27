@@ -1,3 +1,0 @@
-Make ``delete_license`` wait for the licenses table's search filter to
-have been applied before clicking a row, rather than clicking a row
-from the unfiltered table which is about to be replaced.

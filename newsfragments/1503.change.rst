@@ -1,2 +1,0 @@
-Say what was received, rather than "unexpected shape", when the Vuforia
-credentials API returns something which is not JSON.

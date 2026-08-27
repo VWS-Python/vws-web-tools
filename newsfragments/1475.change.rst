@@ -1,3 +1,0 @@
-Raise a descriptive error, rather than an ``IndexError``, when
-``get_vumark_target_id`` is asked for a target which the target manager
-has not yet rendered as a link.

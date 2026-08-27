@@ -1,3 +1,0 @@
-Support database, license and target names which contain both an
-apostrophe and a quotation mark, by building a ``concat()`` XPath
-expression for them.
