@@ -539,6 +539,34 @@ def test_get_model_target_web_api_details_library(
         )
 
 
+def test_delete_model_target_web_api_credentials_cli(
+    *,
+    vws_credentials: VWSCredentials,
+    logged_in_chrome_driver: WebDriver,
+) -> None:
+    """Test deleting Model Target Web API credentials via the CLI."""
+    details = vws_web_tools.get_model_target_web_api_details(
+        driver=logged_in_chrome_driver,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli=vws_web_tools_group,
+        args=[
+            "delete-model-target-web-api-credentials",
+            "--client-id",
+            details["client_id"],
+            "--email-address",
+            vws_credentials.email_address,
+            "--password",
+            vws_credentials.password,
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+
+
 def test_show_license_details_cli(
     *,
     vws_credentials: VWSCredentials,

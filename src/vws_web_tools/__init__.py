@@ -1757,6 +1757,33 @@ def show_vumark_database_details(
         click.echo(message=yaml.dump(data=details), nl=False)
 
 
+@click.command(name="delete-model-target-web-api-credentials")
+@click.option("--client-id", required=True)
+@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
+@click.option("--password", envvar="VWS_PASSWORD", required=True)
+@beartype
+def delete_model_target_web_api_credentials(
+    *,
+    client_id: str,
+    email_address: str,
+    password: str,
+) -> None:
+    """Delete one Model Target Web API client credential."""
+    driver = create_chrome_driver()
+    try:
+        log_in(
+            driver=driver,
+            email_address=email_address,
+            password=password,
+        )
+        delete_model_target_web_api_client_credentials(
+            driver=driver,
+            client_id=client_id,
+        )
+    finally:
+        driver.quit()
+
+
 @click.command()
 @click.option("--license-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
@@ -1798,6 +1825,7 @@ def show_license_details(
 vws_web_tools_group.add_command(cmd=create_vws_cloud_database)
 vws_web_tools_group.add_command(cmd=create_vws_license)
 vws_web_tools_group.add_command(cmd=create_vws_vumark_database)
+vws_web_tools_group.add_command(cmd=delete_model_target_web_api_credentials)
 vws_web_tools_group.add_command(cmd=delete_vws_license)
 vws_web_tools_group.add_command(cmd=get_vumark_instance_id)
 vws_web_tools_group.add_command(cmd=show_database_details)
