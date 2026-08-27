@@ -378,23 +378,35 @@ def delete_license(
     search_input_element.send_keys(license_name)
     search_input_element.send_keys(Keys.ENTER)
 
-    license_name_xpath = _xpath_literal(value=license_name)
-
     @beartype
     def _click_license_row(
         *,
         driver: WebDriver,
     ) -> bool:
-        """Find and click the row matching license_name."""
-        element = driver.find_element(
+        """Find and click the row matching license_name.
+
+        The search filter is applied asynchronously, so the table can
+        still hold unfiltered rows when this first runs. Wait for every
+        row shown to match the search text before clicking, rather than
+        clicking a row which is about to be replaced.
+        """
+        rows = driver.find_elements(
             by=By.XPATH,
             value=(
                 "//span[starts-with(@id, 'table_row_')"
-                " and contains(@id, '_app_name')"
-                f" and normalize-space(.)={license_name_xpath}]"
+                " and contains(@id, '_app_name')]"
             ),
         )
-        element.click()
+        row_texts = [row.text.strip() for row in rows]
+        if not row_texts or not all(
+            license_name in row_text for row_text in row_texts
+        ):
+            return False
+        if license_name not in row_texts:  # pragma: no cover
+            # Every row contains the search text by now, but a row whose
+            # text merely contains it is not the row we want.
+            return False
+        rows[row_texts.index(license_name)].click()
         return True
 
     thirty_second_wait.until(
