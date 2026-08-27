@@ -1020,17 +1020,15 @@ def get_license_details(
         ),
     )
 
-    long_wait.until(
+    # Use the value the wait returned rather than reading the element
+    # again: the wait only returns a non-empty key, but a second read
+    # can land after a re-render and see an empty box.
+    license_key = long_wait.until(
         method=lambda d: d.find_element(
             by=By.CLASS_NAME,
             value="license-key-box",
         ).text.strip(),
     )
-
-    license_key = driver.find_element(
-        by=By.CLASS_NAME,
-        value="license-key-box",
-    ).text.strip()
 
     return {
         "license_name": license_name,
