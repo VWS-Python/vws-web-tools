@@ -16,10 +16,11 @@ import requests
 import yaml
 from beartype import beartype
 from selenium.common.exceptions import (
+    ElementClickInterceptedException,
+    ElementNotInteractableException,
     NoSuchElementException,
     StaleElementReferenceException,
     TimeoutException,
-    WebDriverException,
 )
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.webdriver import WebDriver as ChromeDriver
@@ -439,7 +440,15 @@ def _open_add_database_dialog(
         value=add_database_button_id,
     )
     add_database_button_element.click()
-    with contextlib.suppress(WebDriverException):
+    # The dialog sometimes does not open on the first click. Click
+    # again, ignoring the errors which mean that the first click did
+    # open it: the button is then covered by the dialog, hidden, or
+    # gone from the DOM.
+    with contextlib.suppress(
+        ElementClickInterceptedException,
+        ElementNotInteractableException,
+        StaleElementReferenceException,
+    ):
         add_database_button_element.click()
     database_name_id = "database-name"
     thirty_second_wait.until(
