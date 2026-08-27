@@ -6,6 +6,7 @@ api
 beartype
 changelog
 cli
+glTF
 macOS
 mypy
 noqa

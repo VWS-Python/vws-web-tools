@@ -41,7 +41,13 @@ from tenacity import (
 
 LOGGER = logging.getLogger(name=__name__)
 
-_MODEL_TARGET_WEB_API_CAD_DATA_URL = (
+# A CAD model to use with the Model Target Web API.
+#
+# This is pinned to a commit rather than to a branch so that the file
+# does not change under us. A pinned URL can still stop resolving - if
+# the repository is renamed, deleted or rewritten - so callers can pass
+# their own URL to ``get_model_target_web_api_details``.
+MODEL_TARGET_WEB_API_CAD_DATA_URL = (
     "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/"
     "d7a3cc8e51d7c573771ae77a57f16b0662a905c6/"
     "2.0/Duck/glTF-Binary/Duck.glb"
@@ -1472,6 +1478,7 @@ def get_model_target_web_api_details(
     *,
     driver: WebDriver,
     scopes: Sequence[str] = MODEL_TARGET_WEB_API_STANDARD_SCOPES,
+    cad_data_url: str = MODEL_TARGET_WEB_API_CAD_DATA_URL,
 ) -> ModelTargetWebAPIDict:
     """Get Model Target Web API credentials and a CAD data URL.
 
@@ -1483,6 +1490,12 @@ def get_model_target_web_api_details(
     advanced Model Target scope; this requires a Vuforia Enterprise
     developer account, and credential creation raises a ``RuntimeError``
     if the account is not entitled to a requested scope.
+
+    The ``cad_data_url`` argument is returned as-is, as the
+    ``cad_data_url`` item of the result. It defaults to
+    ``MODEL_TARGET_WEB_API_CAD_DATA_URL``, a model pinned to a commit in
+    the glTF sample models repository. Pass another URL to use a
+    different model, or if that one stops resolving.
     """
     driver.get(url="https://developer.vuforia.com/develop/credentials")
     wait_for_logged_in(driver=driver)
@@ -1501,7 +1514,7 @@ def get_model_target_web_api_details(
     return {
         "client_id": credentials.client_id,
         "client_secret": credentials.client_secret,
-        "cad_data_url": _MODEL_TARGET_WEB_API_CAD_DATA_URL,
+        "cad_data_url": cad_data_url,
     }
 
 
@@ -1513,6 +1526,7 @@ def model_target_web_api_details(
     *,
     driver: WebDriver,
     scopes: Sequence[str] = MODEL_TARGET_WEB_API_STANDARD_SCOPES,
+    cad_data_url: str = MODEL_TARGET_WEB_API_CAD_DATA_URL,
 ) -> Iterator[ModelTargetWebAPIDict]:
     """Yield Model Target Web API details, then delete the credential.
 
@@ -1523,10 +1537,14 @@ def model_target_web_api_details(
     credential on the account. This deletes the credential however the
     ``with`` block is left.
 
-    See ``get_model_target_web_api_details`` for the ``scopes``
-    argument.
+    See ``get_model_target_web_api_details`` for the ``scopes`` and
+    ``cad_data_url`` arguments.
     """
-    details = get_model_target_web_api_details(driver=driver, scopes=scopes)
+    details = get_model_target_web_api_details(
+        driver=driver,
+        scopes=scopes,
+        cad_data_url=cad_data_url,
+    )
     try:
         yield details
     finally:
