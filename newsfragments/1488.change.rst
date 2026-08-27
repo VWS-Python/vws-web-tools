@@ -1,0 +1,3 @@
+Chain the underlying ``requests`` exception onto the ``RuntimeError``
+raised when a call to the Vuforia credentials API fails, so that a
+traceback shows what went wrong at the network level.

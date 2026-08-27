@@ -1386,7 +1386,7 @@ def _request(
         if exc.response is not None:
             body_excerpt = f": {exc.response.text[:500]}"
         message = f"Could not call the Vuforia credentials API{body_excerpt}"
-        raise RuntimeError(message) from None
+        raise RuntimeError(message) from exc
     return response
 
 
