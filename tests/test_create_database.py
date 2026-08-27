@@ -624,7 +624,14 @@ def test_create_databases_cli(
     vws_credentials: VWSCredentials,
     cli_license_name: str,
 ) -> None:
-    """Test creating databases via the CLI."""
+    """Test creating databases via the CLI.
+
+    Every CLI invocation here starts a browser and logs in, so each one
+    added costs the slowest test in the suite another browser session.
+    ``show-license-details`` is covered by
+    ``test_show_license_details_cli``, against the same license, so it
+    is deliberately not repeated here.
+    """
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
@@ -632,24 +639,6 @@ def test_create_databases_cli(
     database_name = f"database-ci-{today_date}-{random_str}"
 
     runner = CliRunner()
-
-    result = runner.invoke(
-        cli=vws_web_tools_group,
-        args=[
-            "show-license-details",
-            "--license-name",
-            cli_license_name,
-            "--email-address",
-            email_address,
-            "--password",
-            password,
-        ],
-        catch_exceptions=False,
-    )
-    assert result.exit_code == 0
-    license_details = yaml.safe_load(stream=result.output)
-    assert license_details["license_name"] == cli_license_name
-    assert license_details["license_key"]
 
     result = runner.invoke(
         cli=vws_web_tools_group,
