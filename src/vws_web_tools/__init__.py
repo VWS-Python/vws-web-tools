@@ -182,19 +182,20 @@ def _dismiss_cookie_banner(
         var consent = document.getElementById('onetrust-consent-sdk');
         if (consent) consent.remove();
 
-        // Set up observer to remove banner if it appears later
-        if (!window.__otObserver) {
-            window.__otObserver = new MutationObserver(function() {
-                var b = document.getElementById('onetrust-banner-sdk');
-                if (b) b.remove();
-                var c = document.getElementById('onetrust-consent-sdk');
-                if (c) c.remove();
-            });
-            window.__otObserver.observe(
-                document.documentElement,
-                {childList: true, subtree: true}
-            );
-        }
+        // Set up observer to remove banner if it appears later.
+        // Disconnect any observer this function set up earlier on this
+        // document first, so that only one is ever running.
+        if (window.__otObserver) window.__otObserver.disconnect();
+        window.__otObserver = new MutationObserver(function() {
+            var b = document.getElementById('onetrust-banner-sdk');
+            if (b) b.remove();
+            var c = document.getElementById('onetrust-consent-sdk');
+            if (c) c.remove();
+        });
+        window.__otObserver.observe(
+            document.documentElement,
+            {childList: true, subtree: true}
+        );
         """
     )
 
