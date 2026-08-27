@@ -728,6 +728,31 @@ def _find_vumark_target_link(
     return str(object=target_link)
 
 
+@beartype
+def _open_target_key_tab(
+    *,
+    wait: WebDriverWait[WebDriver],
+) -> None:
+    """Click the target-key tab of a VuMark database.
+
+    The tab is clicked exactly once. The wait is what makes the tab
+    being slow to render survivable: it retries until the click goes
+    through, and returns as soon as one has.
+    """
+
+    @beartype
+    def _click_target_key_tab(driver: WebDriver) -> bool:
+        """Click the target-key tab."""
+        target_key_tab = driver.find_element(
+            by=By.ID,
+            value="target-key-tab",
+        )
+        target_key_tab.click()
+        return True
+
+    wait.until(method=_click_target_key_tab)
+
+
 @_TIMEOUT_RETRY_DECORATOR
 @beartype
 def wait_for_vumark_target_link(
@@ -753,15 +778,7 @@ def wait_for_vumark_target_link(
         ),
     )
 
-    def _click_target_key_tab(d: WebDriver) -> bool:
-        """Click the target-key tab once it is clickable."""
-        target_key_tab = d.find_element(by=By.ID, value="target-key-tab")
-        target_key_tab.click()
-        return True
-
-    long_wait.until(
-        method=_click_target_key_tab,
-    )
+    _open_target_key_tab(wait=long_wait)
 
     target_name_xpath_literal = _xpath_literal(value=target_name)
     target_row_predicate = (
@@ -822,15 +839,7 @@ def get_vumark_target_id(
         ),
     )
 
-    def _click_target_key_tab(d: WebDriver) -> bool:
-        """Click the target-key tab once it is clickable."""
-        target_key_tab = d.find_element(by=By.ID, value="target-key-tab")
-        target_key_tab.click()
-        return True
-
-    short_wait.until(
-        method=_click_target_key_tab,
-    )
+    _open_target_key_tab(wait=short_wait)
     short_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
