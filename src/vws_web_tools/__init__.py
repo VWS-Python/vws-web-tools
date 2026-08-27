@@ -815,11 +815,11 @@ def get_vumark_target_id(
     """Get the ID for a VuMark target in a database.
 
     Limitation:
-        This navigates to the requested database but does not wait for
-        readiness. It hard-errors if the target name is not yet rendered
-        as a clickable link. While a target is still processing, VWS
-        often renders plain text in that column and no target ID link is
-        available.
+        While a target is still processing, VWS renders plain text in
+        the target-name column rather than a link, and no target ID is
+        available. This waits up to 30 seconds for the link, and then
+        hard-errors. Use ``wait_for_vumark_target_link`` first to wait
+        for longer than that.
     """
     LOGGER.debug(
         "Getting VuMark target ID for database '%s' and target '%s'.",
@@ -854,9 +854,12 @@ def get_vumark_target_id(
         " ) = '_target_name'"
         f" and normalize-space(.) = {target_name_xpath_literal}"
     )
+    # Wait for a link rather than for any element which matches, as the
+    # target manager renders the target's name as plain text until the
+    # target has finished processing, and only a link carries the ID.
     short_wait.until(
         method=expected_conditions.presence_of_element_located(
-            locator=(By.XPATH, f"//*[{target_row_predicate}]"),
+            locator=(By.XPATH, f"//a[{target_row_predicate}]"),
         ),
     )
 
