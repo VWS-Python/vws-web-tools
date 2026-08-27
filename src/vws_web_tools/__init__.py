@@ -1305,8 +1305,15 @@ def _string_from_json(
     if _is_json_object(value):
         for key in keys:
             child = value.get(key)
-            if isinstance(child, str) and child:
-                return child
+            if isinstance(child, str):
+                if child:
+                    return child
+                # An object which has the key but with an empty value is
+                # the object we were looking for, and it is malformed.
+                # Do not fall through to a nested object which happens
+                # to have the same key.
+                message = f"Response included an empty '{key}'."
+                raise ValueError(message)
         for child in value.values():
             with contextlib.suppress(ValueError):
                 return _string_from_json(value=child, keys=keys)
