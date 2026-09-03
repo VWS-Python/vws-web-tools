@@ -152,7 +152,9 @@ lint.external = [
     # Vulture.
     "V",
 ]
-lint.flake8-tidy-imports.banned-api."typing.cast".msg = "typing.cast is banned: use explicit type narrowing or a typed variable instead."
+lint.flake8-tidy-imports.banned-api."typing.cast".msg = """\
+    typing.cast is banned: use explicit type narrowing or a typed variable instead.\
+    """
 lint.pydocstyle.convention = "google"
 
 [tool.pylint]
