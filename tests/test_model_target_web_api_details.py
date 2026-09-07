@@ -189,8 +189,8 @@ class _Session(requests.Session):
         self.send_kwargs: dict[str, object] | None = None
         self._response = response
 
-    @override
-    def send(  # noqa: V105
+    @override  # noqa: V105
+    def send(
         self,
         request: requests.PreparedRequest,
         **kwargs: Any,
@@ -206,8 +206,8 @@ class _Session(requests.Session):
 class _FailingSession(requests.Session):
     """A requests session which fails before receiving a response."""
 
-    @override
-    def send(  # noqa: V105
+    @override  # noqa: V105
+    def send(
         self,
         request: requests.PreparedRequest,
         **kwargs: Any,

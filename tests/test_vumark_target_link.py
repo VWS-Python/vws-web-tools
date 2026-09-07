@@ -18,8 +18,8 @@ class _NoElementsDriver(WebDriver):
     def __init__(self) -> None:
         """Avoid starting a browser session."""
 
-    @override
-    def find_elements(  # noqa: V105
+    @override  # noqa: V105
+    def find_elements(
         self,
         *args: Any,
         **kwargs: Any,
