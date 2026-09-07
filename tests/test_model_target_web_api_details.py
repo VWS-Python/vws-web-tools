@@ -1,10 +1,10 @@
 # pyright: reportPrivateUsage=false
 # pylint: disable=protected-access,super-init-not-called
-# ruff: noqa: ANN401, SLF001
+# ruff: noqa: SLF001
 """Tests for Model Target Web API detail helpers."""
 
 import re
-from typing import Any
+from typing import Any, override
 
 import pytest
 import requests
@@ -31,16 +31,19 @@ class _BrowserStateDriver(WebDriver):
         self._current_url = current_url
 
     @property
+    @override
     def current_url(self) -> str:
         """Return the controlled browser URL."""
         return self._current_url
 
+    @override
     def execute_script(self, script: str, *args: object) -> object:
         """Return the controlled user agent."""
         assert script == "return navigator.userAgent"
         assert not args
         return self._user_agent
 
+    @override
     def get_cookies(self) -> Any:
         """Return the controlled cookies."""
         return self._cookies
@@ -186,6 +189,7 @@ class _Session(requests.Session):
         self.send_kwargs: dict[str, object] | None = None
         self._response = response
 
+    @override
     def send(  # noqa: V105
         self,
         request: requests.PreparedRequest,
@@ -202,6 +206,7 @@ class _Session(requests.Session):
 class _FailingSession(requests.Session):
     """A requests session which fails before receiving a response."""
 
+    @override
     def send(  # noqa: V105
         self,
         request: requests.PreparedRequest,

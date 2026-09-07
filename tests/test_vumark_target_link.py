@@ -1,9 +1,9 @@
 # pyright: reportPrivateUsage=false
 # pylint: disable=protected-access,super-init-not-called
-# ruff: noqa: ANN401, SLF001
+# ruff: noqa: SLF001
 """Tests for finding VuMark target links."""
 
-from typing import Any
+from typing import Any, override
 
 import pytest
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -18,6 +18,7 @@ class _NoElementsDriver(WebDriver):
     def __init__(self) -> None:
         """Avoid starting a browser session."""
 
+    @override
     def find_elements(  # noqa: V105
         self,
         *args: Any,
