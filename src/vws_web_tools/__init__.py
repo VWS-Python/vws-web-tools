@@ -9,7 +9,7 @@ import uuid
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict, TypeGuard
+from typing import Literal, TypedDict, TypeGuard
 from urllib.parse import quote, urlparse
 
 import click
@@ -63,7 +63,7 @@ MODEL_TARGET_WEB_API_ADVANCED_SCOPES: tuple[str, ...] = (
 )
 _OAUTH2_CLIENT_CREDENTIALS_SCOPE = "oauth2.clientcredentials.all"
 _REQUEST_TIMEOUT_SECONDS = 30
-_DATABASE_PAGE_URL_PATH_PATTERN = re.compile(
+_DATABASE_PAGE_URL_PATH_PATTERN: re.Pattern[str] = re.compile(
     pattern=r"^/develop/databases/(?P<database_id>[^/]+)/",
 )
 _TARGET_ID_PATTERN = re.compile(pattern=r"[0-9a-zA-Z]{32}")
@@ -1028,24 +1028,20 @@ def _database_id_from_current_url(
     )
 
     @beartype
-    def _database_id_in_url(driver: WebDriver) -> str | None:
+    def _database_id_in_url(driver: WebDriver) -> str | Literal[False]:
         """Get the database ID in the current URL.
 
-        This returns ``None`` while the browser has not yet landed on a
+        This returns ``False`` while the browser has not yet landed on a
         database's page, so that the wait keeps polling.
         """
         match = _DATABASE_PAGE_URL_PATH_PATTERN.match(
             string=urlparse(url=driver.current_url).path,
         )
-        return None if match is None else match.group("database_id")  # ty: ignore[unsound-return-statement]
+        return (
+            False if match is None else str(object=match.group("database_id"))
+        )
 
-    database_id = long_wait.until(method=_database_id_in_url)
-    if database_id is None:  # pragma: no cover
-        # ``WebDriverWait.until`` never returns a false value, so this
-        # is unreachable. It is here to narrow the type.
-        message = "No database ID was found in the URL."
-        raise ValueError(message)
-    return database_id
+    return long_wait.until(method=_database_id_in_url)
 
 
 @beartype
