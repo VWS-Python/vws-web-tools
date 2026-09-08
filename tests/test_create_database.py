@@ -123,7 +123,7 @@ def test_create_databases_library(
         license_name=license_name,
     )
     assert license_details["license_name"] == license_name
-    assert license_details["license_key"]
+    assert license_details["license_key"] != ""
 
     vws_web_tools.create_cloud_database(
         driver=logged_in_chrome_driver,
@@ -137,10 +137,10 @@ def test_create_databases_library(
     )
 
     assert details["database_name"] == database_name
-    assert details["server_access_key"]
-    assert details["server_secret_key"]
-    assert details["client_access_key"]
-    assert details["client_secret_key"]
+    assert details["server_access_key"] != ""
+    assert details["server_secret_key"] != ""
+    assert details["client_access_key"] != ""
+    assert details["client_secret_key"] != ""
 
     expected_database_id_length = 32
     assert len(details["database_id"]) == expected_database_id_length
@@ -175,7 +175,7 @@ def test_delete_license_library(
         license_name=license_name,
     )
     assert license_details["license_name"] == license_name
-    assert license_details["license_key"]
+    assert license_details["license_key"] != ""
 
     vws_web_tools.delete_license(
         driver=chrome_driver,
@@ -228,7 +228,7 @@ def test_delete_license_cli(
     assert show_license_result.exit_code == 0
     license_details = yaml.safe_load(stream=show_license_result.output)
     assert license_details["license_name"] == license_name
-    assert license_details["license_key"]
+    assert license_details["license_key"] != ""
 
     delete_result = runner.invoke(
         cli=vws_web_tools_group,
@@ -276,8 +276,8 @@ def test_create_vumark_database_library(
     )
 
     assert details["database_name"] == database_name
-    assert details["server_access_key"]
-    assert details["server_secret_key"]
+    assert details["server_access_key"] != ""
+    assert details["server_secret_key"] != ""
 
 
 def test_create_vumark_database_cli(
@@ -322,10 +322,10 @@ def test_create_vumark_database_cli(
         catch_exceptions=False,
     )
     assert result.exit_code == 0
-    details = yaml.safe_load(stream=result.output)
+    details: dict[str, str] = yaml.safe_load(stream=result.output)
     assert details["database_name"] == database_name
-    assert details["server_access_key"]
-    assert details["server_secret_key"]
+    assert details["server_access_key"] != ""
+    assert details["server_secret_key"] != ""
 
     result = runner.invoke(
         cli=vws_web_tools_group,
@@ -347,8 +347,8 @@ def test_create_vumark_database_cli(
         for line in result.output.strip().split(sep="\n")
     )
     assert env_vars["VUFORIA_TARGET_MANAGER_DATABASE_NAME"] == database_name
-    assert env_vars["VUFORIA_SERVER_ACCESS_KEY"]
-    assert env_vars["VUFORIA_SERVER_SECRET_KEY"]
+    assert env_vars["VUFORIA_SERVER_ACCESS_KEY"] != ""
+    assert env_vars["VUFORIA_SERVER_SECRET_KEY"] != ""
 
 
 def test_upload_vumark_template(
@@ -516,7 +516,7 @@ def test_get_vumark_target_id(
     assert test_file_path is not None
     svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
     template_name = f"template-{random_str}"
-    vws_web_tools.upload_vumark_template(
+    _ = vws_web_tools.upload_vumark_template(
         driver=chrome_driver,
         database_name=database_name,
         svg_file_path=svg_path,
@@ -552,7 +552,7 @@ def test_get_license_details_library(
     )
 
     assert details["license_name"] == license_name
-    assert details["license_key"]
+    assert details["license_key"] != ""
 
 
 def test_get_model_target_web_api_details_library(
@@ -563,8 +563,8 @@ def test_get_model_target_web_api_details_library(
     with vws_web_tools.model_target_web_api_details(
         driver=logged_in_chrome_driver,
     ) as details:
-        assert details["client_id"]
-        assert details["client_secret"]
+        assert details["client_id"] != ""
+        assert details["client_secret"] != ""
         assert details["cad_data_url"] == (
             "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/"
             "d7a3cc8e51d7c573771ae77a57f16b0662a905c6/"
@@ -627,10 +627,10 @@ def test_show_model_target_web_api_details_cli(
             catch_exceptions=False,
         )
         assert result.exit_code == 0
-        details = yaml.safe_load(stream=result.output)
+        details: dict[str, str] = yaml.safe_load(stream=result.output)
         client_ids.append(details["client_id"])
-        assert details["client_secret"]
-        assert details["cad_data_url"]
+        assert details["client_secret"] != ""
+        assert details["cad_data_url"] != ""
 
         result = runner.invoke(
             cli=vws_web_tools_group,
@@ -650,7 +650,7 @@ def test_show_model_target_web_api_details_cli(
             for line in result.output.strip().split(sep="\n")
         )
         client_ids.append(env_vars["MODEL_TARGET_VUFORIA_CLIENT_ID"])
-        assert env_vars["MODEL_TARGET_VUFORIA_CLIENT_SECRET"]
+        assert env_vars["MODEL_TARGET_VUFORIA_CLIENT_SECRET"] != ""
         assert (
             env_vars["MODEL_TARGET_VUFORIA_CAD_DATA_URL"]
             == (details["cad_data_url"])
@@ -688,9 +688,9 @@ def test_show_license_details_cli(
         catch_exceptions=False,
     )
     assert result.exit_code == 0
-    details = yaml.safe_load(stream=result.output)
+    details: dict[str, str] = yaml.safe_load(stream=result.output)
     assert details["license_name"] == cli_license_name
-    assert details["license_key"]
+    assert details["license_key"] != ""
 
     result = runner.invoke(
         cli=vws_web_tools_group,
@@ -712,7 +712,7 @@ def test_show_license_details_cli(
         for line in result.output.strip().split(sep="\n")
     )
     assert env_vars["VUFORIA_LICENSE_NAME"] == cli_license_name
-    assert env_vars["VUFORIA_LICENSE_KEY"]
+    assert env_vars["VUFORIA_LICENSE_KEY"] != ""
 
 
 def test_create_databases_cli(
@@ -767,12 +767,12 @@ def test_create_databases_cli(
         catch_exceptions=False,
     )
     assert result.exit_code == 0
-    details = yaml.safe_load(stream=result.output)
+    details: dict[str, str] = yaml.safe_load(stream=result.output)
     assert details["database_name"] == database_name
-    assert details["server_access_key"]
-    assert details["server_secret_key"]
-    assert details["client_access_key"]
-    assert details["client_secret_key"]
+    assert details["server_access_key"] != ""
+    assert details["server_secret_key"] != ""
+    assert details["client_access_key"] != ""
+    assert details["client_secret_key"] != ""
 
     expected_database_id_length = 32
     database_id = details["database_id"]
@@ -800,7 +800,7 @@ def test_create_databases_cli(
     )
     assert env_vars["VUFORIA_TARGET_MANAGER_DATABASE_NAME"] == database_name
     assert env_vars["VUFORIA_DATABASE_ID"] == database_id
-    assert env_vars["VUFORIA_SERVER_ACCESS_KEY"]
-    assert env_vars["VUFORIA_SERVER_SECRET_KEY"]
-    assert env_vars["VUFORIA_CLIENT_ACCESS_KEY"]
-    assert env_vars["VUFORIA_CLIENT_SECRET_KEY"]
+    assert env_vars["VUFORIA_SERVER_ACCESS_KEY"] != ""
+    assert env_vars["VUFORIA_SERVER_SECRET_KEY"] != ""
+    assert env_vars["VUFORIA_CLIENT_ACCESS_KEY"] != ""
+    assert env_vars["VUFORIA_CLIENT_SECRET_KEY"] != ""
