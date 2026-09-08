@@ -1037,7 +1037,7 @@ def _database_id_from_current_url(
         match = _DATABASE_PAGE_URL_PATH_PATTERN.match(
             string=urlparse(url=driver.current_url).path,
         )
-        return None if match is None else match.group("database_id")
+        return None if match is None else match.group("database_id")  # ty: ignore[unsound-return-statement]
 
     database_id = long_wait.until(method=_database_id_in_url)
     if database_id is None:  # pragma: no cover
