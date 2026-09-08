@@ -1,10 +1,10 @@
 # pyright: reportPrivateUsage=false
 # pylint: disable=protected-access,super-init-not-called
-# ruff: noqa: ANN401, SLF001
+# ruff: noqa: SLF001
 """Tests for Model Target Web API detail helpers."""
 
 import re
-from typing import Any
+from typing import Any, override
 
 import pytest
 import requests
@@ -18,7 +18,7 @@ _PORTAL_URL = "https://developer.vuforia.com/develop/credentials"
 class _BrowserStateDriver(WebDriver):
     """A WebDriver shell with controlled browser state."""
 
-    def __init__(
+    def __init__(  # pyrefly: ignore [missing-super-call]
         self,
         *,
         user_agent: object,
@@ -31,17 +31,20 @@ class _BrowserStateDriver(WebDriver):
         self._current_url = current_url
 
     @property
+    @override
     def current_url(self) -> str:
         """Return the controlled browser URL."""
         return self._current_url
 
+    @override
     def execute_script(self, script: str, *args: object) -> object:
         """Return the controlled user agent."""
         assert script == "return navigator.userAgent"
-        assert not args
+        assert len(args) == 0
         return self._user_agent
 
-    def get_cookies(self) -> Any:
+    @override
+    def get_cookies(self) -> Any:  # pyrefly: ignore [explicit-any]
         """Return the controlled cookies."""
         return self._cookies
 
@@ -112,7 +115,7 @@ def test_requests_session_from_driver_handles_unexpected_browser_state(
     assert session.headers["User-Agent"] == (
         user_agent if isinstance(user_agent, str) else "python-requests/2.34.2"
     )
-    assert not session.cookies
+    assert len(session.cookies) == 0
 
 
 def test_string_from_json_finds_nested_values() -> None:
@@ -136,7 +139,7 @@ def test_string_from_json_rejects_an_empty_top_level_value() -> None:
         expected_exception=ValueError,
         match="Response included an empty 'client_id'",
     ):
-        vws_web_tools._string_from_json(
+        _ = vws_web_tools._string_from_json(
             value={
                 "client_id": "",
                 "nested": [
@@ -153,7 +156,7 @@ def test_string_from_json_raises_for_missing_values() -> None:
         expected_exception=ValueError,
         match="Response did not include any of",
     ):
-        vws_web_tools._string_from_json(
+        _ = vws_web_tools._string_from_json(
             value={"nested": [None, {"client_id": ""}]},
             keys=("client_id", "clientId"),
         )
@@ -186,10 +189,11 @@ class _Session(requests.Session):
         self.send_kwargs: dict[str, object] | None = None
         self._response = response
 
-    def send(  # noqa: V105
+    @override  # noqa: V105
+    def send(
         self,
         request: requests.PreparedRequest,
-        **kwargs: Any,
+        **kwargs: Any,  # pyrefly: ignore [explicit-any]
     ) -> requests.Response:
         """Store the prepared request and return the controlled
         response.
@@ -202,10 +206,11 @@ class _Session(requests.Session):
 class _FailingSession(requests.Session):
     """A requests session which fails before receiving a response."""
 
-    def send(  # noqa: V105
+    @override  # noqa: V105
+    def send(
         self,
         request: requests.PreparedRequest,
-        **kwargs: Any,
+        **kwargs: Any,  # pyrefly: ignore [explicit-any]
     ) -> requests.Response:
         """Raise a request failure without an HTTP response."""
         assert request.url == "https://example.com/"
@@ -254,7 +259,7 @@ def test_json_request_raises_runtime_error_for_request_failure() -> None:
     )
 
     with pytest.raises(expected_exception=RuntimeError, match="response body"):
-        vws_web_tools._json_request(
+        _ = vws_web_tools._json_request(
             session=session,
             method="GET",
             url="https://example.com",
@@ -269,7 +274,7 @@ def test_json_request_raises_runtime_error_for_connection_failure() -> None:
         expected_exception=RuntimeError,
         match=r"Could not call the Vuforia credentials API$",
     ) as exc_info:
-        vws_web_tools._json_request(
+        _ = vws_web_tools._json_request(
             session=_FailingSession(),
             method="GET",
             url="https://example.com",
@@ -295,7 +300,7 @@ def test_json_request_raises_runtime_error_for_invalid_json() -> None:
             ),
         ),
     ):
-        vws_web_tools._json_request(
+        _ = vws_web_tools._json_request(
             session=session,
             method="GET",
             url="https://example.com",

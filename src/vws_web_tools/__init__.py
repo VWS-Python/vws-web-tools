@@ -6,10 +6,10 @@ import logging
 import re
 import shlex
 import uuid
-from collections.abc import Iterator, Sequence
+from collections.abc import Generator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict, TypeGuard
+from typing import TypedDict, TypeGuard
 from urllib.parse import quote, urlparse
 
 import click
@@ -331,7 +331,7 @@ def create_license(
         ),
     )
     confirm_button.click()
-    sixty_second_wait.until(
+    _ = sixty_second_wait.until(
         method=expected_conditions.url_changes(url=new_license_url),
     )
 
@@ -359,12 +359,12 @@ def delete_license(
         ),
     )
 
-    thirty_second_wait.until(
+    _ = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
         ),
     )
-    thirty_second_wait.until(
+    _ = thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_app_name"),
         ),
@@ -398,7 +398,7 @@ def delete_license(
             ),
         )
         row_texts = [row.text.strip() for row in rows]
-        if not row_texts or not all(
+        if len(row_texts) == 0 or not all(
             license_name in row_text for row_text in row_texts
         ):
             return False
@@ -409,11 +409,11 @@ def delete_license(
         rows[row_texts.index(license_name)].click()
         return True
 
-    thirty_second_wait.until(
+    _ = thirty_second_wait.until(
         method=lambda d: _click_license_row(driver=d),
     )
 
-    thirty_second_wait.until(
+    _ = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "license-header-name"),
         ),
@@ -433,7 +433,7 @@ def delete_license(
         ),
     )
     confirm_button.click()
-    thirty_second_wait.until(
+    _ = thirty_second_wait.until(
         method=expected_conditions.staleness_of(element=confirm_button),
     )
 
@@ -464,13 +464,13 @@ def _open_add_database_dialog(
     )
 
     add_database_button_id = "add-dialog-btn"
-    thirty_second_wait.until(
+    _ = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, add_database_button_id),
         ),
     )
 
-    thirty_second_wait.until(
+    _ = thirty_second_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, add_database_button_id),
         ),
@@ -492,7 +492,7 @@ def _open_add_database_dialog(
     ):
         add_database_button_element.click()
     database_name_id = "database-name"
-    thirty_second_wait.until(
+    _ = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, database_name_id),
         ),
@@ -518,7 +518,7 @@ def _submit_add_database_dialog(
         ),
     )
     generate_button.click()
-    wait.until(
+    _ = wait.until(
         method=expected_conditions.staleness_of(element=generate_button),
     )
 
@@ -687,7 +687,7 @@ def upload_vumark_template(
             StaleElementReferenceException,
         ),
     )
-    long_wait.until(
+    _ = long_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.XPATH, f"//*[{target_name_cell_predicate}]"),
         ),
@@ -725,9 +725,9 @@ def _xpath_literal(
     apostrophe_literal = '"\'"'
     segments: list[str] = []
     for index, part in enumerate(iterable=value.split(sep="'")):
-        if index:
+        if index != 0:
             segments.append(apostrophe_literal)
-        if part:
+        if part != "":
             segments.append(f"'{part}'")
     joined_segments = ", ".join(segments)
     return f"concat({joined_segments})"
@@ -758,7 +758,7 @@ def _find_vumark_target_link(
         len(target_link_elements),
         target_name,
     )
-    if not target_link_elements:
+    if len(target_link_elements) == 0:
         message = (
             f"No link was found for the target named '{target_name}'. "
             "The target manager renders a target's name as plain text "
@@ -799,7 +799,7 @@ def _open_target_key_tab(
         target_key_tab.click()
         return True
 
-    wait.until(method=_click_target_key_tab)
+    _ = wait.until(method=_click_target_key_tab)
 
 
 @_TIMEOUT_RETRY_DECORATOR
@@ -848,7 +848,7 @@ def wait_for_vumark_target_link(
             ),
         )
 
-    long_wait.until(
+    _ = long_wait.until(
         method=_target_link_found,
     )
 
@@ -889,7 +889,7 @@ def get_vumark_target_id(
     )
 
     _open_target_key_tab(wait=short_wait)
-    short_wait.until(
+    _ = short_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
         ),
@@ -906,7 +906,7 @@ def get_vumark_target_id(
     # Wait for a link rather than for any element which matches, as the
     # target manager renders the target's name as plain text until the
     # target has finished processing, and only a link carries the ID.
-    short_wait.until(
+    _ = short_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.XPATH, f"//a[{target_row_predicate}]"),
         ),
@@ -919,7 +919,9 @@ def get_vumark_target_id(
 
     url_path = urlparse(url=target_link).path
     target_id = url_path.rstrip("/").split(sep="/")[-1]
-    if not _TARGET_ID_PATTERN.fullmatch(string=target_id):  # pragma: no cover
+    if (  # pragma: no cover
+        _TARGET_ID_PATTERN.fullmatch(string=target_id) is None
+    ):
         message = (
             f"Expected the last path segment of the target link "
             f"'{target_link}' to be a target ID, but it was "
@@ -953,12 +955,12 @@ def navigate_to_database(
 
     # The table search field needs ENTER to trigger filtering
     # in our Selenium runs.
-    long_wait.until(
+    _ = long_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
         ),
     )
-    long_wait.until(
+    _ = long_wait.until(
         method=expected_conditions.element_to_be_clickable(
             mark=(By.ID, "table_row_0_project_name"),
         ),
@@ -991,7 +993,7 @@ def navigate_to_database(
             ),
         )
         row_texts = [row.text.strip() for row in rows]
-        if not row_texts or not all(
+        if len(row_texts) == 0 or not all(
             database_name in row_text for row_text in row_texts
         ):
             return False
@@ -1002,7 +1004,7 @@ def navigate_to_database(
         rows[row_texts.index(database_name)].click()
         return True
 
-    long_wait.until(method=lambda d: _click_database_row(driver=d))
+    _ = long_wait.until(method=lambda d: _click_database_row(driver=d))
 
 
 @beartype
@@ -1068,7 +1070,7 @@ def navigate_to_license(
         ),
     )
 
-    long_wait.until(
+    _ = long_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.ID, "table_search"),
         ),
@@ -1100,7 +1102,7 @@ def navigate_to_license(
         element.click()
         return True
 
-    long_wait.until(method=lambda d: _click_license_row(driver=d))
+    _ = long_wait.until(method=lambda d: _click_license_row(driver=d))
 
 
 @_TIMEOUT_RETRY_DECORATOR
@@ -1147,7 +1149,7 @@ def _wait_for_access_keys(
     key_ids: Sequence[str],
 ) -> None:
     """Wait for key sections to show an access key and a secret key."""
-    wait.until(
+    _ = wait.until(
         method=lambda d: all(
             len(
                 boxes := d.find_element(
@@ -1332,7 +1334,7 @@ def delete_model_target_web_api_client_credentials(
         driver=driver,
     )
     encoded_client_id = quote(string=client_id, safe="")
-    _request(
+    _ = _request(
         session=api_session.session,
         method="DELETE",
         url=(
@@ -1405,9 +1407,8 @@ def _requests_session_from_driver(
         session.headers.update({"User-Agent": user_agent})
 
     # https://github.com/SeleniumHQ/selenium/pull/17537
-    raw_cookies: Any = driver.get_cookies()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-    cookies: object = raw_cookies
-    if not _is_json_array(cookies):
+    cookies: object = driver.get_cookies()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    if not _is_json_array(cookies):  # pyright: ignore[reportUnknownArgumentType]
         return session
 
     # A cookie set for the current host has no ``domain`` attribute of
@@ -1429,9 +1430,9 @@ def _requests_session_from_driver(
         cookie_kwargs = {
             "path": path if isinstance(path, str) else "/",
         }
-        if domain:
+        if domain is not None and domain != "":
             cookie_kwargs["domain"] = domain
-        session.cookies.set(
+        _ = session.cookies.set(
             name=name,
             value=value,
             **cookie_kwargs,
@@ -1463,7 +1464,7 @@ def _string_from_json(
         for key in keys:
             child = value.get(key)
             if isinstance(child, str):
-                if child:
+                if child != "":
                     return child
                 # An object which has the key but with an empty value is
                 # the object we were looking for, and it is malformed.
@@ -1600,14 +1601,15 @@ def get_model_target_web_api_details(
 
 # ``Generator[...]`` with defaulted type arguments is not valid at
 # runtime on Python 3.12, which this package supports.
-@contextlib.contextmanager  # pyright: ignore[reportDeprecated]
+@contextlib.contextmanager
 @beartype
 def model_target_web_api_details(
     *,
     driver: WebDriver,
     scopes: Sequence[str] = MODEL_TARGET_WEB_API_STANDARD_SCOPES,
     cad_data_url: str = MODEL_TARGET_WEB_API_CAD_DATA_URL,
-) -> Iterator[ModelTargetWebAPIDict]:
+    # pylint: disable-next=unnecessary-default-type-args
+) -> Generator[ModelTargetWebAPIDict, None, None]:
     """Yield Model Target Web API details, then delete the credential.
 
     ``get_model_target_web_api_details`` creates an OAuth2 client
@@ -1774,7 +1776,7 @@ def upload_vumark_template_to_database(  # noqa: PLR0913
             email_address=email_address,
             password=password,
         )
-        upload_vumark_template(
+        _ = upload_vumark_template(
             driver=driver,
             database_name=database_name,
             svg_file_path=svg_file_path,

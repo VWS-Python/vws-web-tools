@@ -11,8 +11,10 @@ macOS
 mypy
 noqa
 pragma
+pyrefly
 pyright
 reportDeprecated
+reportUnknownArgumentType
 reportUnknownMemberType
 vuforia
 vumark

@@ -1,9 +1,9 @@
 # pyright: reportPrivateUsage=false
 # pylint: disable=protected-access,super-init-not-called
-# ruff: noqa: ANN401, SLF001
+# ruff: noqa: SLF001
 """Tests for finding VuMark target links."""
 
-from typing import Any
+from typing import Any, override
 
 import pytest
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -15,17 +15,18 @@ import vws_web_tools
 class _NoElementsDriver(WebDriver):
     """A WebDriver shell which finds no elements."""
 
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # pyrefly: ignore [missing-super-call]
         """Avoid starting a browser session."""
 
-    def find_elements(  # noqa: V105
+    @override  # noqa: V105
+    def find_elements(
         self,
-        *args: Any,
-        **kwargs: Any,
+        *args: Any,  # pyrefly: ignore [explicit-any]
+        **kwargs: Any,  # pyrefly: ignore [explicit-any]
     ) -> list[WebElement]:
         """Return no elements."""
-        assert not args
-        assert kwargs
+        assert len(args) == 0
+        assert len(kwargs) > 0
         return []
 
 
@@ -35,7 +36,7 @@ def test_find_vumark_target_link_without_a_link() -> None:
         expected_exception=ValueError,
         match="No link was found for the target named 'my-target'",
     ):
-        vws_web_tools._find_vumark_target_link(
+        _ = vws_web_tools._find_vumark_target_link(
             driver=_NoElementsDriver(),
             target_name="my-target",
         )
