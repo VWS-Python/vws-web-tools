@@ -16,6 +16,7 @@ pyright
 reportDeprecated
 reportUnknownArgumentType
 reportUnknownMemberType
+ty
 vuforia
 vumark
 vws
