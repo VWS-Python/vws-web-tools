@@ -6,12 +6,19 @@ from collections.abc import Iterator
 
 import pytest
 import yaml
+from beartype import beartype
 from click.testing import CliRunner
 from selenium.webdriver.remote.webdriver import WebDriver
 
 import vws_web_tools
 from tests.credentials import VWSCredentials
 from vws_web_tools import vws_web_tools_group
+
+
+@beartype
+def _string_mapping(value: dict[str, str], /) -> dict[str, str]:
+    """Return a runtime-validated string mapping."""
+    return value
 
 
 @pytest.fixture(name="chrome_driver")
@@ -322,7 +329,7 @@ def test_create_vumark_database_cli(
         catch_exceptions=False,
     )
     assert result.exit_code == 0
-    details: dict[str, str] = yaml.safe_load(stream=result.output)  # ty: ignore[unsound-assignment]
+    details = _string_mapping(yaml.safe_load(stream=result.output))
     assert details["database_name"] == database_name
     assert details["server_access_key"] != ""
     assert details["server_secret_key"] != ""
@@ -627,7 +634,7 @@ def test_show_model_target_web_api_details_cli(
             catch_exceptions=False,
         )
         assert result.exit_code == 0
-        details: dict[str, str] = yaml.safe_load(stream=result.output)  # ty: ignore[unsound-assignment]
+        details = _string_mapping(yaml.safe_load(stream=result.output))
         client_ids.append(details["client_id"])
         assert details["client_secret"] != ""
         assert details["cad_data_url"] != ""
@@ -688,7 +695,7 @@ def test_show_license_details_cli(
         catch_exceptions=False,
     )
     assert result.exit_code == 0
-    details: dict[str, str] = yaml.safe_load(stream=result.output)  # ty: ignore[unsound-assignment]
+    details = _string_mapping(yaml.safe_load(stream=result.output))
     assert details["license_name"] == cli_license_name
     assert details["license_key"] != ""
 
@@ -767,7 +774,7 @@ def test_create_databases_cli(
         catch_exceptions=False,
     )
     assert result.exit_code == 0
-    details: dict[str, str] = yaml.safe_load(stream=result.output)  # ty: ignore[unsound-assignment]
+    details = _string_mapping(yaml.safe_load(stream=result.output))
     assert details["database_name"] == database_name
     assert details["server_access_key"] != ""
     assert details["server_secret_key"] != ""
