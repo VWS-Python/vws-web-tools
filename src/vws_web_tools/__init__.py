@@ -9,7 +9,7 @@ import uuid
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, TypedDict, TypeGuard
+from typing import Literal, Protocol, TypedDict, TypeGuard
 from urllib.parse import quote, urlparse
 
 import click
@@ -80,6 +80,43 @@ _VUMARK_TEMPLATE_WIDTH_LOCATOR = (
     "input[placeholder='Width']",
 )
 _VUMARK_TEMPLATE_NAME_LOCATOR = (By.CSS_SELECTOR, "input[placeholder='Name']")
+
+
+class _ScriptExecutor(Protocol):
+    """The typed part of Selenium's script-execution interface."""
+
+    def execute_script(self, script: str, /) -> object:
+        """Execute JavaScript and return its decoded value."""
+
+
+class _CookieReader(Protocol):
+    """The typed part of Selenium's cookie-reading interface."""
+
+    def get_cookies(self) -> object:
+        """Return the current browser cookies."""
+
+
+class _AttributeReader(Protocol):
+    """The typed part of Selenium's element-attribute interface."""
+
+    def get_attribute(self, name: str, /) -> object:
+        """Return an element attribute."""
+
+
+def _execute_script(*, driver: _ScriptExecutor, script: str) -> object:
+    """Execute a Selenium script through a typed boundary."""
+    return driver.execute_script(script)
+
+
+def _cookies(*, driver: _CookieReader) -> object:
+    """Read Selenium cookies through a typed boundary."""
+    return driver.get_cookies()
+
+
+def _attribute(*, element: _AttributeReader, name: str) -> object:
+    """Read a Selenium element attribute through a typed boundary."""
+    return element.get_attribute(name)
+
 
 _TIMEOUT_RETRY_DECORATOR = retry(
     retry=retry_if_exception_type(
@@ -204,8 +241,9 @@ def _dismiss_cookie_banner(
     driver: WebDriver,
 ) -> None:
     """Dismiss the OneTrust cookie consent banner if present."""
-    driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
-        """
+    _ = _execute_script(
+        driver=driver,
+        script="""
         // Remove any existing banner immediately
         var banner = document.getElementById('onetrust-banner-sdk');
         if (banner) banner.remove();
@@ -226,7 +264,7 @@ def _dismiss_cookie_banner(
             document.documentElement,
             {childList: true, subtree: true}
         );
-        """
+        """,
     )
 
 
@@ -244,11 +282,12 @@ def wait_for_logged_in(*, driver: WebDriver) -> None:
             StaleElementReferenceException,
         ),
     )
-    sixty_second_wait.until(
+    _ = sixty_second_wait.until(
         method=lambda d: (
             "/auth/login" not in d.current_url
-            and d.execute_script(  # pyright: ignore[reportUnknownMemberType]
-                "return document.readyState",
+            and _execute_script(
+                driver=d,
+                script="return document.readyState",
             )
             == "complete"
         ),
@@ -766,7 +805,8 @@ def _find_vumark_target_link(
         )
         raise ValueError(message)
     target_link_element = target_link_elements[0]
-    target_link = target_link_element.get_attribute(  # pyright: ignore[reportUnknownMemberType]
+    target_link = _attribute(
+        element=target_link_element,
         name="href",
     )
     LOGGER.debug(
@@ -1395,16 +1435,15 @@ def _requests_session_from_driver(
 ) -> requests.Session:
     """Create a requests session using the browser's authenticated cookies."""
     session = requests.Session()
-    # https://github.com/SeleniumHQ/selenium/pull/17536
-    user_agent = driver.execute_script(  # pyright: ignore[reportUnknownMemberType]
-        "return navigator.userAgent",
+    user_agent = _execute_script(
+        driver=driver,
+        script="return navigator.userAgent",
     )
     if isinstance(user_agent, str):
         session.headers.update({"User-Agent": user_agent})
 
-    # https://github.com/SeleniumHQ/selenium/pull/17537
-    cookies: object = driver.get_cookies()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-    if not _is_json_array(cookies):  # pyright: ignore[reportUnknownArgumentType]
+    cookies = _cookies(driver=driver)
+    if not _is_json_array(cookies):
         return session
 
     # A cookie set for the current host has no ``domain`` attribute of
