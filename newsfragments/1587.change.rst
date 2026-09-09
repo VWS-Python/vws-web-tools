@@ -1,0 +1,1 @@
+Validate decoded CLI YAML output in the integration tests.
