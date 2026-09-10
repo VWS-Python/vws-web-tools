@@ -193,7 +193,7 @@ class _Session(requests.Session):
     def send(
         self,
         request: requests.PreparedRequest,
-        **kwargs: Any,  # pyrefly: ignore [explicit-any]
+        **kwargs: object,
     ) -> requests.Response:
         """Store the prepared request and return the controlled
         response.
@@ -210,7 +210,7 @@ class _FailingSession(requests.Session):
     def send(
         self,
         request: requests.PreparedRequest,
-        **kwargs: Any,  # pyrefly: ignore [explicit-any]
+        **kwargs: object,
     ) -> requests.Response:
         """Raise a request failure without an HTTP response."""
         assert request.url == "https://example.com/"
