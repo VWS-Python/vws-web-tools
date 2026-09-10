@@ -1,32 +1,27 @@
 # pyright: reportPrivateUsage=false
-# pylint: disable=protected-access,super-init-not-called
+# pylint: disable=protected-access
 # ruff: noqa: SLF001
 """Tests for finding VuMark target links."""
 
-from typing import override
-
 import pytest
-from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
 import vws_web_tools
 
 
-class _NoElementsDriver(WebDriver):
+class _NoElementsDriver:
     """A WebDriver shell which finds no elements."""
 
-    def __init__(self) -> None:  # pyrefly: ignore [missing-super-call]
-        """Avoid starting a browser session."""
-
-    @override  # noqa: V105
+    @staticmethod
     def find_elements(
-        self,
-        *args: object,
-        **kwargs: object,
+        *,
+        by: str,
+        value: str,
     ) -> list[WebElement]:
         """Return no elements."""
-        assert len(args) == 0
-        assert len(kwargs) > 0
+        assert by == By.XPATH
+        assert value.startswith("//a[")
         return []
 
 

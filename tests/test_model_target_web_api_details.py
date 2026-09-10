@@ -1,24 +1,23 @@
 # pyright: reportPrivateUsage=false
-# pylint: disable=protected-access,super-init-not-called
+# pylint: disable=protected-access
 # ruff: noqa: SLF001
 """Tests for Model Target Web API detail helpers."""
 
 import re
-from typing import Any, override
+from typing import override
 
 import pytest
 import requests
-from selenium.webdriver.remote.webdriver import WebDriver
 
 import vws_web_tools
 
 _PORTAL_URL = "https://developer.vuforia.com/develop/credentials"
 
 
-class _BrowserStateDriver(WebDriver):
+class _BrowserStateDriver:
     """A WebDriver shell with controlled browser state."""
 
-    def __init__(  # pyrefly: ignore [missing-super-call]
+    def __init__(
         self,
         *,
         user_agent: object,
@@ -31,20 +30,17 @@ class _BrowserStateDriver(WebDriver):
         self._current_url = current_url
 
     @property
-    @override
     def current_url(self) -> str:
         """Return the controlled browser URL."""
         return self._current_url
 
-    @override
     def execute_script(self, script: str, *args: object) -> object:
         """Return the controlled user agent."""
         assert script == "return navigator.userAgent"
         assert len(args) == 0
         return self._user_agent
 
-    @override
-    def get_cookies(self) -> Any:  # pyrefly: ignore [explicit-any]
+    def get_cookies(self) -> object:
         """Return the controlled cookies."""
         return self._cookies
 

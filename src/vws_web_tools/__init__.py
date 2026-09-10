@@ -9,7 +9,7 @@ import uuid
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol, TypedDict, TypeGuard
+from typing import Literal, Protocol, TypedDict, TypeGuard, runtime_checkable
 from urllib.parse import quote, urlparse
 
 import click
@@ -101,6 +101,30 @@ class _AttributeReader(Protocol):
 
     def get_attribute(self, name: str, /) -> object:
         """Return an element attribute."""
+
+
+@runtime_checkable
+class _BrowserStateReader(_ScriptExecutor, _CookieReader, Protocol):
+    """Browser state needed to create an authenticated HTTP session."""
+
+    @property
+    def current_url(self) -> str:
+        """Return the current browser URL."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class _ElementFinder(Protocol):
+    """Browser operation needed to find a target-name link."""
+
+    def find_elements(
+        self,
+        *,
+        by: str,
+        value: str,
+    ) -> list[WebElement]:
+        """Find elements matching a locator."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 def _execute_script(*, driver: _ScriptExecutor, script: str) -> object:
@@ -775,7 +799,7 @@ def _xpath_literal(
 @beartype
 def _find_vumark_target_link(
     *,
-    driver: WebDriver,
+    driver: _ElementFinder,
     target_name: str,
 ) -> str:
     """Find and return a target-name link."""
@@ -1431,7 +1455,7 @@ def _model_target_web_api_credentials_api_session(
 @beartype
 def _requests_session_from_driver(
     *,
-    driver: WebDriver,
+    driver: _BrowserStateReader,
 ) -> requests.Session:
     """Create a requests session using the browser's authenticated cookies."""
     session = requests.Session()
