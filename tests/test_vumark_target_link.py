@@ -3,7 +3,7 @@
 # ruff: noqa: SLF001
 """Tests for finding VuMark target links."""
 
-from typing import Any, override
+from typing import override
 
 import pytest
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -21,8 +21,8 @@ class _NoElementsDriver(WebDriver):
     @override  # noqa: V105
     def find_elements(
         self,
-        *args: Any,  # pyrefly: ignore [explicit-any]
-        **kwargs: Any,  # pyrefly: ignore [explicit-any]
+        *args: object,
+        **kwargs: object,
     ) -> list[WebElement]:
         """Return no elements."""
         assert len(args) == 0
