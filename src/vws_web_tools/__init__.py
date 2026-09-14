@@ -113,20 +113,6 @@ class _BrowserStateReader(_ScriptExecutor, _CookieReader, Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
-@runtime_checkable
-class _ElementFinder(Protocol):
-    """Browser operation needed to find a target-name link."""
-
-    def find_elements(
-        self,
-        *,
-        by: str,
-        value: str,
-    ) -> list[WebElement]:
-        """Find elements matching a locator."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-
 def _execute_script(*, driver: _ScriptExecutor, script: str) -> object:
     """Execute a Selenium script through a typed boundary."""
     return driver.execute_script(script)
@@ -441,40 +427,20 @@ def delete_license(
     search_input_element.send_keys(license_name)
     search_input_element.send_keys(Keys.ENTER)
 
-    @beartype
-    def _click_license_row(
-        *,
-        driver: WebDriver,
-    ) -> bool:
-        """Find and click the row matching license_name.
-
-        The search filter is applied asynchronously, so the table can
-        still hold unfiltered rows when this first runs. Wait for every
-        row shown to match the search text before clicking, rather than
-        clicking a row which is about to be replaced.
-        """
-        rows = driver.find_elements(
-            by=By.XPATH,
-            value=(
-                "//span[starts-with(@id, 'table_row_')"
-                " and contains(@id, '_app_name')]"
+    license_name_xpath = _xpath_literal(value=license_name)
+    license_row = thirty_second_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(
+                By.XPATH,
+                (
+                    "//span[starts-with(@id, 'table_row_')"
+                    " and contains(@id, '_app_name')"
+                    f" and normalize-space(.)={license_name_xpath}]"
+                ),
             ),
-        )
-        row_texts = [row.text.strip() for row in rows]
-        if len(row_texts) == 0 or not all(
-            license_name in row_text for row_text in row_texts
-        ):
-            return False
-        if license_name not in row_texts:  # pragma: no cover
-            # Every row contains the search text by now, but a row whose
-            # text merely contains it is not the row we want.
-            return False
-        rows[row_texts.index(license_name)].click()
-        return True
-
-    _ = thirty_second_wait.until(
-        method=lambda d: _click_license_row(driver=d),
+        ),
     )
+    license_row.click()
 
     _ = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
@@ -797,51 +763,6 @@ def _xpath_literal(
 
 
 @beartype
-def _find_vumark_target_link(
-    *,
-    driver: _ElementFinder,
-    target_name: str,
-) -> str:
-    """Find and return a target-name link."""
-    target_name_xpath_literal = _xpath_literal(value=target_name)
-    target_row_predicate = (
-        "starts-with(@id, 'table_row_')"
-        " and substring("
-        "@id,"
-        " string-length(@id) - string-length('_target_name') + 1"
-        " ) = '_target_name'"
-        f" and normalize-space(.) = {target_name_xpath_literal}"
-    )
-    target_link_elements = driver.find_elements(
-        by=By.XPATH,
-        value=f"//a[{target_row_predicate}]",
-    )
-    LOGGER.debug(
-        "Found %d matching target-name links while searching for '%s'.",
-        len(target_link_elements),
-        target_name,
-    )
-    if len(target_link_elements) == 0:
-        message = (
-            f"No link was found for the target named '{target_name}'. "
-            "The target manager renders a target's name as plain text "
-            "rather than as a link while the target is still processing."
-        )
-        raise ValueError(message)
-    target_link_element = target_link_elements[0]
-    target_link = _attribute(
-        element=target_link_element,
-        name="href",
-    )
-    LOGGER.debug(
-        "Found VuMark target link '%s' for '%s'.",
-        target_link,
-        target_name,
-    )
-    return str(object=target_link)
-
-
-@beartype
 def _open_target_key_tab(
     *,
     wait: WebDriverWait[WebDriver],
@@ -970,15 +891,21 @@ def get_vumark_target_id(
     # Wait for a link rather than for any element which matches, as the
     # target manager renders the target's name as plain text until the
     # target has finished processing, and only a link carries the ID.
-    _ = short_wait.until(
+    target_link_element = short_wait.until(
         method=expected_conditions.presence_of_element_located(
             locator=(By.XPATH, f"//a[{target_row_predicate}]"),
         ),
     )
-
-    target_link = _find_vumark_target_link(
-        driver=driver,
-        target_name=target_name,
+    target_link = str(
+        object=_attribute(
+            element=target_link_element,
+            name="href",
+        ),
+    )
+    LOGGER.debug(
+        "Found VuMark target link '%s' for '%s'.",
+        target_link,
+        target_name,
     )
 
     url_path = urlparse(url=target_link).path
@@ -1037,38 +964,20 @@ def navigate_to_database(
     search_input_element.send_keys(database_name)
     search_input_element.send_keys(Keys.ENTER)
 
-    @beartype
-    def _click_database_row(
-        *,
-        driver: WebDriver,
-    ) -> bool:
-        """Find and click the row matching database_name.
-
-        The search filter is applied asynchronously, so the table can
-        still hold unfiltered rows when this first runs. Wait for every
-        row shown to match the search text before clicking, rather than
-        clicking a row which is about to be replaced.
-        """
-        rows = driver.find_elements(
-            by=By.XPATH,
-            value=(
-                "//span[starts-with(@id, 'table_row_')"
-                " and contains(@id, '_project_name')]"
+    database_name_xpath = _xpath_literal(value=database_name)
+    database_row = long_wait.until(
+        method=expected_conditions.element_to_be_clickable(
+            mark=(
+                By.XPATH,
+                (
+                    "//span[starts-with(@id, 'table_row_')"
+                    " and contains(@id, '_project_name')"
+                    f" and normalize-space(.)={database_name_xpath}]"
+                ),
             ),
-        )
-        row_texts = [row.text.strip() for row in rows]
-        if len(row_texts) == 0 or not all(
-            database_name in row_text for row_text in row_texts
-        ):
-            return False
-        if database_name not in row_texts:  # pragma: no cover
-            # Every row contains the search text by now, but a row whose
-            # text merely contains it is not the row we want.
-            return False
-        rows[row_texts.index(database_name)].click()
-        return True
-
-    _ = long_wait.until(method=lambda d: _click_database_row(driver=d))
+        ),
+    )
+    database_row.click()
 
 
 @beartype

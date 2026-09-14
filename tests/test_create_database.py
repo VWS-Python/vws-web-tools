@@ -523,7 +523,7 @@ def test_get_vumark_target_id(
     assert test_file_path is not None
     svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
     template_name = f"template-{random_str}"
-    _ = vws_web_tools.upload_vumark_template(
+    uploaded_target_id = vws_web_tools.upload_vumark_template(
         driver=chrome_driver,
         database_name=database_name,
         svg_file_path=svg_path,
@@ -542,9 +542,7 @@ def test_get_vumark_target_id(
         database_name=database_name,
         target_name=template_name,
     )
-    expected_target_id_length = 32
-    assert len(target_id) == expected_target_id_length
-    assert target_id.isalnum()
+    assert target_id == uploaded_target_id
 
 
 def test_get_license_details_library(
