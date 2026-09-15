@@ -5,6 +5,7 @@
 
 import re
 from typing import override
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -214,6 +215,34 @@ class _FailingSession(requests.Session):
         raise requests.ConnectionError
 
 
+class _SequenceSession(requests.Session):
+    """A requests session returning or raising successive outcomes."""
+
+    def __init__(
+        self,
+        *,
+        outcomes: list[requests.Response | requests.RequestException],
+    ) -> None:
+        """Store the outcomes to return or raise."""
+        super().__init__()
+        self.outcomes = outcomes
+        self.request_count = 0
+
+    @override  # noqa: V105
+    def send(
+        self,
+        request: requests.PreparedRequest,
+        **kwargs: object,
+    ) -> requests.Response:
+        """Return or raise the next outcome."""
+        _ = request, kwargs
+        outcome = self.outcomes[self.request_count]
+        self.request_count += 1
+        if isinstance(outcome, requests.RequestException):
+            raise outcome
+        return outcome
+
+
 def test_json_request_sends_json_headers_and_returns_response_body() -> None:
     """JSON requests include headers, payloads, and access tokens."""
     session = _Session(
@@ -247,11 +276,8 @@ def test_json_request_sends_json_headers_and_returns_response_body() -> None:
 
 def test_json_request_raises_runtime_error_for_request_failure() -> None:
     """Request failures include a response body excerpt."""
-    session = _Session(
-        response=_response(
-            status_code=500,
-            content=b"response body",
-        ),
+    session = _SequenceSession(
+        outcomes=[_response(status_code=500, content=b"response body")],
     )
 
     with pytest.raises(expected_exception=RuntimeError, match="response body"):
@@ -263,13 +289,21 @@ def test_json_request_raises_runtime_error_for_request_failure() -> None:
             access_token=None,
         )
 
+    assert session.request_count == len(session.outcomes)
+
 
 def test_json_request_raises_runtime_error_for_connection_failure() -> None:
     """Connection failures raise a stable runtime error."""
-    with pytest.raises(
-        expected_exception=RuntimeError,
-        match=r"Could not call the Vuforia credentials API$",
-    ) as exc_info:
+    with (
+        pytest.raises(
+            expected_exception=RuntimeError,
+            match=(
+                r"Vuforia credentials API GET request to "
+                r"https://example\.com failed$"
+            ),
+        ) as exc_info,
+        patch(target="vws_web_tools.time.sleep"),
+    ):
         _ = vws_web_tools._json_request(
             session=_FailingSession(),
             method="GET",
@@ -279,6 +313,85 @@ def test_json_request_raises_runtime_error_for_connection_failure() -> None:
         )
 
     assert isinstance(exc_info.value.__cause__, requests.ConnectionError)
+
+
+@pytest.mark.parametrize(argnames="status_code", argvalues=[502, 503, 504])
+def test_json_request_retries_transient_get_failures(
+    *,
+    status_code: int,
+) -> None:
+    """Safe requests retry transient gateway responses with back-off."""
+    session = _SequenceSession(
+        outcomes=[
+            _response(status_code=status_code, content=b"gateway error"),
+            _response(status_code=200, content=b'{"ok": true}'),
+        ],
+    )
+
+    with patch(target="vws_web_tools.time.sleep") as sleep:
+        result = vws_web_tools._json_request(
+            session=session,
+            method="GET",
+            url="https://example.com",
+            data=None,
+            access_token=None,
+        )
+
+    assert result == {"ok": True}
+    assert session.request_count == len(session.outcomes)
+    sleep.assert_called_once_with(1)
+
+
+def test_json_request_retries_connection_failures_with_backoff() -> None:
+    """Safe requests retry transport failures with increasing delays."""
+    session = _SequenceSession(
+        outcomes=[
+            requests.ConnectionError(),
+            requests.Timeout(),
+            _response(status_code=200, content=b'{"ok": true}'),
+        ],
+    )
+
+    with patch(target="vws_web_tools.time.sleep") as sleep:
+        result = vws_web_tools._json_request(
+            session=session,
+            method="GET",
+            url="https://example.com",
+            data=None,
+            access_token=None,
+        )
+
+    assert result == {"ok": True}
+    assert session.request_count == len(session.outcomes)
+    assert sleep.call_args_list == [((1,),), ((2,),)]
+
+
+def test_json_request_does_not_retry_mutating_requests() -> None:
+    """A failed mutating request is not automatically repeated."""
+    session = _SequenceSession(
+        outcomes=[_response(status_code=502, content=b"gateway error")],
+    )
+
+    with (
+        patch(target="vws_web_tools.time.sleep") as sleep,
+        pytest.raises(
+            expected_exception=RuntimeError,
+            match=(
+                r"Vuforia credentials API POST request to "
+                r"https://example\.com failed: gateway error"
+            ),
+        ),
+    ):
+        _ = vws_web_tools._json_request(
+            session=session,
+            method="POST",
+            url="https://example.com",
+            data={"name": "credential"},
+            access_token=None,
+        )
+
+    assert session.request_count == 1
+    sleep.assert_not_called()
 
 
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:
