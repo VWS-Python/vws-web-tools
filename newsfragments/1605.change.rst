@@ -1,2 +1,1 @@
-Retry safe Vuforia credentials API requests after transient connection and
-gateway failures.
+Retry safe Vuforia credentials API requests after transient connection and gateway failures.
