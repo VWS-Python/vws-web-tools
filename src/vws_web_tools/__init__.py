@@ -5,6 +5,7 @@ import datetime
 import logging
 import re
 import shlex
+import time
 import uuid
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
@@ -63,6 +64,10 @@ MODEL_TARGET_WEB_API_ADVANCED_SCOPES: tuple[str, ...] = (
 )
 _OAUTH2_CLIENT_CREDENTIALS_SCOPE = "oauth2.clientcredentials.all"
 _REQUEST_TIMEOUT_SECONDS = 30
+_REQUEST_RETRY_BACKOFF_SECONDS: tuple[float, ...] = (1, 2)
+_REQUEST_RETRY_ATTEMPTS = len(_REQUEST_RETRY_BACKOFF_SECONDS) + 1
+_RETRYABLE_REQUEST_METHODS = frozenset({"GET"})
+_RETRYABLE_REQUEST_STATUS_CODES = frozenset({502, 503, 504})
 _DATABASE_PAGE_URL_PATH_PATTERN: re.Pattern[str] = re.compile(
     pattern=r"^/develop/databases/(?P<database_id>[^/]+)/",
 )
@@ -1504,21 +1509,68 @@ def _request(
         headers["Authorization"] = f"Bearer {access_token}"
 
     try:
-        response = session.request(
+        response = _request_with_retry(
+            session=session,
             method=method,
             url=url,
             headers=headers,
-            json=data,
-            timeout=_REQUEST_TIMEOUT_SECONDS,
+            data=data,
         )
-        response.raise_for_status()
     except requests.RequestException as exc:
         body_excerpt = ""
         if exc.response is not None:
             body_excerpt = f": {exc.response.text[:500]}"
-        message = f"Could not call the Vuforia credentials API{body_excerpt}"
+        message = (
+            f"Vuforia credentials API {method} request to {url} failed"
+            f"{body_excerpt}"
+        )
         raise RuntimeError(message) from exc
     return response
+
+
+@beartype
+def _request_with_retry(
+    *,
+    session: requests.Session,
+    method: str,
+    url: str,
+    headers: dict[str, str],
+    data: dict[str, str | list[str]] | None,
+) -> requests.Response:
+    """Make a request, retrying safe transient failures."""
+    attempt: int = 1
+    while True:
+        try:
+            response = session.request(
+                method=method,
+                url=url,
+                headers=headers,
+                json=data,
+                timeout=_REQUEST_TIMEOUT_SECONDS,
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            retryable_status = (
+                exc.response is not None
+                and exc.response.status_code in _RETRYABLE_REQUEST_STATUS_CODES
+            )
+            retryable = (
+                isinstance(
+                    exc,
+                    (requests.ConnectionError, requests.Timeout),
+                )
+                or retryable_status
+            )
+            if (
+                method.upper() not in _RETRYABLE_REQUEST_METHODS
+                or not retryable
+                or attempt == _REQUEST_RETRY_ATTEMPTS
+            ):
+                raise
+            time.sleep(_REQUEST_RETRY_BACKOFF_SECONDS[attempt - 1])
+            attempt += 1
+        else:
+            return response
 
 
 @_TIMEOUT_RETRY_DECORATOR
