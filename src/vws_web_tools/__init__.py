@@ -35,8 +35,10 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from tenacity import (
     retry,
+    retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
+    wait_exponential,
     wait_fixed,
 )
 
@@ -64,8 +66,6 @@ MODEL_TARGET_WEB_API_ADVANCED_SCOPES: tuple[str, ...] = (
 )
 _OAUTH2_CLIENT_CREDENTIALS_SCOPE = "oauth2.clientcredentials.all"
 _REQUEST_TIMEOUT_SECONDS = 30
-_REQUEST_RETRY_BACKOFF_SECONDS: tuple[float, ...] = (1, 2)
-_REQUEST_RETRY_ATTEMPTS = len(_REQUEST_RETRY_BACKOFF_SECONDS) + 1
 _RETRYABLE_REQUEST_METHODS = frozenset({"GET"})
 _RETRYABLE_REQUEST_STATUS_CODES = frozenset({502, 503, 504})
 _DATABASE_PAGE_URL_PATH_PATTERN: re.Pattern[str] = re.compile(
@@ -1509,7 +1509,12 @@ def _request(
         headers["Authorization"] = f"Bearer {access_token}"
 
     try:
-        response = _request_with_retry(
+        request_function = (
+            _request_with_retry
+            if method.upper() in _RETRYABLE_REQUEST_METHODS
+            else _request_once
+        )
+        response = request_function(
             session=session,
             method=method,
             url=url,
@@ -1528,6 +1533,58 @@ def _request(
     return response
 
 
+def _is_retryable_request_exception(exception: BaseException) -> bool:
+    """Return whether a credentials API request failure is transient."""
+    if isinstance(
+        exception,
+        (requests.ConnectionError, requests.Timeout),
+    ):
+        return True
+    if not isinstance(exception, requests.HTTPError):
+        return False
+    response = exception.response
+    return (
+        isinstance(response, requests.Response)
+        and response.status_code in _RETRYABLE_REQUEST_STATUS_CODES
+    )
+
+
+def _sleep_before_request_retry(seconds: float) -> None:
+    """Sleep between credentials API request attempts."""
+    time.sleep(seconds)
+
+
+_REQUEST_RETRY_DECORATOR = retry(
+    retry=retry_if_exception(predicate=_is_retryable_request_exception),
+    stop=stop_after_attempt(max_attempt_number=3),
+    wait=wait_exponential(multiplier=1, min=1, max=2),
+    sleep=_sleep_before_request_retry,
+    reraise=True,
+)
+
+
+@beartype
+def _request_once(
+    *,
+    session: requests.Session,
+    method: str,
+    url: str,
+    headers: dict[str, str],
+    data: dict[str, str | list[str]] | None,
+) -> requests.Response:
+    """Make one request to the credentials API."""
+    response = session.request(
+        method=method,
+        url=url,
+        headers=headers,
+        json=data,
+        timeout=_REQUEST_TIMEOUT_SECONDS,
+    )
+    response.raise_for_status()
+    return response
+
+
+@_REQUEST_RETRY_DECORATOR
 @beartype
 def _request_with_retry(
     *,
@@ -1538,39 +1595,13 @@ def _request_with_retry(
     data: dict[str, str | list[str]] | None,
 ) -> requests.Response:
     """Make a request, retrying safe transient failures."""
-    attempt: int = 1
-    while True:
-        try:
-            response = session.request(
-                method=method,
-                url=url,
-                headers=headers,
-                json=data,
-                timeout=_REQUEST_TIMEOUT_SECONDS,
-            )
-            response.raise_for_status()
-        except requests.RequestException as exc:
-            retryable_status = (
-                exc.response is not None
-                and exc.response.status_code in _RETRYABLE_REQUEST_STATUS_CODES
-            )
-            retryable = (
-                isinstance(
-                    exc,
-                    (requests.ConnectionError, requests.Timeout),
-                )
-                or retryable_status
-            )
-            if (
-                method.upper() not in _RETRYABLE_REQUEST_METHODS
-                or not retryable
-                or attempt == _REQUEST_RETRY_ATTEMPTS
-            ):
-                raise
-            time.sleep(_REQUEST_RETRY_BACKOFF_SECONDS[attempt - 1])
-            attempt += 1
-        else:
-            return response
+    return _request_once(
+        session=session,
+        method=method,
+        url=url,
+        headers=headers,
+        data=data,
+    )
 
 
 @_TIMEOUT_RETRY_DECORATOR

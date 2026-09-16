@@ -373,7 +373,7 @@ def test_json_request_does_not_retry_mutating_requests() -> None:
     )
 
     with (
-        patch(target="vws_web_tools.time.sleep") as sleep,
+        patch(target="vws_web_tools._request_with_retry") as retrying_request,
         pytest.raises(
             expected_exception=RuntimeError,
             match=(
@@ -391,6 +391,39 @@ def test_json_request_does_not_retry_mutating_requests() -> None:
         )
 
     assert session.request_count == 1
+    retrying_request.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    argnames="exception",
+    argvalues=[requests.RequestException(), requests.HTTPError()],
+)
+def test_json_request_does_not_retry_other_request_failures(
+    *,
+    exception: requests.RequestException,
+) -> None:
+    """Other request failures are immediately reported."""
+    session = _SequenceSession(outcomes=[exception])
+
+    with (
+        patch(target="vws_web_tools.time.sleep") as sleep,
+        pytest.raises(
+            expected_exception=RuntimeError,
+            match=(
+                r"Vuforia credentials API GET request to "
+                r"https://example\.com failed$"
+            ),
+        ),
+    ):
+        _ = vws_web_tools._json_request(
+            session=session,
+            method="GET",
+            url="https://example.com",
+            data=None,
+            access_token=None,
+        )
+
+    assert session.request_count == len(session.outcomes)
     sleep.assert_not_called()
 
 
