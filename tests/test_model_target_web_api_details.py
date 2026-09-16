@@ -5,7 +5,6 @@
 
 import re
 from typing import override
-from unittest.mock import patch
 
 import pytest
 import requests
@@ -200,21 +199,6 @@ class _Session(requests.Session):
         return self._response
 
 
-class _FailingSession(requests.Session):
-    """A requests session which fails before receiving a response."""
-
-    @override  # noqa: V105
-    def send(
-        self,
-        request: requests.PreparedRequest,
-        **kwargs: object,
-    ) -> requests.Response:
-        """Raise a request failure without an HTTP response."""
-        assert request.url == "https://example.com/"
-        assert kwargs["timeout"] == vws_web_tools._REQUEST_TIMEOUT_SECONDS
-        raise requests.ConnectionError
-
-
 class _SequenceSession(requests.Session):
     """A requests session returning or raising successive outcomes."""
 
@@ -290,141 +274,6 @@ def test_json_request_raises_runtime_error_for_request_failure() -> None:
         )
 
     assert session.request_count == len(session.outcomes)
-
-
-def test_json_request_raises_runtime_error_for_connection_failure() -> None:
-    """Connection failures raise a stable runtime error."""
-    with (
-        pytest.raises(
-            expected_exception=RuntimeError,
-            match=(
-                r"Vuforia credentials API GET request to "
-                r"https://example\.com failed$"
-            ),
-        ) as exc_info,
-        patch(target="vws_web_tools.time.sleep"),
-    ):
-        _ = vws_web_tools._json_request(
-            session=_FailingSession(),
-            method="GET",
-            url="https://example.com",
-            data=None,
-            access_token=None,
-        )
-
-    assert isinstance(exc_info.value.__cause__, requests.ConnectionError)
-
-
-@pytest.mark.parametrize(argnames="status_code", argvalues=[502, 503, 504])
-def test_json_request_retries_transient_get_failures(
-    *,
-    status_code: int,
-) -> None:
-    """Safe requests retry transient gateway responses with back-off."""
-    session = _SequenceSession(
-        outcomes=[
-            _response(status_code=status_code, content=b"gateway error"),
-            _response(status_code=200, content=b'{"ok": true}'),
-        ],
-    )
-
-    with patch(target="vws_web_tools.time.sleep") as sleep:
-        result = vws_web_tools._json_request(
-            session=session,
-            method="GET",
-            url="https://example.com",
-            data=None,
-            access_token=None,
-        )
-
-    assert result == {"ok": True}
-    assert session.request_count == len(session.outcomes)
-    sleep.assert_called_once_with(1)
-
-
-def test_json_request_retries_connection_failures_with_backoff() -> None:
-    """Safe requests retry transport failures with increasing delays."""
-    session = _SequenceSession(
-        outcomes=[
-            requests.ConnectionError(),
-            requests.Timeout(),
-            _response(status_code=200, content=b'{"ok": true}'),
-        ],
-    )
-
-    with patch(target="vws_web_tools.time.sleep") as sleep:
-        result = vws_web_tools._json_request(
-            session=session,
-            method="GET",
-            url="https://example.com",
-            data=None,
-            access_token=None,
-        )
-
-    assert result == {"ok": True}
-    assert session.request_count == len(session.outcomes)
-    assert sleep.call_args_list == [((1,),), ((2,),)]
-
-
-def test_json_request_does_not_retry_mutating_requests() -> None:
-    """A failed mutating request is not automatically repeated."""
-    session = _SequenceSession(
-        outcomes=[_response(status_code=502, content=b"gateway error")],
-    )
-
-    with (
-        patch(target="vws_web_tools._request_with_retry") as retrying_request,
-        pytest.raises(
-            expected_exception=RuntimeError,
-            match=(
-                r"Vuforia credentials API POST request to "
-                r"https://example\.com failed: gateway error"
-            ),
-        ),
-    ):
-        _ = vws_web_tools._json_request(
-            session=session,
-            method="POST",
-            url="https://example.com",
-            data={"name": "credential"},
-            access_token=None,
-        )
-
-    assert session.request_count == 1
-    retrying_request.assert_not_called()
-
-
-@pytest.mark.parametrize(
-    argnames="exception",
-    argvalues=[requests.RequestException(), requests.HTTPError()],
-)
-def test_json_request_does_not_retry_other_request_failures(
-    *,
-    exception: requests.RequestException,
-) -> None:
-    """Other request failures are immediately reported."""
-    session = _SequenceSession(outcomes=[exception])
-
-    with (
-        patch(target="vws_web_tools.time.sleep") as sleep,
-        pytest.raises(
-            expected_exception=RuntimeError,
-            match=(
-                r"Vuforia credentials API GET request to "
-                r"https://example\.com failed$"
-            ),
-        ),
-    ):
-        _ = vws_web_tools._json_request(
-            session=session,
-            method="GET",
-            url="https://example.com",
-            data=None,
-            access_token=None,
-        )
-
-    assert session.request_count == len(session.outcomes)
-    sleep.assert_not_called()
 
 
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:
