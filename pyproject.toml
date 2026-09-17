@@ -50,7 +50,7 @@ dev = [
     "check-manifest==0.51",
     "deptry==0.25.1",
     "doc8==2.0.0",
-    "doccmd==2026.9.16",
+    "doccmd==2026.9.16.1",
     "furo==2025.12.19",
     "interrogate==1.7.0",
     "mypy[faster-cache]==2.3.1",
@@ -67,6 +67,7 @@ dev = [
     "pytest-beartype-tests==2026.8.16",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.11.0",
+    "requests-mock==1.12.1",
     "ruff==0.16.7",
     # We add shellcheck-py not only for shell scripts and shell code blocks,
     # but also because having it installed means that ``actionlint-py`` will

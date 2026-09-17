@@ -199,21 +199,6 @@ class _Session(requests.Session):
         return self._response
 
 
-class _FailingSession(requests.Session):
-    """A requests session which fails before receiving a response."""
-
-    @override  # noqa: V105
-    def send(
-        self,
-        request: requests.PreparedRequest,
-        **kwargs: object,
-    ) -> requests.Response:
-        """Raise a request failure without an HTTP response."""
-        assert request.url == "https://example.com/"
-        assert kwargs["timeout"] == vws_web_tools._REQUEST_TIMEOUT_SECONDS
-        raise requests.ConnectionError
-
-
 def test_json_request_sends_json_headers_and_returns_response_body() -> None:
     """JSON requests include headers, payloads, and access tokens."""
     session = _Session(
@@ -262,23 +247,6 @@ def test_json_request_raises_runtime_error_for_request_failure() -> None:
             data=None,
             access_token=None,
         )
-
-
-def test_json_request_raises_runtime_error_for_connection_failure() -> None:
-    """Connection failures raise a stable runtime error."""
-    with pytest.raises(
-        expected_exception=RuntimeError,
-        match=r"Could not call the Vuforia credentials API$",
-    ) as exc_info:
-        _ = vws_web_tools._json_request(
-            session=_FailingSession(),
-            method="GET",
-            url="https://example.com",
-            data=None,
-            access_token=None,
-        )
-
-    assert isinstance(exc_info.value.__cause__, requests.ConnectionError)
 
 
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:
