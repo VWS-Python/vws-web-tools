@@ -299,6 +299,27 @@ def test_json_request_handles_failure_without_response() -> None:
     assert session.request_count == 1
 
 
+def test_json_request_retries_connection_failure() -> None:
+    """A safe request retries after a connection failure."""
+    session = _SequenceSession(
+        outcomes=[
+            requests.ConnectionError(),
+            _response(status_code=200, content=b'{"ok": true}'),
+        ],
+    )
+
+    result = vws_web_tools._json_request(
+        session=session,
+        method="GET",
+        url="https://example.com",
+        data=None,
+        access_token=None,
+    )
+
+    assert result == {"ok": True}
+    assert session.request_count == len(session.outcomes)
+
+
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:
     """A response which is not JSON says what was received instead."""
     session = _Session(
