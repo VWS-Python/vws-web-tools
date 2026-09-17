@@ -199,34 +199,6 @@ class _Session(requests.Session):
         return self._response
 
 
-class _SequenceSession(requests.Session):
-    """A requests session returning or raising successive outcomes."""
-
-    def __init__(
-        self,
-        *,
-        outcomes: list[requests.Response | requests.RequestException],
-    ) -> None:
-        """Store the outcomes to return or raise."""
-        super().__init__()
-        self.outcomes = outcomes
-        self.request_count = 0
-
-    @override  # noqa: V105
-    def send(
-        self,
-        request: requests.PreparedRequest,
-        **kwargs: object,
-    ) -> requests.Response:
-        """Return or raise the next outcome."""
-        _ = request, kwargs
-        outcome = self.outcomes[self.request_count]
-        self.request_count += 1
-        if isinstance(outcome, requests.RequestException):
-            raise outcome
-        return outcome
-
-
 def test_json_request_sends_json_headers_and_returns_response_body() -> None:
     """JSON requests include headers, payloads, and access tokens."""
     session = _Session(
@@ -260,8 +232,11 @@ def test_json_request_sends_json_headers_and_returns_response_body() -> None:
 
 def test_json_request_raises_runtime_error_for_request_failure() -> None:
     """Request failures include a response body excerpt."""
-    session = _SequenceSession(
-        outcomes=[_response(status_code=500, content=b"response body")],
+    session = _Session(
+        response=_response(
+            status_code=500,
+            content=b"response body",
+        ),
     )
 
     with pytest.raises(expected_exception=RuntimeError, match="response body"):
@@ -272,52 +247,6 @@ def test_json_request_raises_runtime_error_for_request_failure() -> None:
             data=None,
             access_token=None,
         )
-
-    assert session.request_count == len(session.outcomes)
-
-
-def test_json_request_handles_failure_without_response() -> None:
-    """Request failures without a response include the method and URL."""
-    session = _SequenceSession(outcomes=[requests.RequestException()])
-
-    with pytest.raises(
-        expected_exception=RuntimeError,
-        match=(
-            r"Vuforia credentials API GET request to "
-            r"https://example\.com failed$"
-        ),
-    ) as exc_info:
-        _ = vws_web_tools._json_request(
-            session=session,
-            method="GET",
-            url="https://example.com",
-            data=None,
-            access_token=None,
-        )
-
-    assert isinstance(exc_info.value.__cause__, requests.RequestException)
-    assert session.request_count == 1
-
-
-def test_json_request_retries_connection_failure() -> None:
-    """A safe request retries after a connection failure."""
-    session = _SequenceSession(
-        outcomes=[
-            requests.ConnectionError(),
-            _response(status_code=200, content=b'{"ok": true}'),
-        ],
-    )
-
-    result = vws_web_tools._json_request(
-        session=session,
-        method="GET",
-        url="https://example.com",
-        data=None,
-        access_token=None,
-    )
-
-    assert result == {"ok": True}
-    assert session.request_count == len(session.outcomes)
 
 
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:

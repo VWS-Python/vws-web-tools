@@ -5,6 +5,8 @@ import uuid
 from collections.abc import Iterator
 
 import pytest
+import requests
+import requests_mock
 import yaml
 from beartype import beartype
 from click.testing import CliRunner
@@ -13,6 +15,10 @@ from selenium.webdriver.remote.webdriver import WebDriver
 import vws_web_tools
 from tests.credentials import VWSCredentials
 from vws_web_tools import vws_web_tools_group
+
+_LOGGED_IN_USER_URL = (
+    "https://developer.vuforia.com/targetmanager/vuforiaUtil/getLoggedInUser"
+)
 
 
 @beartype
@@ -578,6 +584,69 @@ def test_get_model_target_web_api_details_library(
         assert details["cad_data_url"] == (
             vws_web_tools.MODEL_TARGET_WEB_API_CAD_DATA_URL
         )
+
+
+def test_model_target_web_api_reports_request_failure(
+    *,
+    logged_in_chrome_driver: WebDriver,
+) -> None:
+    """A failed credentials lookup reports its method and URL."""
+    with requests_mock.Mocker() as requests_mocker:
+        requests_mocker.get(
+            url=_LOGGED_IN_USER_URL,
+            exc=requests.RequestException(),
+        )
+
+        with pytest.raises(
+            expected_exception=RuntimeError,
+            match=(
+                "Vuforia credentials API GET request to "
+                f"{_LOGGED_IN_USER_URL} failed"
+            ),
+        ) as exc_info:
+            _ = vws_web_tools.get_model_target_web_api_details(
+                driver=logged_in_chrome_driver,
+            )
+
+    assert isinstance(exc_info.value.__cause__, requests.RequestException)
+
+
+def test_model_target_web_api_retries_connection_failure(
+    *,
+    logged_in_chrome_driver: WebDriver,
+) -> None:
+    """A connection failure during credentials lookup is retried."""
+    credentials_response = {
+        "client_id": "client-id",
+        "client_secret": "client-secret",
+    }
+
+    with requests_mock.Mocker() as requests_mocker:
+        requests_mocker.get(
+            url=_LOGGED_IN_USER_URL,
+            response_list=[
+                {"exc": requests.ConnectionError()},
+                {"json": {"eguid": "user-id"}},
+            ],
+        )
+        requests_mocker.post(
+            url=(
+                "https://developer.vuforia.com"
+                "/targetmanager/oauth2/credentials/accessToken"
+            ),
+            json={"access_token": "access-token"},
+        )
+        requests_mocker.post(
+            url="https://vws.vuforia.com/oauth2/clientcredentials",
+            json=credentials_response,
+        )
+
+        details = vws_web_tools.get_model_target_web_api_details(
+            driver=logged_in_chrome_driver,
+        )
+
+    assert details["client_id"] == credentials_response["client_id"]
+    assert details["client_secret"] == credentials_response["client_secret"]
 
 
 def test_delete_model_target_web_api_credentials_cli(
