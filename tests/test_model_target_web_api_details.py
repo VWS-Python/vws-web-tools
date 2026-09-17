@@ -276,6 +276,29 @@ def test_json_request_raises_runtime_error_for_request_failure() -> None:
     assert session.request_count == len(session.outcomes)
 
 
+def test_json_request_handles_failure_without_response() -> None:
+    """Request failures without a response include the method and URL."""
+    session = _SequenceSession(outcomes=[requests.RequestException()])
+
+    with pytest.raises(
+        expected_exception=RuntimeError,
+        match=(
+            r"Vuforia credentials API GET request to "
+            r"https://example\.com failed$"
+        ),
+    ) as exc_info:
+        _ = vws_web_tools._json_request(
+            session=session,
+            method="GET",
+            url="https://example.com",
+            data=None,
+            access_token=None,
+        )
+
+    assert isinstance(exc_info.value.__cause__, requests.RequestException)
+    assert session.request_count == 1
+
+
 def test_json_request_raises_runtime_error_for_invalid_json() -> None:
     """A response which is not JSON says what was received instead."""
     session = _Session(
