@@ -115,7 +115,7 @@ class _BrowserStateReader(_ScriptExecutor, _CookieReader, Protocol):
     @property
     def current_url(self) -> str:
         """Return the current browser URL."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
 
 def _execute_script(*, driver: _ScriptExecutor, script: str) -> object:
