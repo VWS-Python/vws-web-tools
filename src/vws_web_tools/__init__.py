@@ -398,11 +398,7 @@ def delete_license(
     license_name: str,
 ) -> None:
     """Delete a license."""
-    licenses_url = "https://developer.vuforia.com/develop/licenses"
-    driver.get(url=licenses_url)
-    # This dismisses the cookie banner as well as waiting for the
-    # licenses page, rather than for a redirect to the login page.
-    wait_for_logged_in(driver=driver)
+    navigate_to_license(driver=driver, license_name=license_name)
 
     thirty_second_wait = WebDriverWait(
         driver=driver,
@@ -412,40 +408,6 @@ def delete_license(
             StaleElementReferenceException,
         ),
     )
-
-    _ = thirty_second_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.ID, "table_search"),
-        ),
-    )
-    _ = thirty_second_wait.until(
-        method=expected_conditions.element_to_be_clickable(
-            mark=(By.ID, "table_row_0_app_name"),
-        ),
-    )
-
-    search_input_element = driver.find_element(
-        by=By.ID,
-        value="table_search",
-    )
-    search_input_element.clear()
-    search_input_element.send_keys(license_name)
-    search_input_element.send_keys(Keys.ENTER)
-
-    license_name_xpath = _xpath_literal(value=license_name)
-    license_row = thirty_second_wait.until(
-        method=expected_conditions.element_to_be_clickable(
-            mark=(
-                By.XPATH,
-                (
-                    "//span[starts-with(@id, 'table_row_')"
-                    " and contains(@id, '_app_name')"
-                    f" and normalize-space(.)={license_name_xpath}]"
-                ),
-            ),
-        ),
-    )
-    license_row.click()
 
     _ = thirty_second_wait.until(
         method=expected_conditions.presence_of_element_located(
