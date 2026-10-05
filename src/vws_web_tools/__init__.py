@@ -101,13 +101,6 @@ class _CookieReader(Protocol):
         """Return the current browser cookies."""
 
 
-class _AttributeReader(Protocol):
-    """The typed part of Selenium's element-attribute interface."""
-
-    def get_attribute(self, name: str, /) -> object:
-        """Return an element attribute."""
-
-
 @runtime_checkable
 class _BrowserStateReader(_ScriptExecutor, _CookieReader, Protocol):
     """Browser state needed to create an authenticated HTTP session."""
@@ -126,11 +119,6 @@ def _execute_script(*, driver: _ScriptExecutor, script: str) -> object:
 def _cookies(*, driver: _CookieReader) -> object:
     """Read Selenium cookies through a typed boundary."""
     return driver.get_cookies()
-
-
-def _attribute(*, element: _AttributeReader, name: str) -> object:
-    """Read a Selenium element attribute through a typed boundary."""
-    return element.get_attribute(name)
 
 
 _TIMEOUT_RETRY_DECORATOR = retry(
@@ -864,8 +852,7 @@ def get_vumark_target_id(
         ),
     )
     target_link = str(
-        object=_attribute(
-            element=target_link_element,
+        object=target_link_element.get_attribute(
             name="href",
         ),
     )
