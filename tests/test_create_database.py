@@ -3,6 +3,7 @@
 import datetime
 import uuid
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 import requests
@@ -368,7 +369,6 @@ def test_upload_vumark_template(
     *,
     chrome_driver: WebDriver,
     vws_credentials: VWSCredentials,
-    request: pytest.FixtureRequest,
 ) -> None:
     """Test uploading a VuMark SVG template via the library."""
     email_address = vws_credentials.email_address
@@ -388,9 +388,9 @@ def test_upload_vumark_template(
         database_name=database_name,
     )
 
-    test_file_path = request.path
-    assert test_file_path is not None
-    svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
+    svg_path = (
+        Path(__file__).resolve().parent / "fixtures" / "vumark_template.svg"
+    )
     template_name = f"template-{random_str}"
     target_id = vws_web_tools.upload_vumark_template(
         driver=chrome_driver,
@@ -409,7 +409,6 @@ def test_upload_vumark_template(
 def test_upload_vumark_template_cli(
     *,
     vws_credentials: VWSCredentials,
-    request: pytest.FixtureRequest,
 ) -> None:
     """Test uploading a VuMark SVG template via the CLI."""
     email_address = vws_credentials.email_address
@@ -419,9 +418,9 @@ def test_upload_vumark_template_cli(
     database_name = f"database-vumark-ci-{today_date}-{random_str}"
     template_name = f"template-{random_str}"
 
-    test_file_path = request.path
-    assert test_file_path is not None
-    svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
+    svg_path = (
+        Path(__file__).resolve().parent / "fixtures" / "vumark_template.svg"
+    )
     runner = CliRunner()
 
     create_database_result = runner.invoke(
@@ -505,7 +504,6 @@ def test_get_vumark_target_id(
     *,
     chrome_driver: WebDriver,
     vws_credentials: VWSCredentials,
-    request: pytest.FixtureRequest,
 ) -> None:
     """Test getting a VuMark target ID via the library."""
     email_address = vws_credentials.email_address
@@ -525,9 +523,9 @@ def test_get_vumark_target_id(
         database_name=database_name,
     )
 
-    test_file_path = request.path
-    assert test_file_path is not None
-    svg_path = test_file_path.parent / "fixtures" / "vumark_template.svg"
+    svg_path = (
+        Path(__file__).resolve().parent / "fixtures" / "vumark_template.svg"
+    )
     template_name = f"template-{random_str}"
     uploaded_target_id = vws_web_tools.upload_vumark_template(
         driver=chrome_driver,
