@@ -6,14 +6,11 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from vws_web_tools import vws_web_tools_group
 
-_SUBCOMMANDS = [[item] for item in vws_web_tools_group.commands]
-_BASE_COMMAND: list[list[str]] = [[]]
-_COMMANDS = _BASE_COMMAND + _SUBCOMMANDS
-
 
 @pytest.mark.parametrize(
     argnames="command",
-    argvalues=_COMMANDS,
+    argvalues=[list[str]()]
+    + [[item] for item in vws_web_tools_group.commands],
     ids=str,
 )
 def test_vws_command_help(
