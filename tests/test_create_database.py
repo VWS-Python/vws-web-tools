@@ -1,6 +1,6 @@
 """Tests which create real databases on Vuforia."""
 
-import datetime
+import datetime as dt
 import uuid
 from collections.abc import Iterator
 from pathlib import Path
@@ -87,7 +87,7 @@ def fixture_license_name(
 ) -> str:
     """Create a license and return its name."""
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     license_name = f"license-ci-{today_date}-{random_str}"
     vws_web_tools.create_license(
         driver=logged_in_chrome_driver,
@@ -102,7 +102,7 @@ def fixture_cli_license_name(
 ) -> str:
     """Create a license via the CLI and return its name."""
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     license_name = f"license-ci-{today_date}-{random_str}"
     runner = CliRunner()
     result = runner.invoke(
@@ -129,7 +129,7 @@ def test_create_databases_library(
 ) -> None:
     """Test creating databases via the library."""
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     database_name = f"database-ci-{today_date}-{random_str}"
 
     license_details = vws_web_tools.get_license_details(
@@ -170,7 +170,7 @@ def test_delete_license_library(
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     license_name = f"license-del-ci-{today_date}-{random_str}"
 
     vws_web_tools.log_in(
@@ -205,7 +205,7 @@ def test_delete_license_cli(
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     license_name = f"license-del-ci-{today_date}-{random_str}"
 
     runner = CliRunner()
@@ -270,7 +270,7 @@ def test_create_vumark_database_library(
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     database_name = f"database-vumark-ci-{today_date}-{random_str}"
 
     vws_web_tools.log_in(
@@ -302,7 +302,7 @@ def test_create_vumark_database_cli(
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     database_name = f"database-vumark-ci-{today_date}-{random_str}"
 
     runner = CliRunner()
@@ -374,7 +374,7 @@ def test_upload_vumark_template(
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     database_name = f"database-vumark-ci-{today_date}-{random_str}"
 
     vws_web_tools.log_in(
@@ -414,7 +414,7 @@ def test_upload_vumark_template_cli(
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     database_name = f"database-vumark-ci-{today_date}-{random_str}"
     template_name = f"template-{random_str}"
 
@@ -509,7 +509,7 @@ def test_get_vumark_target_id(
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     database_name = f"database-vumark-ci-{today_date}-{random_str}"
 
     vws_web_tools.log_in(
@@ -803,7 +803,7 @@ def test_create_databases_cli(
     email_address = vws_credentials.email_address
     password = vws_credentials.password
     random_str = uuid.uuid4().hex[:5]
-    today_date = datetime.datetime.now(tz=datetime.UTC).date().isoformat()
+    today_date = dt.datetime.now(tz=dt.UTC).date().isoformat()
     database_name = f"database-ci-{today_date}-{random_str}"
 
     runner = CliRunner()

@@ -1,7 +1,7 @@
 """Tools for interacting with the VWS (Vuforia Web Services) website."""
 
 import contextlib
-import datetime
+import datetime as dt
 import logging
 import re
 import shlex
@@ -1583,7 +1583,7 @@ def get_model_target_web_api_details(
 
     credential_name = (
         "vws-web-tools-model-target-web-api-"
-        f"{datetime.datetime.now(tz=datetime.UTC):%Y-%m-%d-%H-%M-%S}-"
+        f"{dt.datetime.now(tz=dt.UTC):%Y-%m-%d-%H-%M-%S}-"
         f"{uuid.uuid4().hex}"
     )
     credentials = _create_model_target_web_api_client_credentials(
