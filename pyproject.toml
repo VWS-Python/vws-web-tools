@@ -401,6 +401,7 @@ analysis.strict-generic-narrowing = true
 beartype_packages = [ "vws_web_tools" ]
 beartype_test_fixtures = true
 beartype_tests = true
+filterwarnings = [ "error::beartype.roar.BeartypeClawDecorWarning" ]
 log_cli = true
 xfail_strict = true
 

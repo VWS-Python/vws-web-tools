@@ -87,6 +87,7 @@ _VUMARK_TEMPLATE_WIDTH_LOCATOR = (
 _VUMARK_TEMPLATE_NAME_LOCATOR = (By.CSS_SELECTOR, "input[placeholder='Name']")
 
 
+@runtime_checkable
 class _ScriptExecutor(Protocol):
     """The typed part of Selenium's script-execution interface."""
 
@@ -94,6 +95,7 @@ class _ScriptExecutor(Protocol):
         """Execute JavaScript and return its decoded value."""
 
 
+@runtime_checkable
 class _CookieReader(Protocol):
     """The typed part of Selenium's cookie-reading interface."""
 
