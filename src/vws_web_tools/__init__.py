@@ -10,7 +10,7 @@ import uuid
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol, TypedDict, TypeGuard, runtime_checkable
+from typing import Protocol, TypedDict, TypeGuard, runtime_checkable
 from urllib.parse import quote, urlparse
 
 import click
@@ -29,9 +29,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver as ChromeDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from tenacity import (
     retry,
@@ -150,18 +148,6 @@ def create_chrome_driver() -> WebDriver:
     # and clickable without scrolling.
     options.add_argument(argument="--window-size=1920,1080")
     return ChromeDriver(options=options)
-
-
-@beartype
-class DatabaseDict(TypedDict):
-    """A dictionary type which represents a database."""
-
-    database_name: str
-    database_id: str
-    server_access_key: str
-    server_secret_key: str
-    client_access_key: str
-    client_secret_key: str
 
 
 @beartype
@@ -507,62 +493,6 @@ def _submit_add_database_dialog(
     _ = wait.until(
         method=expected_conditions.staleness_of(element=generate_button),
     )
-
-
-@_TIMEOUT_RETRY_DECORATOR
-@beartype
-def create_cloud_database(
-    *,
-    driver: WebDriver,
-    database_name: str,
-    license_name: str,
-) -> None:
-    """Create a cloud database."""
-    wait = _open_add_database_dialog(
-        driver=driver,
-        database_name=database_name,
-    )
-
-    database_type_radio_element = driver.find_element(
-        by=By.ID,
-        value="cloud-radio-btn",
-    )
-    database_type_radio_element.click()
-
-    @beartype
-    def _matching_license_options(driver: WebDriver) -> list[WebElement]:
-        """Return the drop-down options for the wanted license."""
-        license_select = Select(
-            webelement=driver.find_element(
-                by=By.ID,
-                value="cloud-license-dropdown",
-            ),
-        )
-        return [
-            option
-            for option in license_select.options
-            if option.text == license_name
-        ]
-
-    matching_options = wait.until(method=_matching_license_options)
-    if len(matching_options) > 1:  # pragma: no cover
-        message = (
-            f"{len(matching_options)} licenses in the drop-down are named "
-            f"'{license_name}'. Which one to attach the new database to "
-            "is ambiguous."
-        )
-        raise ValueError(message)
-
-    Select(
-        webelement=driver.find_element(
-            by=By.ID,
-            value="cloud-license-dropdown",
-        ),
-    ).select_by_visible_text(
-        text=license_name,
-    )
-
-    _submit_add_database_dialog(wait=wait)
 
 
 @_TIMEOUT_RETRY_DECORATOR
@@ -937,43 +867,6 @@ def navigate_to_database(
 
 
 @beartype
-def _database_id_from_current_url(
-    *,
-    driver: WebDriver,
-) -> str:
-    """Get a database's ID from the URL of its page in the target manager.
-
-    ``navigate_to_database`` lands on a URL with a path of the form
-    ``/develop/databases/{database_id}/targets``, and the ID is not shown
-    anywhere else on the page.
-    """
-    long_wait = WebDriverWait(
-        driver=driver,
-        timeout=180,
-        ignored_exceptions=(
-            NoSuchElementException,
-            StaleElementReferenceException,
-        ),
-    )
-
-    @beartype
-    def _database_id_in_url(driver: WebDriver) -> str | Literal[False]:
-        """Get the database ID in the current URL.
-
-        This returns ``False`` while the browser has not yet landed on a
-        database's page, so that the wait keeps polling.
-        """
-        match = _DATABASE_PAGE_URL_PATH_PATTERN.match(
-            string=urlparse(url=driver.current_url).path,
-        )
-        return (
-            False if match is None else str(object=match.group("database_id"))
-        )
-
-    return long_wait.until(method=_database_id_in_url)
-
-
-@beartype
 def navigate_to_license(
     *,
     driver: WebDriver,
@@ -1111,57 +1004,6 @@ def _access_key_pair(
     access_key = grey_boxes[0].text.strip()
     secret_key = grey_boxes[1].text.strip()
     return (access_key, secret_key)
-
-
-@_TIMEOUT_RETRY_DECORATOR
-@beartype
-def get_database_details(
-    *,
-    driver: WebDriver,
-    database_name: str,
-) -> DatabaseDict:
-    """Get details of a database."""
-    navigate_to_database(driver=driver, database_name=database_name)
-    database_id = _database_id_from_current_url(driver=driver)
-    long_wait = WebDriverWait(
-        driver=driver,
-        timeout=180,
-        ignored_exceptions=(
-            NoSuchElementException,
-            StaleElementReferenceException,
-        ),
-    )
-
-    access_keys_tab_item = long_wait.until(
-        method=expected_conditions.presence_of_element_located(
-            locator=(By.LINK_TEXT, "Database Access Keys"),
-        ),
-    )
-
-    access_keys_tab_item.click()
-
-    _wait_for_access_keys(
-        wait=long_wait,
-        key_ids=("client-access-key", "server-access-key"),
-    )
-
-    client_access_key, client_secret_key = _access_key_pair(
-        driver=driver,
-        key_id="client-access-key",
-    )
-    server_access_key, server_secret_key = _access_key_pair(
-        driver=driver,
-        key_id="server-access-key",
-    )
-
-    return {
-        "database_name": database_name,
-        "database_id": database_id,
-        "server_access_key": server_access_key,
-        "server_secret_key": server_secret_key,
-        "client_access_key": client_access_key,
-        "client_secret_key": client_secret_key,
-    }
 
 
 @_TIMEOUT_RETRY_DECORATOR
@@ -1693,36 +1535,6 @@ def delete_vws_license(
 
 
 @click.command()
-@click.option("--license-name", required=True)
-@click.option("--database-name", required=True)
-@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
-@click.option("--password", envvar="VWS_PASSWORD", required=True)
-@beartype
-def create_vws_cloud_database(
-    *,
-    database_name: str,
-    license_name: str,
-    email_address: str,
-    password: str,
-) -> None:
-    """Create a cloud database."""
-    driver = create_chrome_driver()
-    try:
-        log_in(
-            driver=driver,
-            email_address=email_address,
-            password=password,
-        )
-        create_cloud_database(
-            driver=driver,
-            database_name=database_name,
-            license_name=license_name,
-        )
-    finally:
-        driver.quit()
-
-
-@click.command()
 @click.option("--database-name", required=True)
 @click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
 @click.option("--password", envvar="VWS_PASSWORD", required=True)
@@ -1855,51 +1667,6 @@ def wait_for_vumark_instance_id(
             target_name=target_name,
         )
         click.echo(message=instance_id)
-    finally:
-        driver.quit()
-
-
-@click.command()
-@click.option("--database-name", required=True)
-@click.option("--email-address", envvar="VWS_EMAIL_ADDRESS", required=True)
-@click.option("--password", envvar="VWS_PASSWORD", required=True)
-@click.option("--env-var-format", is_flag=True)
-@beartype
-def show_database_details(
-    *,
-    database_name: str,
-    email_address: str,
-    password: str,
-    env_var_format: bool,
-) -> None:
-    """Show the details of a database."""
-    driver = create_chrome_driver()
-    try:
-        log_in(
-            driver=driver,
-            email_address=email_address,
-            password=password,
-        )
-        details = get_database_details(
-            driver=driver,
-            database_name=database_name,
-        )
-        if env_var_format:
-            env_var_format_details = {
-                "VUFORIA_TARGET_MANAGER_DATABASE_NAME": details[
-                    "database_name"
-                ],
-                "VUFORIA_DATABASE_ID": details["database_id"],
-                "VUFORIA_SERVER_ACCESS_KEY": details["server_access_key"],
-                "VUFORIA_SERVER_SECRET_KEY": details["server_secret_key"],
-                "VUFORIA_CLIENT_ACCESS_KEY": details["client_access_key"],
-                "VUFORIA_CLIENT_SECRET_KEY": details["client_secret_key"],
-            }
-
-            for key, value in env_var_format_details.items():
-                click.echo(message=f"{key}={shlex.quote(s=value)}")
-        else:
-            click.echo(message=yaml.dump(data=details), nl=False)
     finally:
         driver.quit()
 
@@ -2066,13 +1833,11 @@ def show_license_details(
         driver.quit()
 
 
-vws_web_tools_group.add_command(cmd=create_vws_cloud_database)
 vws_web_tools_group.add_command(cmd=create_vws_license)
 vws_web_tools_group.add_command(cmd=create_vws_vumark_database)
 vws_web_tools_group.add_command(cmd=delete_model_target_web_api_credentials)
 vws_web_tools_group.add_command(cmd=delete_vws_license)
 vws_web_tools_group.add_command(cmd=get_vumark_instance_id)
-vws_web_tools_group.add_command(cmd=show_database_details)
 vws_web_tools_group.add_command(cmd=show_license_details)
 vws_web_tools_group.add_command(cmd=show_model_target_web_api_details)
 vws_web_tools_group.add_command(cmd=show_vumark_database_details)
